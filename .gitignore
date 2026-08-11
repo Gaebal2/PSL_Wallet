@@ -1,0 +1,10 @@
+.idea
+.DS_Store
+node_modules
+keypair.json
+test
+.env
+.env.*
+!.env.example
+*.log
+coverage
