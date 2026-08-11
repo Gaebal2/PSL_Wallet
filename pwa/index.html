@@ -12,6 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="install.css">
   <title>PSL Wallet</title>
 </head>
 <body>
@@ -125,6 +126,23 @@
       </section>
     </main>
   </div>
+
+  <dialog id="installDialog" class="install-dialog" aria-labelledby="installTitle">
+    <div class="install-visual" aria-hidden="true">
+      <span class="install-logo">P</span>
+      <span class="install-arrow">↓</span>
+    </div>
+    <p class="eyebrow">QUICK ACCESS</p>
+    <h2 id="installTitle">PSL Wallet을 설치할까요?</h2>
+    <p id="installDescription" class="install-description">홈 화면이나 바탕화면에서 앱처럼 빠르게 열 수 있습니다.</p>
+    <div id="iosInstallHelp" class="install-help hidden">
+      Safari 하단의 <strong>공유</strong> 버튼을 누른 뒤 <strong>홈 화면에 추가</strong>를 선택하세요.
+    </div>
+    <div class="install-actions">
+      <button id="installBtn" class="button primary" type="button">폰·바탕화면에 설치</button>
+      <button id="installLaterBtn" class="button secondary" type="button">나중에</button>
+    </div>
+  </dialog>
 
   <dialog id="settingsDialog">
     <form id="settingsForm" method="dialog">

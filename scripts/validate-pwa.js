@@ -4,7 +4,7 @@ const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
 const pwa = path.join(root, 'pwa');
-const required = ['index.html', 'styles.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon.svg'];
+const required = ['index.html', 'styles.css', 'install.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon.svg'];
 const failures = [];
 
 for (const file of required) {

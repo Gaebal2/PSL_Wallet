@@ -14,6 +14,7 @@
   let rawSlBalance = '0';
   let selectedAsset = 'PSL';
   let autoLockTimer;
+  let deferredInstallPrompt = null;
 
   function readJson(key, fallback) {
     try { return { ...fallback, ...JSON.parse(localStorage.getItem(key) || '{}') }; }
@@ -220,6 +221,66 @@
     catch { toast('복사할 수 없습니다. 주소를 길게 눌러 복사해 주세요.'); }
   }
 
+  function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+
+  function isIos() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent);
+  }
+
+  function updateInstallDialog() {
+    const ios = isIos();
+    $('iosInstallHelp').classList.toggle('hidden', !ios);
+    if (ios) {
+      $('installDescription').textContent = 'Safari에서 홈 화면 아이콘을 만들어 앱처럼 사용할 수 있습니다.';
+      $('installBtn').textContent = '설치 방법 확인';
+    } else if (deferredInstallPrompt) {
+      $('installDescription').textContent = '홈 화면이나 바탕화면에서 앱처럼 빠르게 열 수 있습니다.';
+      $('installBtn').textContent = '폰·바탕화면에 설치';
+    } else {
+      $('installDescription').textContent = '브라우저 메뉴에서 앱 설치 또는 바로가기 만들기를 선택할 수 있습니다.';
+      $('installBtn').textContent = '설치 방법 확인';
+    }
+  }
+
+  function showInstallDialog() {
+    if (isStandalone() || $('installDialog').open) return;
+    updateInstallDialog();
+    $('installDialog').showModal();
+  }
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    updateInstallDialog();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    if ($('installDialog').open) $('installDialog').close();
+    toast('PSL Wallet을 설치했습니다.');
+  });
+
+  $('installBtn').onclick = async () => {
+    if (deferredInstallPrompt) {
+      const promptEvent = deferredInstallPrompt;
+      deferredInstallPrompt = null;
+      await promptEvent.prompt();
+      const choice = await promptEvent.userChoice;
+      if (choice.outcome === 'accepted') $('installDialog').close();
+      else updateInstallDialog();
+      return;
+    }
+    if (isIos()) {
+      $('iosInstallHelp').classList.remove('hidden');
+      return;
+    }
+    toast('브라우저 메뉴의 “앱 설치” 또는 “바로가기 만들기”를 선택하세요.');
+  };
+
+  $('installLaterBtn').onclick = () => $('installDialog').close();
+
   $('createBtn').onclick = () => {
     $('createForm').classList.toggle('hidden');
     $('importForm').classList.add('hidden');
@@ -362,4 +423,5 @@
   }
   showOnly(localStorage.getItem(VAULT_KEY) ? 'unlock' : 'onboarding');
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(() => {});
+  window.addEventListener('load', () => setTimeout(showInstallDialog, 700));
 })();

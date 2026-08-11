@@ -1,0 +1,62 @@
+.install-dialog {
+  padding: 30px 24px 24px;
+  text-align: center;
+}
+
+.install-visual {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 24px;
+}
+
+.install-logo {
+  width: 86px;
+  height: 86px;
+  border-radius: 27px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 38px;
+  font-weight: 900;
+  background: linear-gradient(145deg, #917cff, #5137e8);
+  box-shadow: 0 18px 40px #7157ff4a;
+}
+
+.install-arrow {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 34px;
+  height: 34px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: #10131a;
+  font-weight: 900;
+}
+
+.install-dialog h2 { font-size: 26px; }
+
+.install-description {
+  max-width: 330px;
+  margin: 12px auto 18px;
+  color: #697180;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.install-help {
+  margin: 0 0 18px;
+  padding: 14px;
+  border-radius: 14px;
+  color: #4f5360;
+  background: #f1efff;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.install-actions { display: grid; gap: 9px; }
+.install-actions .button { margin: 0; }
