@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f4f6fb">
+  <meta name="description" content="기기 안에서 안전하게 관리하는 오픈소스 SASEUL PSL 지갑">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="PSL Wallet">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <title>PSL Wallet</title>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="PSL Wallet 홈">
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <span><small>SASEUL</small><strong>PSL Wallet</strong></span>
+      </a>
+      <div class="header-actions">
+        <span id="connectionState" class="connection"><i></i> 연결 확인 중</span>
+        <button id="lockBtn" class="icon-button hidden" type="button" aria-label="지갑 잠그기" title="지갑 잠그기">⌁</button>
+        <button id="settingsBtn" class="icon-button" type="button" aria-label="설정 열기" title="설정">⚙</button>
+      </div>
+    </header>
+
+    <main id="main">
+      <section id="onboarding" class="auth-view hidden" aria-labelledby="welcomeTitle">
+        <div class="orb" aria-hidden="true"><span>P</span></div>
+        <p class="eyebrow">OPEN SOURCE · SELF CUSTODY</p>
+        <h1 id="welcomeTitle">내 자산의 열쇠를<br>내 손 안에.</h1>
+        <p class="lead">개인키는 서버로 전송되지 않으며, 이 기기에서 비밀번호로 암호화됩니다.</p>
+        <div class="auth-actions">
+          <button id="createBtn" class="button primary" type="button">새 지갑 만들기</button>
+          <button id="showImportBtn" class="button secondary" type="button">기존 지갑 가져오기</button>
+        </div>
+        <form id="createForm" class="auth-form hidden">
+          <h2>지갑 보호 비밀번호</h2>
+          <p class="helper">12자 이상을 권장합니다. 비밀번호는 복구할 수 없습니다.</p>
+          <label for="createPassword">비밀번호</label>
+          <input id="createPassword" type="password" minlength="10" autocomplete="new-password" required>
+          <label for="createPasswordConfirm">비밀번호 확인</label>
+          <input id="createPasswordConfirm" type="password" minlength="10" autocomplete="new-password" required>
+          <label class="check"><input id="createAck" type="checkbox" required> 비밀번호와 개인키를 잃으면 자산을 복구할 수 없음을 이해했습니다.</label>
+          <button class="button primary" type="submit">안전하게 생성</button>
+        </form>
+        <form id="importForm" class="auth-form hidden">
+          <h2>기존 지갑 가져오기</h2>
+          <label for="importKey">개인키 (64자리)</label>
+          <input id="importKey" type="password" maxlength="64" autocomplete="off" spellcheck="false" required>
+          <label for="importPassword">새 보호 비밀번호</label>
+          <input id="importPassword" type="password" minlength="10" autocomplete="new-password" required>
+          <button class="button primary" type="submit">암호화하여 가져오기</button>
+        </form>
+      </section>
+
+      <section id="unlock" class="auth-view hidden" aria-labelledby="unlockTitle">
+        <div class="orb small" aria-hidden="true"><span>⌁</span></div>
+        <p class="eyebrow">WELCOME BACK</p>
+        <h1 id="unlockTitle">지갑 잠금 해제</h1>
+        <p class="lead">보호 비밀번호는 이 기기 안에서만 확인됩니다.</p>
+        <form id="unlockForm" class="auth-form compact">
+          <label for="unlockPassword">비밀번호</label>
+          <input id="unlockPassword" type="password" autocomplete="current-password" autofocus required>
+          <p id="unlockError" class="error" role="alert"></p>
+          <button id="unlockBtn" class="button primary" type="submit">잠금 해제</button>
+        </form>
+        <button id="resetBtn" class="text-button danger-text" type="button">이 기기에서 지갑 삭제</button>
+      </section>
+
+      <section id="wallet" class="dashboard hidden">
+        <section class="balance-card" aria-labelledby="portfolioLabel">
+          <div class="card-top">
+            <div><p id="portfolioLabel" class="eyebrow light">TOTAL PORTFOLIO</p><span id="networkBadge" class="network-badge">MAINNET</span></div>
+            <button id="refreshBtn" class="round-button" type="button" aria-label="잔액 새로고침">↻</button>
+          </div>
+          <p class="balance-label">PSL 잔액</p>
+          <div class="balance"><strong id="balance">—</strong><span id="symbol">PSL</span></div>
+          <div class="address-pill"><code id="accountAddress"></code><button id="copyAccount" type="button">복사</button></div>
+        </section>
+
+        <div class="quick-actions" aria-label="빠른 작업">
+          <button id="sendTab" type="button"><span>↗</span><strong>보내기</strong><small>PSL 전송</small></button>
+          <button id="receiveTab" type="button"><span>↙</span><strong>받기</strong><small>주소 공유</small></button>
+        </div>
+
+        <section class="asset-section">
+          <div class="section-heading"><div><p class="eyebrow">ASSETS</p><h2>내 자산</h2></div><span>2</span></div>
+          <article class="asset-row">
+            <div class="coin psl">P</div><div class="asset-name"><strong id="assetSymbol">PSL</strong><small>SASEUL Token</small></div>
+            <div class="asset-value"><strong id="balanceShort">—</strong><small id="assetValueStatus">실시간 잔액</small></div>
+          </article>
+          <article class="asset-row">
+            <div class="coin sl">S</div><div class="asset-name"><strong>SL</strong><small>Network fee</small></div>
+            <div class="asset-value"><strong id="slBalance">—</strong><small>전송 수수료</small></div>
+          </article>
+          <div class="native-actions"><button id="slSendTab" type="button">SL 보내기</button><button id="slReceiveTab" type="button">SL 받기</button></div>
+        </section>
+
+        <section id="sendPanel" class="sheet hidden" aria-labelledby="sendTitle">
+          <div class="sheet-head"><div><p class="eyebrow">TRANSFER</p><h2 id="sendTitle">PSL 보내기</h2></div><button class="close" data-close type="button" aria-label="닫기">×</button></div>
+          <form id="sendForm">
+            <label for="toAddress">받는 주소</label>
+            <input id="toAddress" maxlength="44" placeholder="44자리 SASEUL 주소" autocomplete="off" spellcheck="false" required>
+            <div class="label-row"><label for="amount">수량</label><button id="maxBtn" type="button">최대</button></div>
+            <div class="amount-input"><input id="amount" inputmode="decimal" placeholder="0" required><span id="amountSymbol">PSL</span></div>
+            <p id="sendError" class="error" role="alert"></p>
+            <button id="sendBtn" class="button primary" type="submit">검토 후 전송</button>
+          </form>
+        </section>
+
+        <section id="receivePanel" class="sheet hidden" aria-labelledby="receiveTitle">
+          <div class="sheet-head"><div><p class="eyebrow">RECEIVE</p><h2 id="receiveTitle">PSL 받기</h2></div><button class="close" data-close type="button" aria-label="닫기">×</button></div>
+          <div class="receive-mark" aria-hidden="true">P</div>
+          <p id="receiveHelp" class="center helper">아래 SASEUL 주소를 보내는 사람에게 공유하세요.</p>
+          <div class="address-box"><code id="receiveAddress"></code><button id="copyAddress" type="button">주소 복사</button></div>
+        </section>
+
+        <aside class="security-note"><span>✓</span><div><strong>로컬 암호화 보관</strong><p>개인키는 AES-GCM으로 암호화되어 이 기기에만 저장됩니다.</p></div></aside>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="settingsDialog">
+    <form id="settingsForm" method="dialog">
+      <div class="sheet-head"><div><p class="eyebrow">PREFERENCES</p><h2>네트워크 설정</h2></div><button id="settingsClose" class="close" type="button" aria-label="닫기">×</button></div>
+      <label for="endpoint">RPC 엔드포인트</label><input id="endpoint" type="url" required>
+      <label for="contractOwner">토큰 발행자 주소</label><input id="contractOwner" maxlength="44" placeholder="CID 입력 시 비워도 됩니다">
+      <label for="space">컨트랙트 공간명</label><input id="space" required>
+      <label for="cid">토큰 CID (선택)</label><input id="cid" maxlength="64" placeholder="64자리 CID">
+      <p class="helper">신뢰하는 HTTPS RPC만 사용하세요. CID가 있으면 발행자와 공간명보다 우선합니다.</p>
+      <button class="button primary" value="default">저장하고 연결</button>
+      <div class="settings-divider"></div>
+      <button id="exportBtn" class="button secondary" type="button">개인키 백업 보기</button>
+      <button id="logoutBtn" class="button danger" type="button">이 기기에서 지갑 삭제</button>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="vendor/crypto-js.min.js"></script>
+  <script src="vendor/nacl-fast.min.js"></script>
+  <script src="vendor/axios.min.js"></script>
+  <script src="vendor/saseul.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

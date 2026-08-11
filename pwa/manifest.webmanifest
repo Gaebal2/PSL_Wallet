@@ -1,0 +1,22 @@
+{
+  "id": "./",
+  "name": "PSL Wallet",
+  "short_name": "PSL",
+  "description": "기기 안에서 안전하게 관리하는 오픈소스 SASEUL PSL 지갑",
+  "lang": "ko-KR",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#f4f6fb",
+  "theme_color": "#f4f6fb",
+  "categories": ["finance", "utilities"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "지갑 열기", "short_name": "열기", "url": "./", "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }] }
+  ]
+}

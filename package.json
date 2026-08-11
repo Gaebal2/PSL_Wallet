@@ -1,4 +1,14 @@
 {
+  "name": "psl-wallet",
+  "version": "1.1.0",
+  "description": "Open-source PSL wallet for the SASEUL network",
+  "private": false,
+  "scripts": {
+    "start": "node pwa/server.js",
+    "dev": "node pwa/server.js",
+    "wallet": "node pwa/server.js",
+    "test": "node scripts/validate-pwa.js"
+  },
   "dependencies": {
     "config-ini-parser": "^1.6.1",
     "path": "^0.12.7",

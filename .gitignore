@@ -1,8 +1,10 @@
 .idea
-.git
-.github
 .DS_Store
 node_modules
-package-lock.json
 keypair.json
 test
+.env
+.env.*
+!.env.example
+*.log
+coverage
