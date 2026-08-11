@@ -4,7 +4,7 @@ const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
 const pwa = path.join(root, 'pwa');
-const required = ['index.html', 'styles.css', 'install.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon.svg'];
+const required = ['index.html', 'styles.css', 'install.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon.svg', 'images/psl-wallet-social.png'];
 const failures = [];
 
 for (const file of required) {
@@ -31,6 +31,8 @@ const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
 const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
 if (duplicates.length) failures.push(`Duplicate HTML ids: ${[...new Set(duplicates)].join(', ')}`);
 if (!html.includes('Content-Security-Policy')) failures.push('HTML CSP is missing');
+if (!html.includes('property="og:image"')) failures.push('Open Graph image metadata is missing');
+if (!html.includes('https://gaebal2.github.io/PSL_Wallet/images/psl-wallet-social.png')) failures.push('Open Graph image must use the public absolute URL');
 if (html.includes('\uFFFD') || html.includes('釉') || html.includes('吏')) failures.push('HTML appears to contain mojibake');
 
 if (failures.length) {

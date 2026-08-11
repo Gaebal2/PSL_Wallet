@@ -7,6 +7,7 @@ const APP_SHELL = [
   './app.js',
   './manifest.webmanifest',
   './icons/icon.svg',
+  './images/psl-wallet-social.png',
   './vendor/crypto-js.min.js',
   './vendor/nacl-fast.min.js',
   './vendor/axios.min.js',
