@@ -10,7 +10,8 @@ const types = {
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.webmanifest': 'application/manifest+json; charset=utf-8',
-  '.svg': 'image/svg+xml; charset=utf-8'
+  '.svg': 'image/svg+xml; charset=utf-8',
+  '.png': 'image/png'
 };
 const securityHeaders = {
   'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",

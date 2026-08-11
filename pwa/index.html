@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f4f6fb">
   <meta name="description" content="기기 안에서 안전하게 관리하는 오픈소스 SASEUL PSL 지갑">
+  <link rel="canonical" href="https://gaebal2.github.io/PSL_Wallet/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="PSL Wallet">
+  <meta property="og:title" content="PSL Wallet">
+  <meta property="og:description" content="기기 안에서 안전하게 관리하는 오픈소스 SASEUL PSL 지갑">
+  <meta property="og:url" content="https://gaebal2.github.io/PSL_Wallet/">
+  <meta property="og:image" content="https://gaebal2.github.io/PSL_Wallet/images/psl-wallet-social.png?v=1">
+  <meta property="og:image:secure_url" content="https://gaebal2.github.io/PSL_Wallet/images/psl-wallet-social.png?v=1">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1536">
+  <meta property="og:image:height" content="1024">
+  <meta property="og:image:alt" content="PSL Wallet 앱 아이콘과 모바일 지갑 화면">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PSL Wallet">
+  <meta name="twitter:description" content="기기 안에서 안전하게 관리하는 오픈소스 SASEUL PSL 지갑">
+  <meta name="twitter:image" content="https://gaebal2.github.io/PSL_Wallet/images/psl-wallet-social.png?v=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -12,6 +28,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="install.css">
   <title>PSL Wallet</title>
 </head>
 <body>
@@ -125,6 +142,23 @@
       </section>
     </main>
   </div>
+
+  <dialog id="installDialog" class="install-dialog" aria-labelledby="installTitle">
+    <div class="install-visual" aria-hidden="true">
+      <span class="install-logo">P</span>
+      <span class="install-arrow">↓</span>
+    </div>
+    <p class="eyebrow">QUICK ACCESS</p>
+    <h2 id="installTitle">PSL Wallet을 설치할까요?</h2>
+    <p id="installDescription" class="install-description">홈 화면이나 바탕화면에서 앱처럼 빠르게 열 수 있습니다.</p>
+    <div id="iosInstallHelp" class="install-help hidden">
+      Safari 하단의 <strong>공유</strong> 버튼을 누른 뒤 <strong>홈 화면에 추가</strong>를 선택하세요.
+    </div>
+    <div class="install-actions">
+      <button id="installBtn" class="button primary" type="button">폰·바탕화면에 설치</button>
+      <button id="installLaterBtn" class="button secondary" type="button">나중에</button>
+    </div>
+  </dialog>
 
   <dialog id="settingsDialog">
     <form id="settingsForm" method="dialog">
