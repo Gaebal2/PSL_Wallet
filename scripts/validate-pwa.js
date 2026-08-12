@@ -30,9 +30,15 @@ const html = fs.readFileSync(path.join(pwa, 'index.html'), 'utf8');
 const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
 const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
 if (duplicates.length) failures.push(`Duplicate HTML ids: ${[...new Set(duplicates)].join(', ')}`);
+const appSource = fs.readFileSync(path.join(pwa, 'app.js'), 'utf8');
+const referencedIds = [...appSource.matchAll(/\$\('([^']+)'\)/g)].map((match) => match[1]);
+const missingIds = [...new Set(referencedIds.filter((id) => !ids.includes(id)))];
+if (missingIds.length) failures.push(`JavaScript references missing HTML ids: ${missingIds.join(', ')}`);
 if (!html.includes('Content-Security-Policy')) failures.push('HTML CSP is missing');
 if (!html.includes('property="og:image"')) failures.push('Open Graph image metadata is missing');
 if (!html.includes('https://gaebal2.github.io/PSL_Wallet/images/psl-wallet-social.png')) failures.push('Open Graph image must use the public absolute URL');
+if (!appSource.includes("notation: 'compact'")) failures.push('Compact balance formatting is missing');
+if ((html.match(/data-password-toggle=/g) || []).length < 5) failures.push('Password visibility toggles are missing');
 if (html.includes('\uFFFD') || html.includes('釉') || html.includes('吏')) failures.push('HTML appears to contain mojibake');
 
 if (failures.length) {

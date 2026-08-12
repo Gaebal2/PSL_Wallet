@@ -41,7 +41,9 @@
       </a>
       <div class="header-actions">
         <span id="connectionState" class="connection"><i></i> 연결 확인 중</span>
-        <button id="lockBtn" class="icon-button hidden" type="button" aria-label="지갑 잠그기" title="지갑 잠그기">⌁</button>
+        <button id="lockBtn" class="icon-button hidden" type="button" aria-label="지갑 잠그기" title="지갑 잠그기">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        </button>
         <button id="settingsBtn" class="icon-button" type="button" aria-label="설정 열기" title="설정">⚙</button>
       </div>
     </header>
@@ -60,18 +62,18 @@
           <h2>지갑 보호 비밀번호</h2>
           <p class="helper">12자 이상을 권장합니다. 비밀번호는 복구할 수 없습니다.</p>
           <label for="createPassword">비밀번호</label>
-          <input id="createPassword" type="password" minlength="10" autocomplete="new-password" required>
+          <div class="password-field"><input id="createPassword" type="password" minlength="10" autocomplete="new-password" required><button class="password-toggle" type="button" data-password-toggle="createPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <label for="createPasswordConfirm">비밀번호 확인</label>
-          <input id="createPasswordConfirm" type="password" minlength="10" autocomplete="new-password" required>
+          <div class="password-field"><input id="createPasswordConfirm" type="password" minlength="10" autocomplete="new-password" required><button class="password-toggle" type="button" data-password-toggle="createPasswordConfirm" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <label class="check"><input id="createAck" type="checkbox" required> 비밀번호와 개인키를 잃으면 자산을 복구할 수 없음을 이해했습니다.</label>
           <button class="button primary" type="submit">안전하게 생성</button>
         </form>
         <form id="importForm" class="auth-form hidden">
           <h2>기존 지갑 가져오기</h2>
           <label for="importKey">개인키 (64자리)</label>
-          <input id="importKey" type="password" maxlength="64" autocomplete="off" spellcheck="false" required>
+          <div class="password-field"><input id="importKey" type="password" maxlength="64" autocomplete="off" spellcheck="false" required><button class="password-toggle" type="button" data-password-toggle="importKey" aria-label="개인키 표시"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <label for="importPassword">새 보호 비밀번호</label>
-          <input id="importPassword" type="password" minlength="10" autocomplete="new-password" required>
+          <div class="password-field"><input id="importPassword" type="password" minlength="10" autocomplete="new-password" required><button class="password-toggle" type="button" data-password-toggle="importPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <button class="button primary" type="submit">암호화하여 가져오기</button>
         </form>
       </section>
@@ -83,7 +85,7 @@
         <p class="lead">보호 비밀번호는 이 기기 안에서만 확인됩니다.</p>
         <form id="unlockForm" class="auth-form compact">
           <label for="unlockPassword">비밀번호</label>
-          <input id="unlockPassword" type="password" autocomplete="current-password" autofocus required>
+          <div class="password-field"><input id="unlockPassword" type="password" autocomplete="current-password" autofocus required><button class="password-toggle" type="button" data-password-toggle="unlockPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <p id="unlockError" class="error" role="alert"></p>
           <button id="unlockBtn" class="button primary" type="submit">잠금 해제</button>
         </form>
@@ -96,8 +98,8 @@
             <div><p id="portfolioLabel" class="eyebrow light">TOTAL PORTFOLIO</p><span id="networkBadge" class="network-badge">MAINNET</span></div>
             <button id="refreshBtn" class="round-button" type="button" aria-label="잔액 새로고침">↻</button>
           </div>
-          <p class="balance-label">PSL 잔액</p>
-          <div class="balance"><strong id="balance">—</strong><span id="symbol">PSL</span></div>
+          <p class="balance-label">SL 메인넷 잔액</p>
+          <div class="balance"><strong id="slHeroBalance">—</strong><span>SL</span></div>
           <div class="address-pill"><code id="accountAddress"></code><button id="copyAccount" type="button">복사</button></div>
         </section>
 
@@ -109,12 +111,12 @@
         <section class="asset-section">
           <div class="section-heading"><div><p class="eyebrow">ASSETS</p><h2>내 자산</h2></div><span>2</span></div>
           <article class="asset-row">
-            <div class="coin psl">P</div><div class="asset-name"><strong id="assetSymbol">PSL</strong><small>SASEUL Token</small></div>
-            <div class="asset-value"><strong id="balanceShort">—</strong><small id="assetValueStatus">실시간 잔액</small></div>
+            <div class="coin sl">S</div><div class="asset-name"><strong>SL</strong><small>SASEUL Mainnet</small></div>
+            <div class="asset-value"><strong id="slBalance">—</strong><small>메인넷 자산 · 수수료</small></div>
           </article>
           <article class="asset-row">
-            <div class="coin sl">S</div><div class="asset-name"><strong>SL</strong><small>Network fee</small></div>
-            <div class="asset-value"><strong id="slBalance">—</strong><small>전송 수수료</small></div>
+            <div class="coin psl">P</div><div class="asset-name"><strong id="assetSymbol">PSL</strong><small>SASEUL Token</small></div>
+            <div class="asset-value"><strong id="balanceShort">—</strong><small id="assetValueStatus">실시간 잔액</small></div>
           </article>
           <div class="native-actions"><button id="slSendTab" type="button">SL 보내기</button><button id="slReceiveTab" type="button">SL 받기</button></div>
         </section>

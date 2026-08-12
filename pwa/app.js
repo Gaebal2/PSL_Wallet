@@ -92,6 +92,18 @@
     return `${negative ? '-' : ''}${integer}${fraction ? `.${fraction}` : ''}`;
   }
 
+  function formatCompactUnits(value, decimals) {
+    const exact = formatUnits(value, decimals);
+    const numeric = Number(exact);
+    if (!Number.isFinite(numeric)) return exact;
+    const absolute = Math.abs(numeric);
+    if (absolute > 0 && absolute < 0.000001) return '< 0.000001';
+    return new Intl.NumberFormat('en-US', absolute >= 1000
+      ? { notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 2 }
+      : { maximumFractionDigits: Math.min(decimals, 6) }
+    ).format(numeric);
+  }
+
   function parseUnits(value, decimals) {
     const text = String(value).trim();
     if (!/^\d+(\.\d+)?$/.test(text)) throw new Error('수량을 숫자로 입력해 주세요.');
@@ -160,8 +172,14 @@
     if (slState.status === 'fulfilled' && slState.value.code === 200) {
       online = true;
       rawSlBalance = String(slState.value.data.balance || '0');
-      $('slBalance').textContent = formatUnits(rawSlBalance, 18);
+      const exactSlBalance = formatUnits(rawSlBalance, 18);
+      const compactSlBalance = formatCompactUnits(rawSlBalance, 18);
+      $('slHeroBalance').textContent = compactSlBalance;
+      $('slHeroBalance').title = `${exactSlBalance} SL`;
+      $('slBalance').textContent = compactSlBalance;
+      $('slBalance').title = `${exactSlBalance} SL`;
     } else {
+      $('slHeroBalance').textContent = '연결 오류';
       $('slBalance').textContent = '연결 오류';
     }
     if (pslState.status === 'fulfilled') {
@@ -170,18 +188,16 @@
         online = true;
         token = { symbol: infoResult.data.symbol || 'PSL', decimal: Number(infoResult.data.decimal || 0) };
         rawBalance = String(balanceResult.data.balance || '0');
-        const formatted = formatUnits(rawBalance, token.decimal);
-        $('symbol').textContent = token.symbol;
+        const exactBalance = formatUnits(rawBalance, token.decimal);
+        const compactBalance = formatCompactUnits(rawBalance, token.decimal);
         $('assetSymbol').textContent = token.symbol;
-        $('balance').textContent = formatted;
-        $('balanceShort').textContent = formatted;
+        $('balanceShort').textContent = compactBalance;
+        $('balanceShort').title = `${exactBalance} ${token.symbol}`;
         $('assetValueStatus').textContent = '실시간 잔액';
       } else {
-        $('balance').textContent = '연결 오류';
         $('balanceShort').textContent = '—';
       }
     } else {
-      $('balance').textContent = '설정 필요';
       $('balanceShort').textContent = '—';
       $('assetValueStatus').textContent = '토큰 설정 확인';
     }
@@ -280,6 +296,18 @@
   };
 
   $('installLaterBtn').onclick = () => $('installDialog').close();
+
+  document.querySelectorAll('[data-password-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const input = $(button.dataset.passwordToggle);
+      const reveal = input.type === 'password';
+      input.type = reveal ? 'text' : 'password';
+      button.classList.toggle('is-visible', reveal);
+      const fieldName = input.id === 'importKey' ? '개인키' : '비밀번호';
+      button.setAttribute('aria-label', `${fieldName} ${reveal ? '숨기기' : '표시'}`);
+      input.focus({ preventScroll: true });
+    });
+  });
 
   $('createBtn').onclick = () => {
     $('createForm').classList.toggle('hidden');
