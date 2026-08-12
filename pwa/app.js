@@ -5,6 +5,7 @@
   const VAULT_KEY = 'psl-wallet-vault-v1';
   const CONFIG_KEY = 'psl-wallet-config-v1';
   const LEGACY_KEY = 'psl-wallet-key';
+  const INSTALLED_KEY = 'psl-wallet-installed-v1';
   const AUTO_LOCK_MS = 5 * 60 * 1000;
   const defaults = { endpoint: 'https://main.saseul.net', owner: '', space: 'MY TOKEN', cid: '' };
   let config = readJson(CONFIG_KEY, defaults);
@@ -222,7 +223,7 @@
     setTimeout(() => {
       pullStart = null;
       pullDistance = 0;
-      $('pullRefresh').className = 'pull-refresh';
+      $('pullRefresh').className = 'pull-refresh hidden';
       $('pullRefresh').style.removeProperty('transform');
       $('pullRefresh').setAttribute('aria-hidden', 'true');
       $('pullRefreshLabel').textContent = '아래로 당겨 새로고침';
@@ -256,6 +257,7 @@
     event.preventDefault();
     pullDistance = Math.min(deltaY * 0.55, 96);
     if (pullDistance > 8) suppressLockClickUntil = Date.now() + 700;
+    $('pullRefresh').classList.remove('hidden');
     $('pullRefresh').classList.add('visible');
     $('pullRefresh').style.transform = `translate(-50%, ${Math.min(0, -70 + pullDistance)}px)`;
     $('pullRefresh').setAttribute('aria-hidden', 'false');
@@ -353,7 +355,7 @@
   }
 
   function showInstallDialog() {
-    if (isStandalone() || $('installDialog').open) return;
+    if (isStandalone() || localStorage.getItem(INSTALLED_KEY) || !deferredInstallPrompt || $('installDialog').open) return;
     updateInstallDialog();
     $('installDialog').showModal();
   }
@@ -362,10 +364,12 @@
     event.preventDefault();
     deferredInstallPrompt = event;
     updateInstallDialog();
+    setTimeout(showInstallDialog, 150);
   });
 
   window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null;
+    localStorage.setItem(INSTALLED_KEY, 'true');
     if ($('installDialog').open) $('installDialog').close();
     toast('PSL Wallet을 설치했습니다.');
   });
@@ -376,7 +380,10 @@
       deferredInstallPrompt = null;
       await promptEvent.prompt();
       const choice = await promptEvent.userChoice;
-      if (choice.outcome === 'accepted') $('installDialog').close();
+      if (choice.outcome === 'accepted') {
+        localStorage.setItem(INSTALLED_KEY, 'true');
+        $('installDialog').close();
+      }
       else updateInstallDialog();
       return;
     }
@@ -546,5 +553,4 @@
   }
   showOnly(localStorage.getItem(VAULT_KEY) ? 'unlock' : 'onboarding');
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(() => {});
-  window.addEventListener('load', () => setTimeout(showInstallDialog, 700));
 })();

@@ -4,7 +4,7 @@ const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
 const pwa = path.join(root, 'pwa');
-const required = ['index.html', 'styles.css', 'install.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon.svg', 'images/psl-wallet-social.png', 'vendor/qrcode.min.js'];
+const required = ['index.html', 'styles.css', 'install.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon.svg', 'images/psl-wallet-social-v2.png', 'vendor/qrcode.min.js'];
 const failures = [];
 
 for (const file of required) {
@@ -36,13 +36,15 @@ const missingIds = [...new Set(referencedIds.filter((id) => !ids.includes(id)))]
 if (missingIds.length) failures.push(`JavaScript references missing HTML ids: ${missingIds.join(', ')}`);
 if (!html.includes('Content-Security-Policy')) failures.push('HTML CSP is missing');
 if (!html.includes('property="og:image"')) failures.push('Open Graph image metadata is missing');
-if (!html.includes('https://gaebal2.github.io/PSL_Wallet/images/psl-wallet-social.png')) failures.push('Open Graph image must use the public absolute URL');
+if (!html.includes('https://gaebal2.github.io/PSL_Wallet/images/psl-wallet-social-v2.png')) failures.push('Open Graph image must use the public absolute URL');
 if (!appSource.includes("notation: 'compact'")) failures.push('Compact balance formatting is missing');
 if ((html.match(/data-password-toggle=/g) || []).length < 5) failures.push('Password visibility toggles are missing');
 if (!html.includes('id="receiveQr"') || !appSource.includes('new QRCode(')) failures.push('Receive QR generation is missing');
 if (!html.includes('id="pslSendTab"') || !html.includes('id="pslReceiveTab"')) failures.push('PSL asset actions are missing');
 if (!html.includes('id="pullRefresh"') || !appSource.includes('PULL_THRESHOLD')) failures.push('Pull-to-refresh is missing');
 if (appSource.includes("setLoading($('refreshBtn')")) failures.push('Refresh button must not replace its icon with loading text');
+if (!html.includes('id="pullRefresh" class="pull-refresh hidden"')) failures.push('Pull-to-refresh must be hidden before CSS and JavaScript are ready');
+if (!appSource.includes('!deferredInstallPrompt')) failures.push('Install dialog must require a real browser install prompt');
 if (html.includes('\uFFFD') || html.includes('釉') || html.includes('吏')) failures.push('HTML appears to contain mojibake');
 
 if (failures.length) {
