@@ -33,6 +33,9 @@
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+  <div id="pullRefresh" class="pull-refresh" role="status" aria-live="polite" aria-hidden="true">
+    <span aria-hidden="true">↻</span><small id="pullRefreshLabel">아래로 당겨 새로고침</small>
+  </div>
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="./" aria-label="PSL Wallet 홈">
@@ -112,7 +115,7 @@
           <div class="section-heading"><div><p class="eyebrow">ASSETS</p><h2>내 자산</h2></div><span>2</span></div>
           <article class="asset-row">
             <div class="coin sl">S</div><div class="asset-name"><strong>SL</strong><small>SASEUL Mainnet</small></div>
-            <div class="asset-value"><strong id="slBalance">—</strong><small>메인넷 자산 · 수수료</small></div>
+            <div class="asset-value"><strong id="slBalance">—</strong><small>메인넷 자산</small></div>
           </article>
           <article class="asset-row">
             <div class="coin psl">P</div><div class="asset-name"><strong id="assetSymbol">PSL</strong><small>SASEUL Token</small></div>
