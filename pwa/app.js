@@ -229,7 +229,25 @@
   function openPanel(id, asset) {
     selectAsset(asset);
     ['sendPanel', 'receivePanel'].forEach((panel) => $(panel).classList.toggle('hidden', panel !== id));
+    if (id === 'receivePanel') renderReceiveQr();
     $(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderReceiveQr() {
+    const container = $('receiveQr');
+    container.replaceChildren();
+    if (!address() || typeof QRCode === 'undefined') {
+      container.textContent = 'QR 코드를 생성할 수 없습니다.';
+      return;
+    }
+    new QRCode(container, {
+      text: address(),
+      width: 176,
+      height: 176,
+      colorDark: '#10131a',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
   }
 
   async function copy(text) {
@@ -402,10 +420,10 @@
   $('logoutBtn').onclick = deleteWallet;
   $('resetBtn').onclick = deleteWallet;
   $('refreshBtn').onclick = refresh;
-  $('sendTab').onclick = () => openPanel('sendPanel', 'PSL');
-  $('receiveTab').onclick = () => openPanel('receivePanel', 'PSL');
-  $('slSendTab').onclick = () => openPanel('sendPanel', 'SL');
-  $('slReceiveTab').onclick = () => openPanel('receivePanel', 'SL');
+  $('sendTab').onclick = () => openPanel('sendPanel', 'SL');
+  $('receiveTab').onclick = () => openPanel('receivePanel', 'SL');
+  $('pslSendTab').onclick = () => openPanel('sendPanel', 'PSL');
+  $('pslReceiveTab').onclick = () => openPanel('receivePanel', 'PSL');
   document.querySelectorAll('[data-close]').forEach((button) => { button.onclick = () => button.closest('.sheet').classList.add('hidden'); });
   $('copyAddress').onclick = () => copy(address());
   $('copyAccount').onclick = () => copy(address());

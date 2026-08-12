@@ -13,6 +13,7 @@
     "config-ini-parser": "^1.6.1",
     "path": "^0.12.7",
     "prompt-sync": "^4.2.0",
+    "qrcodejs": "1.0.0",
     "saseul": "^2.7.14"
   }
 }

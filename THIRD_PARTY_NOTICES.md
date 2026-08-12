@@ -9,3 +9,11 @@ Parts of the repository under `system/`, `event/`, `example/`, and `tools/` orig
 - License: MIT License
 
 The original copyright and MIT permission notice are retained in [LICENSE](LICENSE) as required by that license. Contributor attribution for this repository reflects the independent PSL Wallet commit history; this notice preserves the provenance of incorporated third-party code.
+
+## QRCode.js
+
+The PWA includes QRCode.js 1.0.0 for local, offline wallet-address QR generation.
+
+- Project: `davidshimjs/qrcodejs`
+- Copyright: Copyright (c) 2012 davidshimjs
+- License: MIT License
