@@ -15,6 +15,11 @@
   let selectedAsset = 'PSL';
   let autoLockTimer;
   let deferredInstallPrompt = null;
+  let isRefreshing = false;
+  let pullStart = null;
+  let pullDistance = 0;
+  let suppressLockClickUntil = 0;
+  const PULL_THRESHOLD = 72;
 
   function readJson(key, fallback) {
     try { return { ...fallback, ...JSON.parse(localStorage.getItem(key) || '{}') }; }
@@ -155,8 +160,11 @@
   }
 
   async function refresh() {
-    if (!privateKey) return;
-    setLoading($('refreshBtn'), true, '↻');
+    if (!privateKey || isRefreshing) return;
+    isRefreshing = true;
+    $('refreshBtn').disabled = true;
+    $('refreshBtn').classList.add('is-refreshing');
+    $('refreshBtn').setAttribute('aria-busy', 'true');
     $('connectionState').className = 'connection';
     $('connectionState').innerHTML = '<i></i> 연결 확인 중';
     const slRequest = SASEUL.Rpc.request(SASEUL.Rpc.signedRequest({ type: 'GetBalance', address: address() }, privateKey));
@@ -204,8 +212,74 @@
     $('networkBadge').textContent = config.endpoint.toLowerCase().includes('test') ? 'TESTNET' : 'MAINNET';
     $('connectionState').className = `connection ${online ? 'online' : 'offline'}`;
     $('connectionState').innerHTML = `<i></i> ${online ? '온라인' : '연결 안 됨'}`;
-    setLoading($('refreshBtn'), false, '↻');
+    $('refreshBtn').disabled = false;
+    $('refreshBtn').classList.remove('is-refreshing');
+    $('refreshBtn').removeAttribute('aria-busy');
+    isRefreshing = false;
   }
+
+  function resetPullIndicator(delay = 0) {
+    setTimeout(() => {
+      pullStart = null;
+      pullDistance = 0;
+      $('pullRefresh').className = 'pull-refresh';
+      $('pullRefresh').style.removeProperty('transform');
+      $('pullRefresh').setAttribute('aria-hidden', 'true');
+      $('pullRefreshLabel').textContent = '아래로 당겨 새로고침';
+    }, delay);
+  }
+
+  function canStartPull(event) {
+    return Boolean(
+      privateKey
+      && !isRefreshing
+      && window.scrollY <= 0
+      && !document.querySelector('dialog[open]')
+      && !event.target.closest('input, textarea, select, [contenteditable="true"]')
+    );
+  }
+
+  document.addEventListener('touchstart', (event) => {
+    if (event.touches.length !== 1 || !canStartPull(event)) return;
+    pullStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    pullDistance = 0;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (event) => {
+    if (!pullStart || event.touches.length !== 1) return;
+    const deltaX = event.touches[0].clientX - pullStart.x;
+    const deltaY = event.touches[0].clientY - pullStart.y;
+    if (deltaY <= 0 || Math.abs(deltaX) > deltaY) {
+      resetPullIndicator();
+      return;
+    }
+    event.preventDefault();
+    pullDistance = Math.min(deltaY * 0.55, 96);
+    if (pullDistance > 8) suppressLockClickUntil = Date.now() + 700;
+    $('pullRefresh').classList.add('visible');
+    $('pullRefresh').style.transform = `translate(-50%, ${Math.min(0, -70 + pullDistance)}px)`;
+    $('pullRefresh').setAttribute('aria-hidden', 'false');
+    const ready = pullDistance >= PULL_THRESHOLD;
+    $('pullRefresh').classList.toggle('ready', ready);
+    $('pullRefreshLabel').textContent = ready ? '놓아서 잔액 새로고침' : '아래로 당겨 새로고침';
+  }, { passive: false });
+
+  document.addEventListener('touchend', async () => {
+    if (!pullStart) return;
+    const shouldRefresh = pullDistance >= PULL_THRESHOLD;
+    pullStart = null;
+    if (!shouldRefresh) {
+      resetPullIndicator();
+      return;
+    }
+    $('pullRefresh').className = 'pull-refresh visible refreshing';
+    $('pullRefreshLabel').textContent = 'SL · PSL 잔액 갱신 중';
+    await refresh();
+    $('pullRefreshLabel').textContent = '잔액을 새로고침했습니다';
+    resetPullIndicator(650);
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', () => resetPullIndicator(), { passive: true });
 
   async function saveWallet(key, password) {
     if (!SASEUL.Sign.keyValidity(key)) throw new Error('개인키는 64자리 16진수여야 합니다.');
@@ -383,7 +457,10 @@
 
   $('settingsBtn').onclick = () => $('settingsDialog').showModal();
   $('settingsClose').onclick = () => $('settingsDialog').close();
-  $('lockBtn').onclick = () => lockWallet(true);
+  $('lockBtn').onclick = () => {
+    if (Date.now() < suppressLockClickUntil) return;
+    lockWallet(true);
+  };
   $('settingsForm').onsubmit = (event) => {
     event.preventDefault();
     const next = { endpoint: $('endpoint').value.trim().replace(/\/$/, ''), owner: $('contractOwner').value.trim(), space: $('space').value.trim(), cid: $('cid').value.trim() };

@@ -41,6 +41,8 @@ if (!appSource.includes("notation: 'compact'")) failures.push('Compact balance f
 if ((html.match(/data-password-toggle=/g) || []).length < 5) failures.push('Password visibility toggles are missing');
 if (!html.includes('id="receiveQr"') || !appSource.includes('new QRCode(')) failures.push('Receive QR generation is missing');
 if (!html.includes('id="pslSendTab"') || !html.includes('id="pslReceiveTab"')) failures.push('PSL asset actions are missing');
+if (!html.includes('id="pullRefresh"') || !appSource.includes('PULL_THRESHOLD')) failures.push('Pull-to-refresh is missing');
+if (appSource.includes("setLoading($('refreshBtn')")) failures.push('Refresh button must not replace its icon with loading text');
 if (html.includes('\uFFFD') || html.includes('釉') || html.includes('吏')) failures.push('HTML appears to contain mojibake');
 
 if (failures.length) {
