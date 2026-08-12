@@ -4,7 +4,7 @@ const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
 const pwa = path.join(root, 'pwa');
-const required = ['index.html', 'styles.css', 'install.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon.svg', 'images/psl-wallet-social.png'];
+const required = ['index.html', 'styles.css', 'install.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon.svg', 'images/psl-wallet-social.png', 'vendor/qrcode.min.js'];
 const failures = [];
 
 for (const file of required) {
@@ -39,6 +39,8 @@ if (!html.includes('property="og:image"')) failures.push('Open Graph image metad
 if (!html.includes('https://gaebal2.github.io/PSL_Wallet/images/psl-wallet-social.png')) failures.push('Open Graph image must use the public absolute URL');
 if (!appSource.includes("notation: 'compact'")) failures.push('Compact balance formatting is missing');
 if ((html.match(/data-password-toggle=/g) || []).length < 5) failures.push('Password visibility toggles are missing');
+if (!html.includes('id="receiveQr"') || !appSource.includes('new QRCode(')) failures.push('Receive QR generation is missing');
+if (!html.includes('id="pslSendTab"') || !html.includes('id="pslReceiveTab"')) failures.push('PSL asset actions are missing');
 if (html.includes('\uFFFD') || html.includes('釉') || html.includes('吏')) failures.push('HTML appears to contain mojibake');
 
 if (failures.length) {

@@ -104,8 +104,8 @@
         </section>
 
         <div class="quick-actions" aria-label="빠른 작업">
-          <button id="sendTab" type="button"><span>↗</span><strong>보내기</strong><small>PSL 전송</small></button>
-          <button id="receiveTab" type="button"><span>↙</span><strong>받기</strong><small>주소 공유</small></button>
+          <button id="sendTab" type="button"><span>↗</span><strong>SL 보내기</strong><small>메인넷 전송</small></button>
+          <button id="receiveTab" type="button"><span>↙</span><strong>SL 받기</strong><small>주소·QR 공유</small></button>
         </div>
 
         <section class="asset-section">
@@ -118,7 +118,7 @@
             <div class="coin psl">P</div><div class="asset-name"><strong id="assetSymbol">PSL</strong><small>SASEUL Token</small></div>
             <div class="asset-value"><strong id="balanceShort">—</strong><small id="assetValueStatus">실시간 잔액</small></div>
           </article>
-          <div class="native-actions"><button id="slSendTab" type="button">SL 보내기</button><button id="slReceiveTab" type="button">SL 받기</button></div>
+          <div class="native-actions"><button id="pslSendTab" type="button">PSL 보내기</button><button id="pslReceiveTab" type="button">PSL 받기</button></div>
         </section>
 
         <section id="sendPanel" class="sheet hidden" aria-labelledby="sendTitle">
@@ -134,8 +134,8 @@
         </section>
 
         <section id="receivePanel" class="sheet hidden" aria-labelledby="receiveTitle">
-          <div class="sheet-head"><div><p class="eyebrow">RECEIVE</p><h2 id="receiveTitle">PSL 받기</h2></div><button class="close" data-close type="button" aria-label="닫기">×</button></div>
-          <div class="receive-mark" aria-hidden="true">P</div>
+          <div class="sheet-head"><div><p class="eyebrow">RECEIVE</p><h2 id="receiveTitle">SL 받기</h2></div><button class="close" data-close type="button" aria-label="닫기">×</button></div>
+          <div class="qr-frame"><div id="receiveQr" class="qr-code" role="img" aria-label="지갑 주소 QR 코드"></div></div>
           <p id="receiveHelp" class="center helper">아래 SASEUL 주소를 보내는 사람에게 공유하세요.</p>
           <div class="address-box"><code id="receiveAddress"></code><button id="copyAddress" type="button">주소 복사</button></div>
         </section>
@@ -181,6 +181,7 @@
   <script src="vendor/crypto-js.min.js"></script>
   <script src="vendor/nacl-fast.min.js"></script>
   <script src="vendor/axios.min.js"></script>
+  <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
   <script src="app.js"></script>
 </body>

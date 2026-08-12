@@ -121,3 +121,32 @@
   background: currentColor;
   transform: rotate(-45deg);
 }
+
+.qr-frame {
+  width: 208px;
+  height: 208px;
+  margin: 26px auto 16px;
+  padding: 16px;
+  border: 1px solid #e5e8ef;
+  border-radius: 24px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  box-shadow: 0 16px 35px #27305514;
+}
+
+.qr-code {
+  width: 176px;
+  height: 176px;
+  display: grid;
+  place-items: center;
+  color: #697180;
+  font-size: 11px;
+}
+
+.qr-code img,
+.qr-code canvas {
+  display: block;
+  width: 176px;
+  height: 176px;
+}
