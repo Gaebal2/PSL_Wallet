@@ -61,6 +61,11 @@
 .install-actions { display: grid; gap: 9px; }
 .install-actions .button { margin: 0; }
 
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 .ui-icon {
   width: 20px;
   height: 20px;
