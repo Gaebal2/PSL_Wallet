@@ -245,6 +245,15 @@
     return parseUnits(significantFraction ? `${whole}.${significantFraction}` : whole, decimals);
   }
 
+  function parseTokenUnits(value, decimals) {
+    const text = String(value ?? '0').replace(/,/g, '').trim();
+    if (!/^\d+(\.\d+)?$/.test(text)) throw new Error('토큰 잔액 형식이 올바르지 않습니다.');
+    const [whole, fraction = ''] = text.split('.');
+    if (fraction.length > decimals && /[1-9]/.test(fraction.slice(decimals))) throw new Error('토큰 소수 자릿수가 설정과 일치하지 않습니다.');
+    const usableFraction = fraction.slice(0, decimals);
+    return (BigInt(whole) * (10n ** BigInt(decimals)) + BigInt(usableFraction.padEnd(decimals, '0') || '0')).toString();
+  }
+
   function formatAmountInput(value) {
     const raw = String(value).replace(/,/g, '');
     if (!/^\d*(\.\d*)?$/.test(raw)) return null;
@@ -287,7 +296,7 @@
     if (infoResult.code !== 200) throw new Error(`PSL 컨트랙트를 확인할 수 없습니다: ${rpcError(infoResult)}`);
     if (balanceResult.code !== 200) throw new Error(`PSL 잔액을 확인할 수 없습니다: ${rpcError(balanceResult)}`);
     token = { symbol: infoResult.data.symbol || 'PSL', decimal: Number(infoResult.data.decimal || 0) };
-    rawBalance = parseUnits(String(balanceResult.data.balance ?? '0'), token.decimal);
+    rawBalance = parseTokenUnits(balanceResult.data.balance, token.decimal);
     return cid;
   }
 
@@ -476,15 +485,19 @@
     let psl = '0';
     let online = false;
     if (slState.status === 'fulfilled' && slState.value.code === 200) {
-      sl = normalizeBalance(slState.value.data.balance, 18);
-      online = true;
+      try {
+        sl = normalizeBalance(slState.value.data.balance, 18);
+        online = true;
+      } catch { /* keep PSL and history available if SL formatting is unexpected */ }
     }
     if (pslState.status === 'fulfilled') {
       const [infoResult, balanceResult] = pslState.value;
       if (infoResult.code === 200 && balanceResult.code === 200) {
         token = { symbol: infoResult.data.symbol || 'PSL', decimal: Number(infoResult.data.decimal || 0) };
-        psl = parseUnits(String(balanceResult.data.balance ?? '0'), token.decimal);
-        online = true;
+        try {
+          psl = parseTokenUnits(balanceResult.data.balance, token.decimal);
+          online = true;
+        } catch { /* keep SL and history available if token formatting is unexpected */ }
       }
     }
     walletBalances.set(wallet.id, { sl, psl, loading: false, error: !online });
@@ -498,16 +511,26 @@
     $('connectionState').innerHTML = '<i></i> 연결 확인 중';
     wallets.forEach((wallet) => walletBalances.set(wallet.id, { ...balanceState(wallet.id), loading: true }));
     renderWalletList();
-    const results = await Promise.all(wallets.map(fetchWalletBalance));
-    const balances = balanceState(activeWalletId);
-    updateActiveBalances(balances);
-    renderWalletList();
-    const online = results.some(Boolean);
-    $('networkBadge').textContent = config.endpoint.toLowerCase().includes('test') ? 'TESTNET' : 'MAINNET';
-    $('connectionState').className = `connection ${online ? 'online' : 'offline'}`;
-    $('connectionState').innerHTML = `<i></i> ${online ? '온라인' : '연결 안 됨'}`;
-    isRefreshing = false;
-    refreshHistory(1);
+    let results = [];
+    try {
+      results = await Promise.all(wallets.map(async (wallet) => {
+        try { return await fetchWalletBalance(wallet); }
+        catch {
+          walletBalances.set(wallet.id, { sl: '0', psl: '0', loading: false, error: true });
+          return false;
+        }
+      }));
+    } finally {
+      const balances = balanceState(activeWalletId);
+      updateActiveBalances(balances);
+      renderWalletList();
+      const online = results.some(Boolean);
+      $('networkBadge').textContent = config.endpoint.toLowerCase().includes('test') ? 'TESTNET' : 'MAINNET';
+      $('connectionState').className = `connection ${online ? 'online' : 'offline'}`;
+      $('connectionState').innerHTML = `<i></i> ${online ? '온라인' : '연결 안 됨'}`;
+      isRefreshing = false;
+      refreshHistory(1);
+    }
   }
 
   function transactionEndpoints() {
@@ -588,10 +611,12 @@
         const value = document.createElement('div');
         value.className = 'history-value';
         const amount = document.createElement('strong');
-        const historyAmount = isPsl
-          ? parseUnits(String(transaction.amount || '0'), decimals)
-          : normalizeBalance(transaction.amount, decimals);
-        amount.textContent = `${sent ? '-' : '+'}${formatDisplayUnits(historyAmount, decimals)} ${symbol}`;
+        try {
+          const historyAmount = isPsl
+            ? parseTokenUnits(transaction.amount, decimals)
+            : normalizeBalance(transaction.amount, decimals);
+          amount.textContent = `${sent ? '-' : '+'}${formatDisplayUnits(historyAmount, decimals)} ${symbol}`;
+        } catch { amount.textContent = `${sent ? '-' : '+'}${transaction.amount || '0'} ${symbol}`; }
         const time = document.createElement('small');
         const timestamp = Number(transaction.timestamp || 0);
         time.textContent = timestamp ? new Intl.DateTimeFormat('ko-KR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(timestamp / 1000)) : '';
@@ -1069,5 +1094,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=21', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=22', { updateViaCache: 'none' }).catch(() => {});
 })();

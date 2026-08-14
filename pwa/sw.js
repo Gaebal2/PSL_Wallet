@@ -1,11 +1,11 @@
-const CACHE_NAME = 'psl-wallet-v21';
+const CACHE_NAME = 'psl-wallet-v22';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=21',
-  './wallets.css?v=21',
-  './install.css?v=21',
-  './app.js?v=21',
+  './styles.css?v=22',
+  './wallets.css?v=22',
+  './install.css?v=22',
+  './app.js?v=22',
   './manifest.webmanifest',
   './icons/icon.svg',
   './images/psl-wallet-social-v2.png',
