@@ -326,6 +326,40 @@
     });
   }
 
+  function confirmDanger(title, message, requirePhrase = false) {
+    const dialog = $('dangerConfirmDialog');
+    const phraseWrap = $('dangerConfirmPhraseWrap');
+    const phraseInput = $('dangerConfirmPhrase');
+    $('dangerConfirmTitle').textContent = title;
+    $('dangerConfirmMessage').textContent = message;
+    $('dangerConfirmError').textContent = '';
+    phraseWrap.classList.toggle('hidden', !requirePhrase);
+    phraseInput.value = '';
+    dialog.showModal();
+    if (requirePhrase) setTimeout(() => phraseInput.focus(), 0);
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (confirmed) => {
+        if (settled) return;
+        settled = true;
+        dialog.removeEventListener('cancel', onCancel);
+        dialog.close();
+        resolve(confirmed);
+      };
+      const onCancel = (event) => { event.preventDefault(); finish(false); };
+      $('dangerConfirmCancel').onclick = () => finish(false);
+      $('dangerConfirmAccept').onclick = () => {
+        if (requirePhrase && phraseInput.value.trim() !== '삭제') {
+          $('dangerConfirmError').textContent = '“삭제”를 정확히 입력해 주세요.';
+          phraseInput.focus();
+          return;
+        }
+        finish(true);
+      };
+      dialog.addEventListener('cancel', onCancel);
+    });
+  }
+
   function isInvalidPslTransferAmount(value) {
     const text = String(value).replace(/,/g, '').trim();
     if (!/^\d+(\.\d+)?$/.test(text)) return false;
@@ -454,7 +488,7 @@
     const wallet = wallets.find((item) => item.id === walletId);
     if (!wallet) return;
     if (wallets.length === 1) return toast('마지막 지갑은 여기서 삭제할 수 없습니다. 설정의 “이 기기에서 지갑 삭제”를 이용해 주세요.');
-    if (!confirm(`${wallet.name} 지갑을 삭제할까요?\n\n백업하지 않은 개인키는 복구할 수 없습니다.`)) return;
+    if (!await confirmDanger(`${wallet.name} 지갑을 삭제할까요?`, '백업하지 않은 개인키는 복구할 수 없습니다.')) return;
     const previousWallets = wallets.slice();
     const previousActiveWalletId = activeWalletId;
     wallets = wallets.filter((item) => item.id !== walletId);
@@ -1077,8 +1111,7 @@
 
   async function deleteWallet() {
     if (!walletVault) return;
-    const phrase = prompt('백업하지 않은 지갑은 복구할 수 없습니다. 삭제하려면 "삭제"를 입력하세요.');
-    if (phrase !== '삭제') return toast('삭제를 취소했습니다.');
+    if (!await confirmDanger('이 기기에서 모든 지갑을 삭제할까요?', '백업하지 않은 지갑과 개인키는 복구할 수 없습니다.', true)) return;
     localStorage.removeItem(VAULT_KEY);
     localStorage.removeItem(LEGACY_KEY);
     try { await durableVault('delete'); } catch { /* local deletion still succeeds */ }
@@ -1186,5 +1219,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=32', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=33', { updateViaCache: 'none' }).catch(() => {});
 })();
