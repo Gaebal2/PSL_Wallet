@@ -51,7 +51,7 @@ if (!appSource.includes('navigator.storage?.persist')) failures.push('Persistent
 if (!html.includes('id="walletList"') || !html.includes('id="openAddWalletBtn"')) failures.push('Multi-wallet list and import controls are missing');
 if (!appSource.includes('version: 2, wallets, activeWalletId')) failures.push('Multi-wallet encrypted vault format is missing');
 if (!appSource.includes("['이름 변경', '', '']")) failures.push('Wallet editor action is missing');
-if (!appSource.includes("['이름 변경', '', '']") || !appSource.includes("prompt('새 지갑 이름을 입력하세요.'")) failures.push('Wallet rename control is missing');
+if (!appSource.includes("['이름 변경', '', '']") || !appSource.includes("requestTextInput('지갑 이름 변경'")) failures.push('Wallet rename control is missing');
 if (!html.includes('id="addWalletDialog"') || !html.includes('id="importName"')) failures.push('Independent wallet dialog or wallet name import is missing');
 if (!html.includes('ACTIVE WALLET') || !html.includes('id="editWalletsBtn"') || !html.includes('id="walletManagerDialog"')) failures.push('Active wallet card or wallet manager is missing');
 if (html.includes('class="asset-section"') || html.includes('class="quick-actions"')) failures.push('Legacy asset detail sections must stay removed');
@@ -62,11 +62,13 @@ if (!appSource.includes('removeWallet') || !appSource.includes('syncDialogScroll
 if (!appSource.includes('formatDisplayUnits') || !appSource.includes('submitTransaction') || !html.includes('id="transferSuccessDialog"')) failures.push('Exact grouped amounts or resilient transfer completion UI is missing');
 if (!appSource.includes('Promise.any(requests)') || !appSource.includes('result.data ?? {}') || !appSource.includes("'받는 주소' : '보낸 주소'")) failures.push('Resilient empty history handling or counterparty labels are missing');
 if (!html.includes('id="transferReviewDialog"') || !appSource.includes('confirmTransfer') || !appSource.includes('formatAmountInput') || !appSource.includes("selectedAsset === 'SL' ? amount : formatUnits(amount, decimals)") || !appSource.includes('parseTokenUnits(balanceResult.data.balance, token.decimal)')) failures.push('Custom transfer review, grouped input, or PSL contract units are missing');
-if (!html.includes('app.js?v=33') || !appSource.includes("sw.js?v=33") || !swSource.includes("cache: 'reload'")) failures.push('Versioned app assets or forced service-worker refresh are missing');
+if (!html.includes('app.js?v=34') || !appSource.includes("sw.js?v=34") || !swSource.includes("cache: 'reload'")) failures.push('Versioned app assets or forced service-worker refresh are missing');
 if (!html.includes('id="appAlertDialog"') || !appSource.includes('isInvalidPslTransferAmount') || !appSource.includes('최소 송금 가능 금액은 1 PSL')) failures.push('Whole-unit PSL transfer warning is missing');
 if (!html.includes('id="transferReviewFee"') || !appSource.includes('estimatedFee') || !appSource.includes('history-fee') || !appSource.includes("'psl' : 'sl'")) failures.push('Transfer fee preview or token-aware history is missing');
 if (!html.includes('id="dangerConfirmDialog"') || !appSource.includes('confirmDanger') || appSource.includes('if (!confirm(`${wallet.name}')) failures.push('Custom wallet deletion confirmation is missing');
 if (!html.includes('class="orb small unlock-orb"') || !html.includes('class="active-wallet-name-row"') || !html.includes('class="hero-balance-icon psl-balance-icon"')) failures.push('Unlock icon or active wallet layout refinement is missing');
+if (!html.includes('id="textInputDialog"') || !html.includes('id="backupConfirmDialog"') || !html.includes('id="privateKeyDialog"') || !appSource.includes('requestTextInput') || !appSource.includes('confirmPrivateKeyBackup')) failures.push('Custom rename or private-key backup dialogs are missing');
+if (/\b(?:window\.)?(?:alert|confirm|prompt)\s*\(/.test(appSource.replace(/promptEvent\.prompt\s*\(/g, ''))) failures.push('Browser-native app dialogs are still in use');
 if (!appSource.includes('parseTokenUnits') || !appSource.includes('keep SL and history available')) failures.push('Token balance parsing or refresh isolation is missing');
 if (!appSource.includes('https://explorer.saseul.com/?ic=tx&h=')) failures.push('Explorer transaction links are missing');
 if (!html.includes('id="activePslSend"') || !html.includes('id="activeSlReceive"')) failures.push('Active wallet asset actions are missing');

@@ -360,6 +360,71 @@
     });
   }
 
+  function requestTextInput(title, label, initialValue = '') {
+    const dialog = $('textInputDialog');
+    const input = $('textInputValue');
+    $('textInputTitle').textContent = title;
+    $('textInputLabel').textContent = label;
+    $('textInputError').textContent = '';
+    input.value = initialValue;
+    dialog.showModal();
+    setTimeout(() => { input.focus(); input.select(); }, 0);
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        dialog.removeEventListener('cancel', onCancel);
+        dialog.close();
+        resolve(value);
+      };
+      const onCancel = (event) => { event.preventDefault(); finish(null); };
+      $('textInputCancel').onclick = () => finish(null);
+      $('textInputAccept').onclick = () => {
+        const value = input.value.trim();
+        if (!value) {
+          $('textInputError').textContent = '지갑 이름을 입력해 주세요.';
+          input.focus();
+          return;
+        }
+        finish(value);
+      };
+      input.onkeydown = (event) => { if (event.key === 'Enter') { event.preventDefault(); $('textInputAccept').click(); } };
+      dialog.addEventListener('cancel', onCancel);
+    });
+  }
+
+  function confirmPrivateKeyBackup() {
+    const dialog = $('backupConfirmDialog');
+    dialog.showModal();
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (confirmed) => {
+        if (settled) return;
+        settled = true;
+        dialog.removeEventListener('cancel', onCancel);
+        dialog.close();
+        resolve(confirmed);
+      };
+      const onCancel = (event) => { event.preventDefault(); finish(false); };
+      $('backupConfirmCancel').onclick = () => finish(false);
+      $('backupConfirmAccept').onclick = () => finish(true);
+      dialog.addEventListener('cancel', onCancel);
+    });
+  }
+
+  function showPrivateKeyBackup(key) {
+    $('privateKeyValue').textContent = key;
+    const dialog = $('privateKeyDialog');
+    dialog.oncancel = (event) => { event.preventDefault(); closePrivateKeyBackup(); };
+    dialog.showModal();
+  }
+
+  function closePrivateKeyBackup() {
+    $('privateKeyDialog').close();
+    $('privateKeyValue').textContent = '';
+  }
+
   function isInvalidPslTransferAmount(value) {
     const text = String(value).replace(/,/g, '').trim();
     if (!/^\d+(\.\d+)?$/.test(text)) return false;
@@ -1046,7 +1111,7 @@
   async function renameWallet(walletId) {
     const wallet = wallets.find((item) => item.id === walletId);
     if (!wallet) return;
-    const name = prompt('새 지갑 이름을 입력하세요.', wallet.name)?.trim();
+    const name = await requestTextInput('지갑 이름 변경', '새 지갑 이름', wallet.name);
     if (!name || name === wallet.name) return;
     if (name.length > 24) return toast('지갑 이름은 24자 이하로 입력해 주세요.');
     const previousName = wallet.name;
@@ -1102,12 +1167,15 @@
     if (privateKey) refresh();
   };
 
-  $('exportBtn').onclick = () => {
+  $('exportBtn').onclick = async () => {
     if (!privateKey) return toast('먼저 지갑 잠금을 해제해 주세요.');
-    if (!confirm('화면을 볼 수 있는 사람은 개인키로 자산을 가져갈 수 있습니다. 혼자 있는 안전한 장소입니까?')) return;
-    prompt('개인키를 오프라인 장소에 백업한 뒤 이 창을 닫으세요.', privateKey);
+    if (!await confirmPrivateKeyBackup()) return;
+    showPrivateKeyBackup(privateKey);
     resetAutoLock();
   };
+
+  $('copyPrivateKey').onclick = () => copy($('privateKeyValue').textContent);
+  $('privateKeyClose').onclick = closePrivateKeyBackup;
 
   async function deleteWallet() {
     if (!walletVault) return;
@@ -1219,5 +1287,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=33', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=34', { updateViaCache: 'none' }).catch(() => {});
 })();
