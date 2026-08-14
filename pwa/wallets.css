@@ -47,17 +47,17 @@
 .balance-card { min-height: 0; }
 .active-assets { position: relative; z-index: 1; margin-top: 16px; }
 .active-primary-balance>small { color: #aaa6b7; font-size: 11px; }
-.active-primary-balance>div { display: flex; min-width: 0; align-items: center; gap: 8px; margin-top: 4px; }
+.active-primary-balance>div { display: flex; min-width: 0; min-height: 54px; align-items: center; gap: 8px; margin-top: 4px; }
 .active-primary-balance strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding-right: 3px; font-size: clamp(38px,10vw,50px); line-height: 1.08; letter-spacing: -.045em; }
 .active-primary-balance strong.long-balance { font-size: clamp(28px,7.5vw,36px); }
 .active-primary-balance span { color: #cfc6ff; font-weight: 850; }
-.hero-balance-icon { flex: none; object-fit: contain; }
-.psl-balance-icon { width: clamp(34px,9vw,45px); height: clamp(34px,9vw,45px); }
+.hero-balance-icon { display: block; flex: none; object-fit: contain; }
+.psl-balance-icon { width: clamp(36px,9vw,44px); height: clamp(36px,9vw,44px); }
 .sl-balance-icon { width: 18px; height: 18px; }
 .hero-balance-symbol { flex: none; color: #cfc6ff; font-weight: 850; white-space: nowrap; }
 .active-secondary-balance { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 12px; color: #aaa6b7; font-size: 11px; }
-.active-secondary-balance strong { min-width: 0; display: inline-flex; align-items: center; overflow: hidden; color: #fff; text-overflow: ellipsis; white-space: nowrap; }
-.active-secondary-balance b { font-size: 16px; }
+.active-secondary-balance strong { min-width: 0; min-height: 22px; display: inline-flex; align-items: center; gap: 5px; overflow: hidden; color: #fff; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.active-secondary-balance b { font-size: 16px; line-height: 1; }
 .active-card-actions { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
 .active-card-actions button { min-height: 43px; border: 1px solid #8f82d938; border-radius: 13px; background: #6253a72b; color: #eeeafc; font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
 .active-card-actions span { display: inline-grid; width: 23px; height: 23px; margin-right: 5px; place-items: center; border-radius: 8px; background: #ffffff15; font-size: 13px; }
