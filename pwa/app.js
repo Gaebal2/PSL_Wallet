@@ -7,6 +7,7 @@
   const LEGACY_KEY = 'psl-wallet-key';
   const WALLET_DB = 'psl-wallet-storage-v1';
   const WALLET_STORE = 'wallet';
+  const SL_SYSTEM_CID = '19bd191ea2da3fd599528b4b831206ec5cf958d6cdbea0188a22d7d44673dd58';
   const INSTALLED_KEY = 'psl-wallet-installed-v1';
   const AUTO_LOCK_MS = 5 * 60 * 1000;
   const defaults = { endpoint: 'https://main.saseul.net', owner: '', space: 'MY TOKEN', cid: '' };
@@ -23,6 +24,9 @@
   let autoLockTimer;
   let deferredInstallPrompt = null;
   let isRefreshing = false;
+  let historyPage = 1;
+  let historyLoading = false;
+  let historyRequestId = 0;
   let pullStart = null;
   let pullDistance = 0;
   let suppressLockClickUntil = 0;
@@ -294,8 +298,8 @@
       row.className = 'wallet-select-row';
       row.append(details, selectButton);
       const actions = document.createElement('div');
-      actions.className = 'wallet-item-actions';
-      [['이름 변경', '', ''], ['SL 보내기', 'sendPanel', 'SL'], ['SL 받기', 'receivePanel', 'SL'], ['PSL 보내기', 'sendPanel', 'PSL'], ['PSL 받기', 'receivePanel', 'PSL']].forEach(([label, panel, asset]) => {
+      actions.className = 'wallet-item-actions single-action';
+      [['이름 변경', '', '']].forEach(([label, panel, asset]) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = label;
@@ -325,6 +329,7 @@
     updateActiveBalances(balances);
     renderWalletList();
     try { await persistWallets(); } catch { /* selection remains valid for this session */ }
+    refreshHistory(1);
     if (scroll) $('wallet').scrollIntoView({ behavior: 'smooth', block: 'start' });
     resetAutoLock();
   }
@@ -336,6 +341,11 @@
     $('slHeroBalance').textContent = slDisplay;
     $('slHeroBalance').classList.toggle('long-balance', slDisplay.length > 12);
     $('slHeroBalance').title = `${formatUnits(balances.sl, 18)} SL`;
+    const pslDisplay = balances.error ? '—' : formatCompactUnits(balances.psl, token.decimal, 6);
+    $('pslHeroBalance').textContent = pslDisplay;
+    $('pslHeroBalance').classList.toggle('long-balance', pslDisplay.length > 12);
+    $('pslHeroBalance').title = `${formatUnits(balances.psl, token.decimal)} ${token.symbol}`;
+    $('pslHeroSymbol').textContent = token.symbol;
   }
 
   async function fetchWalletBalance(wallet) {
@@ -384,6 +394,126 @@
     $('connectionState').className = `connection ${online ? 'online' : 'offline'}`;
     $('connectionState').innerHTML = `<i></i> ${online ? '온라인' : '연결 안 됨'}`;
     isRefreshing = false;
+    refreshHistory(1);
+  }
+
+  function transactionEndpoints() {
+    const configured = new URL('/transaction', config.endpoint).href;
+    if (config.endpoint.toLowerCase().includes('test')) return [configured];
+    if (new URL(config.endpoint).hostname === 'main.saseul.net') {
+      return ['https://sub.saseul.net/transaction', 'https://blanc.saseul.net/transaction', 'https://chardonnay.saseul.net/transaction'];
+    }
+    return [configured, 'https://sub.saseul.net/transaction', 'https://blanc.saseul.net/transaction'];
+  }
+
+  async function requestHistory(body) {
+    let lastError;
+    for (const endpoint of transactionEndpoints()) {
+      try {
+        const response = await fetch(endpoint, { method: 'POST', body });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+        if (result.code !== 200 || !result.data) throw new Error(rpcError(result));
+        return result.data;
+      } catch (error) { lastError = error; }
+    }
+    throw lastError || new Error('거래 조회 노드에 연결할 수 없습니다.');
+  }
+
+  function historyTransaction(entry, fallbackHash = '') {
+    let value = entry;
+    if (typeof entry?.data === 'string') {
+      try { value = { ...entry, ...JSON.parse(entry.data) }; } catch { value = entry; }
+    }
+    const transaction = value?.transaction || value;
+    if (!transaction || transaction.type !== 'Send') return null;
+    const hash = value.hash || value.tx_hash || value.transaction_hash || fallbackHash || SASEUL.Enc.txHash(transaction);
+    return { hash, transaction };
+  }
+
+  function renderHistory(entries, page) {
+    const container = $('historyList');
+    container.replaceChildren();
+    const currentAddress = address();
+    let pslCid = '';
+    try { pslCid = contractId(); } catch { /* PSL history stays unavailable until configured */ }
+    const transactions = entries.map(([hash, entry]) => historyTransaction(entry, hash)).filter(Boolean).filter(({ transaction }) => {
+      const involvesWallet = transaction.from === currentAddress || transaction.to === currentAddress;
+      const supportedAsset = !transaction.cid || transaction.cid === SL_SYSTEM_CID || (pslCid && transaction.cid === pslCid);
+      return involvesWallet && supportedAsset;
+    }).slice(0, 10);
+    if (!transactions.length) {
+      $('historyStatus').textContent = '표시할 SL · PSL 송수신 이력이 없습니다.';
+    } else {
+      $('historyStatus').textContent = '';
+      transactions.forEach(({ hash, transaction }) => {
+        const sent = transaction.from === currentAddress;
+        const isPsl = Boolean(transaction.cid && transaction.cid !== SL_SYSTEM_CID);
+        const symbol = isPsl ? token.symbol : 'SL';
+        const decimals = isPsl ? token.decimal : 18;
+        const counterparty = sent ? transaction.to : transaction.from;
+        const row = document.createElement('article');
+        row.className = `history-row ${sent ? 'sent' : 'received'}`;
+        const icon = document.createElement('span');
+        icon.className = 'history-icon';
+        icon.textContent = sent ? '↗' : '↙';
+        const details = document.createElement('div');
+        details.className = 'history-details';
+        const title = document.createElement('strong');
+        title.textContent = `${symbol} ${sent ? '보냄' : '받음'}`;
+        const addressText = document.createElement('small');
+        addressText.textContent = `${counterparty?.slice(0, 8) || '알 수 없음'}…${counterparty?.slice(-6) || ''}`;
+        details.append(title, addressText);
+        const value = document.createElement('div');
+        value.className = 'history-value';
+        const amount = document.createElement('strong');
+        amount.textContent = `${sent ? '-' : '+'}${formatCompactUnits(String(transaction.amount || '0'), decimals, isPsl ? 6 : 9)} ${symbol}`;
+        const time = document.createElement('small');
+        const timestamp = Number(transaction.timestamp || 0);
+        time.textContent = timestamp ? new Intl.DateTimeFormat('ko-KR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(timestamp / 1000)) : '';
+        value.append(amount, time);
+        const explorer = document.createElement('a');
+        explorer.className = 'history-hash';
+        explorer.href = `https://explorer.saseul.com/?ic=tx&h=${encodeURIComponent(hash)}&ia=detail`;
+        explorer.target = '_blank';
+        explorer.rel = 'noopener noreferrer';
+        explorer.textContent = `${hash.slice(0, 10)}…${hash.slice(-8)} ↗`;
+        row.append(icon, details, value, explorer);
+        container.append(row);
+      });
+    }
+    historyPage = page;
+    $('historyPage').textContent = String(page);
+    $('historyPageBadge').textContent = String(page);
+    $('historyPrev').disabled = page <= 1;
+    $('historyNext').disabled = entries.length < 10;
+    $('historyPagination').classList.toggle('hidden', page === 1 && entries.length < 10);
+  }
+
+  async function refreshHistory(page = historyPage) {
+    if (!privateKey) return;
+    const requestId = ++historyRequestId;
+    historyLoading = true;
+    $('historyStatus').textContent = '거래 이력을 불러오는 중입니다.';
+    $('historyPrev').disabled = true;
+    $('historyNext').disabled = true;
+    try {
+      const requestKey = SASEUL.Sign.privateKey();
+      const timestamp = SASEUL.Util.utime();
+      const body = new URLSearchParams({
+        data: 'fullList', type: 'Send', address: address(), page: String(page - 1), count: '10',
+        timestamp: String(timestamp), public_key: SASEUL.Sign.publicKey(requestKey), signature: SASEUL.Sign.signature(timestamp, requestKey)
+      });
+      const data = await requestHistory(body);
+      if (requestId !== historyRequestId) return;
+      const entries = Array.isArray(data) ? data.map((entry) => [entry.hash || '', entry]) : Object.entries(data || {});
+      renderHistory(entries, page);
+    } catch {
+      if (requestId !== historyRequestId) return;
+      $('historyStatus').textContent = '거래 이력을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+      $('historyPrev').disabled = page <= 1;
+      $('historyNext').disabled = true;
+    } finally { if (requestId === historyRequestId) historyLoading = false; }
   }
 
   function resetPullIndicator(delay = 0) {
@@ -642,6 +772,12 @@
   $('settingsClose').onclick = () => $('settingsDialog').close();
   $('editWalletsBtn').onclick = () => $('walletManagerDialog').showModal();
   $('walletManagerClose').onclick = () => $('walletManagerDialog').close();
+  $('activePslSend').onclick = () => openPanel('sendPanel', 'PSL');
+  $('activePslReceive').onclick = () => openPanel('receivePanel', 'PSL');
+  $('activeSlSend').onclick = () => openPanel('sendPanel', 'SL');
+  $('activeSlReceive').onclick = () => openPanel('receivePanel', 'SL');
+  $('historyPrev').onclick = () => refreshHistory(Math.max(1, historyPage - 1));
+  $('historyNext').onclick = () => refreshHistory(historyPage + 1);
   $('openAddWalletBtn').onclick = () => {
     $('walletManagerDialog').close();
     $('addWalletDialog').showModal();

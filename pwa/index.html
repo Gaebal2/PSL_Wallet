@@ -104,12 +104,26 @@
             <div><p id="portfolioLabel" class="eyebrow light">ACTIVE WALLET</p><strong id="activeWalletName" class="active-wallet-name">지갑 1</strong><br><span id="networkBadge" class="network-badge">MAINNET</span></div>
             <button id="editWalletsBtn" class="wallet-edit-button" type="button">지갑 편집</button>
           </div>
-          <p class="balance-label">SL 메인넷 잔액</p>
-          <div class="balance"><strong id="slHeroBalance">—</strong><span>SL</span></div>
+          <div class="active-assets">
+            <div class="active-primary-balance"><small>PSL 토큰 잔액</small><div><strong id="pslHeroBalance">—</strong><span id="pslHeroSymbol">PSL</span></div></div>
+            <div class="active-secondary-balance"><span>SL 메인넷 잔액</span><strong><b id="slHeroBalance">—</b> SL</strong></div>
+          </div>
+          <div class="active-card-actions" aria-label="활성 지갑 작업">
+            <button id="activePslSend" type="button"><span>↗</span>PSL 보내기</button>
+            <button id="activePslReceive" type="button"><span>↙</span>PSL 받기</button>
+            <button id="activeSlSend" type="button"><span>↗</span>SL 보내기</button>
+            <button id="activeSlReceive" type="button"><span>↙</span>SL 받기</button>
+          </div>
           <div class="address-pill"><code id="accountAddress"></code><button id="copyAccount" type="button">복사</button></div>
         </section>
         <p class="pull-refresh-hint">↓ 아래로 당겼다 놓으면 모든 지갑의 잔액이 새로고침됩니다.</p>
         <aside class="security-note"><span>✓</span><div><strong>로컬 암호화 보관</strong><p>개인키는 AES-GCM으로 암호화되어 이 기기에만 저장됩니다.</p></div></aside>
+        <section class="history-section" aria-labelledby="historyTitle">
+          <div class="section-heading"><div><p class="eyebrow">HISTORY</p><h2 id="historyTitle">SL · PSL 거래 이력</h2></div><span id="historyPageBadge">1</span></div>
+          <p id="historyStatus" class="history-status">거래 이력을 불러오는 중입니다.</p>
+          <div id="historyList" class="history-list"></div>
+          <div id="historyPagination" class="history-pagination"><button id="historyPrev" type="button">이전</button><strong id="historyPage">1</strong><button id="historyNext" type="button">다음</button></div>
+        </section>
       </section>
     </main>
   </div>
