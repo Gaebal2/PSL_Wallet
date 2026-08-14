@@ -275,9 +275,22 @@
     return fraction === undefined ? grouped : `${grouped}.${fraction}`;
   }
 
-  function confirmTransfer(amount, symbol, to) {
+  async function estimateTransactionFee(signed) {
+    try {
+      const fee = await SASEUL.Rpc.estimatedFee(signed);
+      if (Number.isFinite(Number(fee)) && Number(fee) >= 0) return BigInt(Math.trunc(Number(fee))).toString();
+    } catch { /* use the SDK's standard Send transaction fallback below */ }
+    return (BigInt(JSON.stringify(signed).length + 336) * 1000000000n).toString();
+  }
+
+  function formatSlFee(fee) {
+    return `${formatDisplayUnits(fee, 18)} SL`;
+  }
+
+  function confirmTransfer(amount, symbol, to, fee) {
     const dialog = $('transferReviewDialog');
     $('transferReviewAmount').textContent = `${amount} ${symbol}`;
+    $('transferReviewFee').textContent = formatSlFee(fee);
     $('transferReviewAddress').textContent = to;
     dialog.showModal();
     return new Promise((resolve) => {
@@ -605,7 +618,13 @@
     const transaction = value?.transaction || value;
     if (!transaction || transaction.type !== 'Send') return null;
     const hash = value.hash || value.tx_hash || value.transaction_hash || fallbackHash || SASEUL.Enc.txHash(transaction);
-    return { hash, transaction };
+    const signed = value?.transaction ? {
+      transaction,
+      ...(value.public_key ? { public_key: value.public_key } : {}),
+      ...(value.signature ? { signature: value.signature } : {})
+    } : { transaction };
+    const recordedFee = value.fee ?? value.transaction_fee ?? value.network_fee ?? null;
+    return { hash, transaction, signed, recordedFee };
   }
 
   function renderHistory(entries, page, hasNext = false) {
@@ -623,7 +642,7 @@
       $('historyStatus').textContent = '표시할 SL · PSL 송수신 이력이 없습니다.';
     } else {
       $('historyStatus').textContent = '';
-      transactions.forEach(({ hash, transaction }) => {
+      transactions.forEach(({ hash, transaction, signed, recordedFee }) => {
         const sent = transaction.from === currentAddress;
         const isPsl = Boolean(transaction.cid && transaction.cid !== SL_SYSTEM_CID);
         const symbol = isPsl ? token.symbol : 'SL';
@@ -633,7 +652,10 @@
         row.className = `history-row ${sent ? 'sent' : 'received'}`;
         const icon = document.createElement('span');
         icon.className = 'history-icon';
-        icon.textContent = sent ? '↗' : '↙';
+        const tokenIcon = document.createElement('img');
+        tokenIcon.src = `images/${isPsl ? 'psl' : 'sl'}-token-icon.png`;
+        tokenIcon.alt = `${symbol} 아이콘`;
+        icon.append(tokenIcon);
         const details = document.createElement('div');
         details.className = 'history-details';
         const title = document.createElement('strong');
@@ -657,7 +679,13 @@
         const time = document.createElement('small');
         const timestamp = Number(transaction.timestamp || 0);
         time.textContent = timestamp ? new Intl.DateTimeFormat('ko-KR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(timestamp / 1000)) : '';
-        value.append(amount, time);
+        const feeText = document.createElement('small');
+        feeText.className = 'history-fee';
+        feeText.textContent = '수수료 계산 중…';
+        value.append(amount, feeText, time);
+        const applyFee = (fee) => { feeText.textContent = `수수료 ${formatSlFee(fee)}`; };
+        if (recordedFee !== null && /^\d+$/.test(String(recordedFee))) applyFee(String(recordedFee));
+        else estimateTransactionFee(signed).then(applyFee).catch(() => { feeText.textContent = '수수료 확인 불가'; });
         const explorer = document.createElement('a');
         explorer.className = 'history-hash';
         explorer.href = `https://explorer.saseul.com/?ic=tx&h=${encodeURIComponent(hash)}&ia=detail`;
@@ -1071,9 +1099,29 @@
   new MutationObserver(syncDialogScrollLock).observe(document.body, { attributes: true, attributeFilter: ['open'], subtree: true });
   $('copyAddress').onclick = () => copy(address());
   $('copyAccount').onclick = () => copy(address());
-  $('maxBtn').onclick = () => {
-    if (selectedAsset === 'SL') return toast('SL은 수수료를 남기고 수량을 입력해 주세요.');
-    $('amount').value = formatAmountInput(formatUnits(rawBalance, token.decimal).split('.')[0]);
+  $('maxBtn').onclick = async () => {
+    if (selectedAsset !== 'SL') {
+      $('amount').value = formatAmountInput(formatUnits(rawBalance, token.decimal).split('.')[0]);
+      return;
+    }
+    const button = $('maxBtn');
+    button.disabled = true;
+    try {
+      const enteredAddress = $('toAddress').value.trim();
+      const to = SASEUL.Sign.addressValidity(enteredAddress) ? enteredAddress : SASEUL.Enc.ZERO_ADDRESS;
+      let maximum = BigInt(rawSlBalance);
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        const signed = SASEUL.Rpc.signedTransaction({ type: 'Send', to, amount: maximum.toString() }, privateKey);
+        const fee = BigInt(await estimateTransactionFee(signed));
+        const nextMaximum = BigInt(rawSlBalance) > fee ? BigInt(rawSlBalance) - fee : 0n;
+        if (nextMaximum === maximum) break;
+        maximum = nextMaximum;
+      }
+      $('amount').value = formatAmountInput(formatUnits(maximum.toString(), 18));
+      $('amount').dataset.previousValue = $('amount').value;
+      if (maximum === 0n) toast('수수료를 제외한 전송 가능 SL이 없습니다.');
+    } catch { toast('SL 최대 전송 금액을 계산하지 못했습니다.'); }
+    finally { button.disabled = false; }
   };
   $('amount').addEventListener('input', (event) => {
     const formatted = formatAmountInput(event.target.value);
@@ -1103,12 +1151,15 @@
       if (BigInt(amount) <= 0n) throw new Error('0보다 큰 수량을 입력해 주세요.');
       if (BigInt(amount) > BigInt(available)) throw new Error('보유 수량이 부족합니다.');
       const displayAmount = formatDisplayUnits(amount, decimals);
-      if (!await confirmTransfer(displayAmount, symbol, to)) return;
-      setLoading($('sendBtn'), true, '검토 후 전송');
       const transactionAmount = selectedAsset === 'SL' ? amount : formatUnits(amount, decimals);
       const transaction = { type: 'Send', to, amount: transactionAmount };
       if (transactionCid) transaction.cid = transactionCid;
       const signed = SASEUL.Rpc.signedTransaction(transaction, privateKey);
+      const fee = await estimateTransactionFee(signed);
+      if (selectedAsset === 'SL' && BigInt(amount) + BigInt(fee) > BigInt(rawSlBalance)) throw new Error('SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니다.');
+      if (selectedAsset !== 'SL' && BigInt(fee) > BigInt(rawSlBalance)) throw new Error(`PSL 전송 수수료 ${formatSlFee(fee)}를 낼 SL 잔액이 부족합니다.`);
+      if (!await confirmTransfer(displayAmount, symbol, to, fee)) return;
+      setLoading($('sendBtn'), true, '검토 후 전송');
       const result = await submitTransaction(signed);
       if (!transactionAccepted(result)) throw new Error(`${symbol} 전송 실패: ${rpcError(result)}`);
       $('sendForm').reset();
@@ -1135,5 +1186,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=31', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=32', { updateViaCache: 'none' }).catch(() => {});
 })();
