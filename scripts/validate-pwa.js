@@ -52,7 +52,9 @@ if (!appSource.includes('version: 2, wallets, activeWalletId')) failures.push('M
 if (!appSource.includes("['SL 보내기', 'sendPanel', 'SL']")) failures.push('Per-wallet asset actions are missing');
 if (!appSource.includes("['이름 변경', '', '']") || !appSource.includes("prompt('새 지갑 이름을 입력하세요.'")) failures.push('Wallet rename control is missing');
 if (!html.includes('id="addWalletDialog"') || !html.includes('id="importName"')) failures.push('Independent wallet dialog or wallet name import is missing');
-if (html.includes('ACTIVE WALLET') || html.includes('class="balance-card"') || html.includes('class="asset-section"')) failures.push('Legacy active-wallet detail cards must be removed');
+if (!html.includes('ACTIVE WALLET') || !html.includes('id="editWalletsBtn"') || !html.includes('id="walletManagerDialog"')) failures.push('Active wallet card or wallet manager is missing');
+if (html.includes('class="asset-section"') || html.includes('class="quick-actions"')) failures.push('Legacy asset detail sections must stay removed');
+if (!appSource.includes('validatePslTransfer') || !appSource.includes('formatCompactUnits(balances.sl, 18, 9)')) failures.push('PSL preflight or 9-decimal SL display is missing');
 if (html.includes('\uFFFD') || html.includes('釉') || html.includes('吏')) failures.push('HTML appears to contain mojibake');
 
 if (failures.length) {

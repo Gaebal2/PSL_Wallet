@@ -99,10 +99,15 @@
       </section>
 
       <section id="wallet" class="dashboard hidden">
-        <section class="wallet-switcher" aria-labelledby="walletListTitle">
-          <div class="section-heading"><div><p class="eyebrow">WALLETS</p><h2 id="walletListTitle">내 지갑</h2></div><span id="walletCount">1</span></div>
-          <div id="walletList" class="wallet-list"></div>
-          <button id="openAddWalletBtn" class="button secondary add-wallet-button" type="button">+ 개인키로 지갑 추가</button>
+        <section class="balance-card" aria-labelledby="portfolioLabel">
+          <div class="card-top">
+            <div><p id="portfolioLabel" class="eyebrow light">ACTIVE WALLET</p><strong id="activeWalletName" class="active-wallet-name">지갑 1</strong><br><span id="networkBadge" class="network-badge">MAINNET</span></div>
+            <button id="editWalletsBtn" class="wallet-edit-button" type="button">지갑 편집</button>
+          </div>
+          <p class="balance-label">SL 메인넷 잔액</p>
+          <div class="balance"><strong id="slHeroBalance">—</strong><span>SL</span></div>
+          <p class="pull-refresh-hint">아래로 당겼다 놓으면 모든 지갑의 잔액이 새로고침됩니다.</p>
+          <div class="address-pill"><code id="accountAddress"></code><button id="copyAccount" type="button">복사</button></div>
         </section>
         <aside class="security-note"><span>✓</span><div><strong>로컬 암호화 보관</strong><p>개인키는 AES-GCM으로 암호화되어 이 기기에만 저장됩니다.</p></div></aside>
       </section>
@@ -149,6 +154,13 @@
       <div class="password-field"><input id="additionalWalletKey" type="password" maxlength="64" autocomplete="off" spellcheck="false"><button class="password-toggle" type="button" data-password-toggle="additionalWalletKey" aria-label="개인키 표시"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
       <button id="addWalletBtn" class="button primary" type="button">암호화하여 추가</button>
     </div>
+  </dialog>
+
+  <dialog id="walletManagerDialog" class="wallet-manager-dialog" aria-labelledby="walletListTitle">
+    <div class="sheet-head"><div><p class="eyebrow">WALLETS</p><h2 id="walletListTitle">내 지갑</h2></div><button id="walletManagerClose" class="close" type="button" aria-label="닫기">×</button></div>
+    <div class="wallet-manager-count"><span>등록된 지갑</span><strong id="walletCount">1</strong></div>
+    <div id="walletList" class="wallet-list"></div>
+    <button id="openAddWalletBtn" class="button secondary add-wallet-button" type="button">+ 개인키로 지갑 추가</button>
   </dialog>
 
   <dialog id="sendPanel" class="sheet" aria-labelledby="sendTitle">

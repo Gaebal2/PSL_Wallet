@@ -174,15 +174,15 @@
     return `${negative ? '-' : ''}${integer}${fraction ? `.${fraction}` : ''}`;
   }
 
-  function formatCompactUnits(value, decimals) {
+  function formatCompactUnits(value, decimals, maxFraction = 6) {
     const exact = formatUnits(value, decimals);
     const numeric = Number(exact);
     if (!Number.isFinite(numeric)) return exact;
     const absolute = Math.abs(numeric);
-    if (absolute > 0 && absolute < 0.000001) return '< 0.000001';
+    if (absolute > 0 && absolute < 10 ** -maxFraction) return `< ${`0.${'0'.repeat(maxFraction - 1)}1`}`;
     return new Intl.NumberFormat('en-US', absolute >= 1000
       ? { notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 2 }
-      : { maximumFractionDigits: Math.min(decimals, 6) }
+      : { maximumFractionDigits: Math.min(decimals, maxFraction) }
     ).format(numeric);
   }
 
@@ -197,7 +197,25 @@
   function rpcError(error) {
     if (typeof error?.msg === 'string') return error.msg;
     if (typeof error?.message === 'string') return error.message;
+    if (typeof error?.data?.msg === 'string') return error.data.msg;
+    if (typeof error?.data === 'string') return error.data;
     return '네트워크 요청에 실패했습니다.';
+  }
+
+  async function validatePslTransfer() {
+    let cid;
+    try { cid = contractId(); }
+    catch { throw new Error('PSL 토큰 CID 또는 발행자 주소를 네트워크 설정에서 먼저 입력해 주세요.'); }
+    const walletAddressValue = address();
+    const [infoResult, balanceResult] = await Promise.all([
+      SASEUL.Rpc.request(SASEUL.Rpc.signedRequest({ cid, type: 'GetInfo' }, privateKey)),
+      SASEUL.Rpc.request(SASEUL.Rpc.signedRequest({ cid, type: 'GetBalance', address: walletAddressValue }, privateKey))
+    ]);
+    if (infoResult.code !== 200) throw new Error(`PSL 컨트랙트를 확인할 수 없습니다: ${rpcError(infoResult)}`);
+    if (balanceResult.code !== 200) throw new Error(`PSL 잔액을 확인할 수 없습니다: ${rpcError(balanceResult)}`);
+    token = { symbol: infoResult.data.symbol || 'PSL', decimal: Number(infoResult.data.decimal || 0) };
+    rawBalance = String(balanceResult.data.balance || '0');
+    return cid;
   }
 
   function applyConfig() {
@@ -220,6 +238,8 @@
     activeWalletId = current.id;
     privateKey = current.privateKey;
     showOnly('wallet');
+    $('activeWalletName').textContent = current.name;
+    $('accountAddress').textContent = address();
     $('receiveAddress').textContent = address();
     renderWalletList();
     resetAutoLock();
@@ -256,22 +276,30 @@
       const item = document.createElement('article');
       item.className = `wallet-list-item${wallet.id === activeWalletId ? ' active' : ''}`;
       item.dataset.walletId = wallet.id;
-      const details = document.createElement('button');
-      details.type = 'button';
+      const details = document.createElement('div');
       details.className = 'wallet-select';
       details.innerHTML = '<span class="wallet-avatar"></span><span class="wallet-meta"><strong></strong><code></code></span><span class="wallet-balances"><strong></strong><small></small></span>';
       details.querySelector('.wallet-avatar').textContent = wallet.name.slice(0, 1).toUpperCase();
       details.querySelector('.wallet-meta strong').textContent = wallet.name;
       details.querySelector('code').textContent = `${wallet.id.slice(0, 8)}…${wallet.id.slice(-6)}`;
-      details.querySelector('.wallet-balances strong').textContent = balances.loading ? '조회 중' : `${formatCompactUnits(balances.sl, 18)} SL`;
+      details.querySelector('.wallet-balances strong').textContent = balances.loading ? '조회 중' : `${formatCompactUnits(balances.sl, 18, 9)} SL`;
       details.querySelector('.wallet-balances small').textContent = balances.loading ? '—' : `${formatCompactUnits(balances.psl, token.decimal)} ${token.symbol}`;
-      details.onclick = () => switchWallet(wallet.id);
+      const selectButton = document.createElement('button');
+      selectButton.type = 'button';
+      selectButton.className = 'wallet-choose-button';
+      selectButton.textContent = wallet.id === activeWalletId ? '선택됨' : '선택';
+      selectButton.disabled = wallet.id === activeWalletId;
+      selectButton.onclick = async () => { await switchWallet(wallet.id, false); $('walletManagerDialog').close(); };
+      const row = document.createElement('div');
+      row.className = 'wallet-select-row';
+      row.append(details, selectButton);
       const actions = document.createElement('div');
       actions.className = 'wallet-item-actions';
       [['이름 변경', '', ''], ['SL 보내기', 'sendPanel', 'SL'], ['SL 받기', 'receivePanel', 'SL'], ['PSL 보내기', 'sendPanel', 'PSL'], ['PSL 받기', 'receivePanel', 'PSL']].forEach(([label, panel, asset]) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = label;
+        button.className = !panel ? 'rename-action' : `${asset.toLowerCase()}-${panel === 'sendPanel' ? 'send' : 'receive'}-action`;
         button.onclick = async () => {
           if (!panel) return renameWallet(wallet.id);
           await switchWallet(wallet.id, false);
@@ -279,7 +307,7 @@
         };
         actions.append(button);
       });
-      item.append(details, actions);
+      item.append(row, actions);
       container.append(item);
     });
     $('walletCount').textContent = String(wallets.length);
@@ -290,6 +318,8 @@
     if (!wallet) return;
     activeWalletId = wallet.id;
     privateKey = wallet.privateKey;
+    $('activeWalletName').textContent = wallet.name;
+    $('accountAddress').textContent = address();
     $('receiveAddress').textContent = address();
     const balances = balanceState(wallet.id);
     updateActiveBalances(balances);
@@ -302,6 +332,8 @@
   function updateActiveBalances(balances) {
     rawSlBalance = balances.sl;
     rawBalance = balances.psl;
+    $('slHeroBalance').textContent = balances.error ? '연결 오류' : formatCompactUnits(balances.sl, 18, 9);
+    $('slHeroBalance').title = `${formatUnits(balances.sl, 18)} SL`;
   }
 
   async function fetchWalletBalance(wallet) {
@@ -346,6 +378,7 @@
     updateActiveBalances(balances);
     renderWalletList();
     const online = results.some(Boolean);
+    $('networkBadge').textContent = config.endpoint.toLowerCase().includes('test') ? 'TESTNET' : 'MAINNET';
     $('connectionState').className = `connection ${online ? 'online' : 'offline'}`;
     $('connectionState').innerHTML = `<i></i> ${online ? '온라인' : '연결 안 됨'}`;
     isRefreshing = false;
@@ -605,7 +638,10 @@
 
   $('settingsBtn').onclick = () => $('settingsDialog').showModal();
   $('settingsClose').onclick = () => $('settingsDialog').close();
+  $('editWalletsBtn').onclick = () => $('walletManagerDialog').showModal();
+  $('walletManagerClose').onclick = () => $('walletManagerDialog').close();
   $('openAddWalletBtn').onclick = () => {
+    $('walletManagerDialog').close();
     $('addWalletDialog').showModal();
     $('additionalWalletName').focus();
   };
@@ -698,6 +734,7 @@
   $('resetBtn').onclick = deleteWallet;
   document.querySelectorAll('[data-close]').forEach((button) => { button.onclick = () => button.closest('dialog').close(); });
   $('copyAddress').onclick = () => copy(address());
+  $('copyAccount').onclick = () => copy(address());
   $('maxBtn').onclick = () => {
     if (selectedAsset === 'SL') return toast('SL은 수수료를 남기고 수량을 입력해 주세요.');
     $('amount').value = formatUnits(rawBalance, token.decimal);
@@ -710,6 +747,7 @@
     try {
       if (!SASEUL.Sign.addressValidity(to)) throw new Error('받는 주소가 올바르지 않습니다.');
       if (to === address()) throw new Error('내 주소로는 전송할 수 없습니다.');
+      const transactionCid = selectedAsset === 'SL' ? '' : await validatePslTransfer();
       const decimals = selectedAsset === 'SL' ? 18 : token.decimal;
       const symbol = selectedAsset === 'SL' ? 'SL' : token.symbol;
       const available = selectedAsset === 'SL' ? rawSlBalance : rawBalance;
@@ -719,9 +757,9 @@
       if (!confirm(`${$('amount').value} ${symbol}을 전송할까요?\n\n받는 주소: ${to}\n\n주소와 수량을 다시 확인하세요.`)) return;
       setLoading($('sendBtn'), true, '검토 후 전송');
       const transaction = { type: 'Send', to, amount };
-      if (selectedAsset !== 'SL') transaction.cid = contractId();
+      if (transactionCid) transaction.cid = transactionCid;
       const result = await SASEUL.Rpc.broadcastTransaction(SASEUL.Rpc.signedTransaction(transaction, privateKey));
-      if (result.code !== 200) throw result;
+      if (result.code !== 200) throw new Error(`${symbol} 전송 실패: ${rpcError(result)}`);
       toast('전송 요청이 완료되었습니다.');
       $('sendForm').reset();
       setTimeout(refresh, 3000);
