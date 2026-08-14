@@ -12,6 +12,10 @@
   const defaults = { endpoint: 'https://main.saseul.net', owner: '', space: 'MY TOKEN', cid: '' };
   let config = readJson(CONFIG_KEY, defaults);
   let privateKey = '';
+  let wallets = [];
+  let activeWalletId = '';
+  let vaultPassword = '';
+  const walletBalances = new Map();
   let token = { symbol: 'PSL', decimal: 0 };
   let rawBalance = '0';
   let rawSlBalance = '0';
@@ -96,12 +100,12 @@
     );
   }
 
-  async function encryptVault(key, password) {
+  async function encryptVault(value, password) {
     if (!crypto?.subtle) throw new Error('이 브라우저는 안전한 암호화 저장소를 지원하지 않습니다.');
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const derivedKey = await passwordKey(password, salt);
-    const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, derivedKey, new TextEncoder().encode(key));
+    const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, derivedKey, new TextEncoder().encode(value));
     walletVault = JSON.stringify({ version: 1, kdf: 'PBKDF2-SHA256', iterations: 310000, salt: bytesToBase64(salt), iv: bytesToBase64(iv), ciphertext: bytesToBase64(new Uint8Array(ciphertext)) });
     localStorage.setItem(VAULT_KEY, walletVault);
     try { await durableVault('put', walletVault); } catch { /* local copy is still usable */ }
@@ -116,12 +120,38 @@
     const key = await passwordKey(password, base64ToBytes(vault.salt));
     const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: base64ToBytes(vault.iv) }, key, base64ToBytes(vault.ciphertext));
     const value = new TextDecoder().decode(plaintext);
-    if (!SASEUL.Sign.keyValidity(value)) throw new Error('지갑 데이터가 손상되었습니다.');
-    return value;
+    if (SASEUL.Sign.keyValidity(value)) {
+      return { version: 2, wallets: [makeWallet(value, '지갑 1')], activeWalletId: '' };
+    }
+    const data = JSON.parse(value);
+    if (data?.version !== 2 || !Array.isArray(data.wallets) || !data.wallets.length
+      || data.wallets.some((item) => !SASEUL.Sign.keyValidity(item.privateKey))) {
+      throw new Error('지갑 데이터가 손상되었습니다.');
+    }
+    return data;
   }
 
   function address() {
     return privateKey ? SASEUL.Sign.address(SASEUL.Sign.publicKey(privateKey)) : '';
+  }
+
+  function walletAddress(wallet) {
+    return SASEUL.Sign.address(SASEUL.Sign.publicKey(wallet.privateKey));
+  }
+
+  function makeWallet(key, name) {
+    const privateKeyValue = key.toLowerCase();
+    const walletAddressValue = walletAddress({ privateKey: privateKeyValue });
+    return { id: walletAddressValue, name: name || `지갑 ${wallets.length + 1}`, privateKey: privateKeyValue };
+  }
+
+  function activeWallet() {
+    return wallets.find((wallet) => wallet.id === activeWalletId) || wallets[0];
+  }
+
+  async function persistWallets() {
+    if (!vaultPassword || !wallets.length) throw new Error('지갑 잠금을 먼저 해제해 주세요.');
+    await encryptVault(JSON.stringify({ version: 2, wallets, activeWalletId }), vaultPassword);
   }
 
   function contractId() {
@@ -185,15 +215,25 @@
   }
 
   function showWallet() {
+    const current = activeWallet();
+    if (!current) return lockWallet(false);
+    activeWalletId = current.id;
+    privateKey = current.privateKey;
     showOnly('wallet');
+    $('activeWalletName').textContent = current.name;
     $('accountAddress').textContent = address();
     $('receiveAddress').textContent = address();
+    renderWalletList();
     resetAutoLock();
     refresh();
   }
 
   function lockWallet(notify = true) {
     privateKey = '';
+    vaultPassword = '';
+    wallets = [];
+    activeWalletId = '';
+    walletBalances.clear();
     clearTimeout(autoLockTimer);
     if (walletVault) showOnly('unlock'); else showOnly('onboarding');
     $('unlockForm').reset();
@@ -206,6 +246,101 @@
     autoLockTimer = setTimeout(() => lockWallet(true), AUTO_LOCK_MS);
   }
 
+  function balanceState(walletId) {
+    return walletBalances.get(walletId) || { sl: '0', psl: '0', loading: true, error: false };
+  }
+
+  function renderWalletList() {
+    const container = $('walletList');
+    container.replaceChildren();
+    wallets.forEach((wallet) => {
+      const balances = balanceState(wallet.id);
+      const item = document.createElement('article');
+      item.className = `wallet-list-item${wallet.id === activeWalletId ? ' active' : ''}`;
+      item.dataset.walletId = wallet.id;
+      const details = document.createElement('button');
+      details.type = 'button';
+      details.className = 'wallet-select';
+      details.innerHTML = '<span class="wallet-avatar"></span><span class="wallet-meta"><strong></strong><code></code></span><span class="wallet-balances"><strong></strong><small></small></span>';
+      details.querySelector('.wallet-avatar').textContent = wallet.name.slice(0, 1).toUpperCase();
+      details.querySelector('.wallet-meta strong').textContent = wallet.name;
+      details.querySelector('code').textContent = `${wallet.id.slice(0, 8)}…${wallet.id.slice(-6)}`;
+      details.querySelector('.wallet-balances strong').textContent = balances.loading ? '조회 중' : `${formatCompactUnits(balances.sl, 18)} SL`;
+      details.querySelector('.wallet-balances small').textContent = balances.loading ? '—' : `${formatCompactUnits(balances.psl, token.decimal)} ${token.symbol}`;
+      details.onclick = () => switchWallet(wallet.id);
+      const actions = document.createElement('div');
+      actions.className = 'wallet-item-actions';
+      [['SL 보내기', 'sendPanel', 'SL'], ['SL 받기', 'receivePanel', 'SL'], ['PSL 보내기', 'sendPanel', 'PSL'], ['PSL 받기', 'receivePanel', 'PSL']].forEach(([label, panel, asset]) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = label;
+        button.onclick = async () => { await switchWallet(wallet.id, false); openPanel(panel, asset); };
+        actions.append(button);
+      });
+      item.append(details, actions);
+      container.append(item);
+    });
+    $('walletCount').textContent = String(wallets.length);
+  }
+
+  async function switchWallet(walletId, scroll = true) {
+    const wallet = wallets.find((item) => item.id === walletId);
+    if (!wallet) return;
+    activeWalletId = wallet.id;
+    privateKey = wallet.privateKey;
+    $('activeWalletName').textContent = wallet.name;
+    $('accountAddress').textContent = address();
+    $('receiveAddress').textContent = address();
+    const balances = balanceState(wallet.id);
+    rawSlBalance = balances.sl;
+    rawBalance = balances.psl;
+    updateActiveBalances(balances);
+    renderWalletList();
+    try { await persistWallets(); } catch { /* selection remains valid for this session */ }
+    if (scroll) $('wallet').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    resetAutoLock();
+  }
+
+  function updateActiveBalances(balances) {
+    const slText = balances.error ? '연결 오류' : formatCompactUnits(balances.sl, 18);
+    const pslText = balances.error ? '—' : formatCompactUnits(balances.psl, token.decimal);
+    $('slHeroBalance').textContent = slText;
+    $('slBalance').textContent = slText;
+    $('balanceShort').textContent = pslText;
+    $('assetSymbol').textContent = token.symbol;
+    $('assetValueStatus').textContent = balances.error ? '토큰 설정 확인' : '실시간 잔액';
+  }
+
+  async function fetchWalletBalance(wallet) {
+    const walletAddressValue = walletAddress(wallet);
+    const slRequest = SASEUL.Rpc.request(SASEUL.Rpc.signedRequest({ type: 'GetBalance', address: walletAddressValue }, wallet.privateKey));
+    const pslRequest = (async () => {
+      const cid = contractId();
+      return Promise.all([
+        SASEUL.Rpc.request(SASEUL.Rpc.signedRequest({ cid, type: 'GetInfo' }, wallet.privateKey)),
+        SASEUL.Rpc.request(SASEUL.Rpc.signedRequest({ cid, type: 'GetBalance', address: walletAddressValue }, wallet.privateKey))
+      ]);
+    })();
+    const [slState, pslState] = await Promise.allSettled([slRequest, pslRequest]);
+    let sl = '0';
+    let psl = '0';
+    let online = false;
+    if (slState.status === 'fulfilled' && slState.value.code === 200) {
+      sl = String(slState.value.data.balance || '0');
+      online = true;
+    }
+    if (pslState.status === 'fulfilled') {
+      const [infoResult, balanceResult] = pslState.value;
+      if (infoResult.code === 200 && balanceResult.code === 200) {
+        token = { symbol: infoResult.data.symbol || 'PSL', decimal: Number(infoResult.data.decimal || 0) };
+        psl = String(balanceResult.data.balance || '0');
+        online = true;
+      }
+    }
+    walletBalances.set(wallet.id, { sl, psl, loading: false, error: !online });
+    return online;
+  }
+
   async function refresh() {
     if (!privateKey || isRefreshing) return;
     isRefreshing = true;
@@ -214,48 +349,15 @@
     $('refreshBtn').setAttribute('aria-busy', 'true');
     $('connectionState').className = 'connection';
     $('connectionState').innerHTML = '<i></i> 연결 확인 중';
-    const slRequest = SASEUL.Rpc.request(SASEUL.Rpc.signedRequest({ type: 'GetBalance', address: address() }, privateKey));
-    const pslRequest = (async () => {
-      const cid = contractId();
-      return Promise.all([
-        SASEUL.Rpc.request(SASEUL.Rpc.signedRequest({ cid, type: 'GetInfo' }, privateKey)),
-        SASEUL.Rpc.request(SASEUL.Rpc.signedRequest({ cid, type: 'GetBalance', address: address() }, privateKey))
-      ]);
-    })();
-    const [slState, pslState] = await Promise.allSettled([slRequest, pslRequest]);
-    let online = false;
-    if (slState.status === 'fulfilled' && slState.value.code === 200) {
-      online = true;
-      rawSlBalance = String(slState.value.data.balance || '0');
-      const exactSlBalance = formatUnits(rawSlBalance, 18);
-      const compactSlBalance = formatCompactUnits(rawSlBalance, 18);
-      $('slHeroBalance').textContent = compactSlBalance;
-      $('slHeroBalance').title = `${exactSlBalance} SL`;
-      $('slBalance').textContent = compactSlBalance;
-      $('slBalance').title = `${exactSlBalance} SL`;
-    } else {
-      $('slHeroBalance').textContent = '연결 오류';
-      $('slBalance').textContent = '연결 오류';
-    }
-    if (pslState.status === 'fulfilled') {
-      const [infoResult, balanceResult] = pslState.value;
-      if (infoResult.code === 200 && balanceResult.code === 200) {
-        online = true;
-        token = { symbol: infoResult.data.symbol || 'PSL', decimal: Number(infoResult.data.decimal || 0) };
-        rawBalance = String(balanceResult.data.balance || '0');
-        const exactBalance = formatUnits(rawBalance, token.decimal);
-        const compactBalance = formatCompactUnits(rawBalance, token.decimal);
-        $('assetSymbol').textContent = token.symbol;
-        $('balanceShort').textContent = compactBalance;
-        $('balanceShort').title = `${exactBalance} ${token.symbol}`;
-        $('assetValueStatus').textContent = '실시간 잔액';
-      } else {
-        $('balanceShort').textContent = '—';
-      }
-    } else {
-      $('balanceShort').textContent = '—';
-      $('assetValueStatus').textContent = '토큰 설정 확인';
-    }
+    wallets.forEach((wallet) => walletBalances.set(wallet.id, { ...balanceState(wallet.id), loading: true }));
+    renderWalletList();
+    const results = await Promise.all(wallets.map(fetchWalletBalance));
+    const balances = balanceState(activeWalletId);
+    rawSlBalance = balances.sl;
+    rawBalance = balances.psl;
+    updateActiveBalances(balances);
+    renderWalletList();
+    const online = results.some(Boolean);
     $('networkBadge').textContent = config.endpoint.toLowerCase().includes('test') ? 'TESTNET' : 'MAINNET';
     $('connectionState').className = `connection ${online ? 'online' : 'offline'}`;
     $('connectionState').innerHTML = `<i></i> ${online ? '온라인' : '연결 안 됨'}`;
@@ -331,9 +433,13 @@
 
   async function saveWallet(key, password) {
     if (!SASEUL.Sign.keyValidity(key)) throw new Error('개인키는 64자리 16진수여야 합니다.');
-    await encryptVault(key.toLowerCase(), password);
+    const wallet = makeWallet(key, '지갑 1');
+    wallets = [wallet];
+    activeWalletId = wallet.id;
+    vaultPassword = password;
+    await persistWallets();
     localStorage.removeItem(LEGACY_KEY);
-    privateKey = key.toLowerCase();
+    privateKey = wallet.privateKey;
     showWallet();
   }
 
@@ -448,7 +554,7 @@
       const reveal = input.type === 'password';
       input.type = reveal ? 'text' : 'password';
       button.classList.toggle('is-visible', reveal);
-      const fieldName = input.id === 'importKey' ? '개인키' : '비밀번호';
+      const fieldName = input.id === 'importKey' || input.id === 'additionalWalletKey' ? '개인키' : '비밀번호';
       button.setAttribute('aria-label', `${fieldName} ${reveal ? '숨기기' : '표시'}`);
       input.focus({ preventScroll: true });
     });
@@ -499,7 +605,13 @@
     $('unlockError').textContent = '';
     try {
       setLoading($('unlockBtn'), true, '잠금 해제');
-      privateKey = await decryptVault($('unlockPassword').value);
+      const password = $('unlockPassword').value;
+      const data = await decryptVault(password);
+      wallets = data.wallets.map((wallet, index) => makeWallet(wallet.privateKey, wallet.name || `지갑 ${index + 1}`));
+      activeWalletId = wallets.some((wallet) => wallet.id === data.activeWalletId) ? data.activeWalletId : wallets[0].id;
+      vaultPassword = password;
+      privateKey = activeWallet().privateKey;
+      await persistWallets();
       $('unlockForm').reset();
       showWallet();
     } catch {
@@ -510,6 +622,36 @@
 
   $('settingsBtn').onclick = () => $('settingsDialog').showModal();
   $('settingsClose').onclick = () => $('settingsDialog').close();
+  $('openAddWalletBtn').onclick = () => {
+    $('addWalletSection').classList.remove('hidden');
+    $('settingsDialog').showModal();
+    $('additionalWalletName').focus();
+  };
+  $('addWalletBtn').onclick = async () => {
+    const key = $('additionalWalletKey').value.trim();
+    if (!SASEUL.Sign.keyValidity(key)) return toast('개인키는 64자리 16진수여야 합니다.');
+    const wallet = makeWallet(key, $('additionalWalletName').value.trim());
+    if (wallets.some((item) => item.id === wallet.id)) return toast('이미 추가된 지갑입니다.');
+    const previousWalletId = activeWalletId;
+    try {
+      setLoading($('addWalletBtn'), true, '암호화하여 추가');
+      wallets.push(wallet);
+      activeWalletId = wallet.id;
+      privateKey = wallet.privateKey;
+      await persistWallets();
+      $('additionalWalletName').value = '';
+      $('additionalWalletKey').value = '';
+      $('addWalletSection').classList.add('hidden');
+      $('settingsDialog').close();
+      showWallet();
+      toast(`${wallet.name}을 추가했습니다.`);
+    } catch (error) {
+      wallets = wallets.filter((item) => item.id !== wallet.id);
+      activeWalletId = previousWalletId;
+      privateKey = activeWallet()?.privateKey || '';
+      toast(error.message);
+    } finally { setLoading($('addWalletBtn'), false, '암호화하여 추가'); }
+  };
   $('lockBtn').onclick = () => {
     if (Date.now() < suppressLockClickUntil) return;
     lockWallet(true);
@@ -544,6 +686,10 @@
     try { await durableVault('delete'); } catch { /* local deletion still succeeds */ }
     walletVault = null;
     privateKey = '';
+    vaultPassword = '';
+    wallets = [];
+    activeWalletId = '';
+    walletBalances.clear();
     $('settingsDialog').close();
     showOnly('onboarding');
     toast('이 기기에서 지갑을 삭제했습니다.');

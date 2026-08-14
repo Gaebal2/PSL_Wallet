@@ -1,0 +1,32 @@
+.wallet-switcher {
+  padding: 21px;
+  border: 1px solid #fff;
+  background: #ffffffd9;
+  border-radius: 25px;
+  box-shadow: 0 12px 35px #2730550b;
+}
+.wallet-list { display: grid; gap: 10px; }
+.wallet-list-item { overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+.wallet-list-item.active { border-color: var(--violet); box-shadow: 0 0 0 3px #7157ff12; }
+.wallet-select { width: 100%; display: grid; grid-template-columns: 42px minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 13px; border: 0; background: transparent; text-align: left; cursor: pointer; }
+.wallet-avatar { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; background: #eeeaff; color: var(--violet); font-weight: 900; }
+.wallet-meta { min-width: 0; }
+.wallet-meta strong, .wallet-meta code, .wallet-balances strong, .wallet-balances small { display: block; }
+.wallet-meta code { margin-top: 4px; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-size: 9px; }
+.wallet-balances { text-align: right; }
+.wallet-balances strong { font-size: 12px; }
+.wallet-balances small { margin-top: 4px; color: var(--muted); font-size: 10px; }
+.wallet-item-actions { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; border-top: 1px solid var(--line); background: var(--line); }
+.wallet-item-actions button { border: 0; padding: 9px 3px; background: #f8f8fb; color: var(--ink); font-size: 9px; font-weight: 750; cursor: pointer; }
+.add-wallet-button { margin-top: 12px; min-height: 44px; padding: 10px; }
+.active-wallet-name { font-size: 15px; }
+.add-wallet-section { margin-bottom: 14px; padding: 16px; border-radius: 18px; background: #f5f3ff; }
+.add-wallet-section h3 { margin: 0; }
+.add-wallet-section .button { margin-top: 14px; }
+.delete-wallet-button { margin-top: 16px; }
+
+@media (max-width: 390px) {
+  .wallet-select { grid-template-columns: 38px minmax(0,1fr); }
+  .wallet-balances { grid-column: 2; text-align: left; }
+  .wallet-item-actions { grid-template-columns: 1fr 1fr; }
+}

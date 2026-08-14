@@ -4,7 +4,7 @@ const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
 const pwa = path.join(root, 'pwa');
-const required = ['index.html', 'styles.css', 'install.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon.svg', 'images/psl-wallet-social-v2.png', 'vendor/qrcode.min.js'];
+const required = ['index.html', 'styles.css', 'wallets.css', 'install.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon.svg', 'images/psl-wallet-social-v2.png', 'vendor/qrcode.min.js'];
 const failures = [];
 
 for (const file of required) {
@@ -47,6 +47,9 @@ if (!html.includes('id="pullRefresh" class="pull-refresh hidden"')) failures.pus
 if (!appSource.includes('!deferredInstallPrompt')) failures.push('Install dialog must require a real browser install prompt');
 if (!appSource.includes("indexedDB.open(WALLET_DB, 1)")) failures.push('Durable IndexedDB wallet backup is missing');
 if (!appSource.includes('navigator.storage?.persist')) failures.push('Persistent browser storage request is missing');
+if (!html.includes('id="walletList"') || !html.includes('id="openAddWalletBtn"')) failures.push('Multi-wallet list and import controls are missing');
+if (!appSource.includes('version: 2, wallets, activeWalletId')) failures.push('Multi-wallet encrypted vault format is missing');
+if (!appSource.includes("['SL 보내기', 'sendPanel', 'SL']")) failures.push('Per-wallet asset actions are missing');
 if (html.includes('\uFFFD') || html.includes('釉') || html.includes('吏')) failures.push('HTML appears to contain mojibake');
 
 if (failures.length) {
