@@ -1,11 +1,11 @@
-const CACHE_NAME = 'psl-wallet-v20';
+const CACHE_NAME = 'psl-wallet-v21';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css',
-  './wallets.css',
-  './install.css',
-  './app.js',
+  './styles.css?v=21',
+  './wallets.css?v=21',
+  './install.css?v=21',
+  './app.js?v=21',
   './manifest.webmanifest',
   './icons/icon.svg',
   './images/psl-wallet-social-v2.png',
@@ -17,7 +17,11 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => Promise.all(APP_SHELL.map(async (url) => {
+    const response = await fetch(url, { cache: 'reload' });
+    if (!response.ok) throw new Error(`Failed to cache ${url}`);
+    await cache.put(url, response);
+  }))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {

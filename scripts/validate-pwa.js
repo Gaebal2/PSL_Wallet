@@ -31,6 +31,7 @@ const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
 const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
 if (duplicates.length) failures.push(`Duplicate HTML ids: ${[...new Set(duplicates)].join(', ')}`);
 const appSource = fs.readFileSync(path.join(pwa, 'app.js'), 'utf8');
+const swSource = fs.readFileSync(path.join(pwa, 'sw.js'), 'utf8');
 const referencedIds = [...appSource.matchAll(/\$\('([^']+)'\)/g)].map((match) => match[1]);
 const missingIds = [...new Set(referencedIds.filter((id) => !ids.includes(id)))];
 if (missingIds.length) failures.push(`JavaScript references missing HTML ids: ${missingIds.join(', ')}`);
@@ -61,6 +62,7 @@ if (!appSource.includes('removeWallet') || !appSource.includes('syncDialogScroll
 if (!appSource.includes('formatDisplayUnits') || !appSource.includes('submitTransaction') || !html.includes('id="transferSuccessDialog"')) failures.push('Exact grouped amounts or resilient transfer completion UI is missing');
 if (!appSource.includes('Promise.any(requests)') || !appSource.includes('result.data ?? {}') || !appSource.includes("'받는 주소' : '보낸 주소'")) failures.push('Resilient empty history handling or counterparty labels are missing');
 if (!html.includes('id="transferReviewDialog"') || !appSource.includes('confirmTransfer') || !appSource.includes('formatAmountInput') || !appSource.includes("selectedAsset === 'SL' ? amount : formatUnits(amount, decimals)") || !appSource.includes("parseUnits(String(balanceResult.data.balance ?? '0'), token.decimal)")) failures.push('Custom transfer review, grouped input, or PSL contract units are missing');
+if (!html.includes('app.js?v=21') || !appSource.includes("sw.js?v=21") || !swSource.includes("cache: 'reload'")) failures.push('Versioned app assets or forced service-worker refresh are missing');
 if (!appSource.includes('https://explorer.saseul.com/?ic=tx&h=')) failures.push('Explorer transaction links are missing');
 if (!html.includes('id="activePslSend"') || !html.includes('id="activeSlReceive"')) failures.push('Active wallet asset actions are missing');
 if (html.includes('\uFFFD') || html.includes('釉') || html.includes('吏')) failures.push('HTML appears to contain mojibake');
