@@ -514,7 +514,11 @@
       details.querySelector('.wallet-avatar').textContent = wallet.name.slice(0, 1).toUpperCase();
       details.querySelector('.wallet-meta strong').textContent = wallet.name;
       details.querySelector('code').textContent = shortenAddress(wallet.id);
-      details.querySelector('.wallet-address button').onclick = () => copy(wallet.id);
+      details.querySelector('.wallet-address button').onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        copy(wallet.id);
+      };
       details.querySelector('.wallet-balances strong').textContent = balances.loading ? '조회 중' : `${formatCompactUnits(balances.sl, 18, 9)} SL`;
       details.querySelector('.wallet-balances small').textContent = balances.loading ? '—' : `${formatCompactUnits(balances.psl, token.decimal)} ${token.symbol}`;
       const selectButton = document.createElement('button');
@@ -1289,5 +1293,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=35', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=36', { updateViaCache: 'none' }).catch(() => {});
 })();
