@@ -1,4 +1,4 @@
-const CACHE_NAME = 'psl-wallet-v14';
+const CACHE_NAME = 'psl-wallet-v15';
 const APP_SHELL = [
   './',
   './index.html',

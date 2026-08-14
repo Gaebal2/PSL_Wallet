@@ -332,7 +332,9 @@
   function updateActiveBalances(balances) {
     rawSlBalance = balances.sl;
     rawBalance = balances.psl;
-    $('slHeroBalance').textContent = balances.error ? '연결 오류' : formatCompactUnits(balances.sl, 18, 9);
+    const slDisplay = balances.error ? '연결 오류' : formatCompactUnits(balances.sl, 18, 9);
+    $('slHeroBalance').textContent = slDisplay;
+    $('slHeroBalance').classList.toggle('long-balance', slDisplay.length > 12);
     $('slHeroBalance').title = `${formatUnits(balances.sl, 18)} SL`;
   }
 
