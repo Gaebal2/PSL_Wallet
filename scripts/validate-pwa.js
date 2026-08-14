@@ -32,6 +32,7 @@ const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
 if (duplicates.length) failures.push(`Duplicate HTML ids: ${[...new Set(duplicates)].join(', ')}`);
 const appSource = fs.readFileSync(path.join(pwa, 'app.js'), 'utf8');
 const swSource = fs.readFileSync(path.join(pwa, 'sw.js'), 'utf8');
+const walletsSource = fs.readFileSync(path.join(pwa, 'wallets.css'), 'utf8');
 const referencedIds = [...appSource.matchAll(/\$\('([^']+)'\)/g)].map((match) => match[1]);
 const missingIds = [...new Set(referencedIds.filter((id) => !ids.includes(id)))];
 if (missingIds.length) failures.push(`JavaScript references missing HTML ids: ${missingIds.join(', ')}`);
@@ -62,7 +63,7 @@ if (!appSource.includes('removeWallet') || !appSource.includes('syncDialogScroll
 if (!appSource.includes('formatDisplayUnits') || !appSource.includes('submitTransaction') || !html.includes('id="transferSuccessDialog"')) failures.push('Exact grouped amounts or resilient transfer completion UI is missing');
 if (!appSource.includes('Promise.any(requests)') || !appSource.includes('result.data ?? {}') || !appSource.includes("'받는 주소' : '보낸 주소'")) failures.push('Resilient empty history handling or counterparty labels are missing');
 if (!html.includes('id="transferReviewDialog"') || !appSource.includes('confirmTransfer') || !appSource.includes('formatAmountInput') || !appSource.includes("selectedAsset === 'SL' ? amount : formatUnits(amount, decimals)") || !appSource.includes('parseTokenUnits(balanceResult.data.balance, token.decimal)')) failures.push('Custom transfer review, grouped input, or PSL contract units are missing');
-if (!html.includes('app.js?v=35') || !appSource.includes("sw.js?v=35") || !swSource.includes("cache: 'reload'")) failures.push('Versioned app assets or forced service-worker refresh are missing');
+if (!html.includes('app.js?v=36') || !appSource.includes("sw.js?v=36") || !swSource.includes("cache: 'reload'")) failures.push('Versioned app assets or forced service-worker refresh are missing');
 if (!html.includes('id="appAlertDialog"') || !appSource.includes('isInvalidPslTransferAmount') || !appSource.includes('최소 송금 가능 금액은 1 PSL')) failures.push('Whole-unit PSL transfer warning is missing');
 if (!html.includes('id="transferReviewFee"') || !appSource.includes('estimatedFee') || !appSource.includes('history-fee') || !appSource.includes("'psl-token-icon.svg' : 'sl-token-icon.png'")) failures.push('Transfer fee preview or token-aware history is missing');
 if (!html.includes('id="dangerConfirmDialog"') || !appSource.includes('confirmDanger') || appSource.includes('if (!confirm(`${wallet.name}')) failures.push('Custom wallet deletion confirmation is missing');
@@ -70,6 +71,7 @@ if (!html.includes('class="orb small unlock-orb"') || !html.includes('class="act
 if (!html.includes('id="textInputDialog"') || !html.includes('id="backupConfirmDialog"') || !html.includes('id="privateKeyDialog"') || !appSource.includes('requestTextInput') || !appSource.includes('confirmPrivateKeyBackup')) failures.push('Custom rename or private-key backup dialogs are missing');
 if (!appSource.includes("DEFAULT_PSL_CID = 'dbd6217ffd83c29c077571c5be8eb945418f6cef27ab4ba92f378acb6a1d0080'")) failures.push('Default PSL CID is missing');
 if (!html.includes('images/psl-token-icon.svg') || !swSource.includes('images/psl-token-icon.svg')) failures.push('Aligned vector PSL icon is missing');
+if (!appSource.includes('event.stopPropagation()') || !walletsSource.includes('-webkit-tap-highlight-color: transparent')) failures.push('Wallet copy tap target isolation is missing');
 if (/\b(?:window\.)?(?:alert|confirm|prompt)\s*\(/.test(appSource.replace(/promptEvent\.prompt\s*\(/g, ''))) failures.push('Browser-native app dialogs are still in use');
 if (!appSource.includes('parseTokenUnits') || !appSource.includes('keep SL and history available')) failures.push('Token balance parsing or refresh isolation is missing');
 if (!appSource.includes('https://explorer.saseul.com/?ic=tx&h=')) failures.push('Explorer transaction links are missing');

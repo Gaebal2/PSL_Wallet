@@ -21,7 +21,7 @@
 .wallet-meta strong, .wallet-meta code, .wallet-balances strong, .wallet-balances small { display: block; }
 .wallet-address { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
 .wallet-meta code { overflow: hidden; color: var(--muted); font-size: 9px; white-space: nowrap; }
-.wallet-address button { flex: none; border: 0; border-radius: 7px; padding: 4px 7px; background: #eeeaff; color: var(--violet-dark); font: inherit; font-size: 9px; font-weight: 850; cursor: pointer; }
+.wallet-address button { flex: none; display: inline-flex; width: auto; align-items: center; justify-content: center; border: 0; border-radius: 7px; padding: 4px 7px; background: #eeeaff; color: var(--violet-dark); font: inherit; font-size: 9px; font-weight: 850; line-height: 1; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .wallet-balances { text-align: right; }
 .wallet-balances strong { font-size: 12px; }
 .wallet-balances small { margin-top: 4px; color: var(--muted); font-size: 10px; }
