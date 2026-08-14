@@ -8,10 +8,12 @@
   const WALLET_DB = 'psl-wallet-storage-v1';
   const WALLET_STORE = 'wallet';
   const SL_SYSTEM_CID = '19bd191ea2da3fd599528b4b831206ec5cf958d6cdbea0188a22d7d44673dd58';
+  const DEFAULT_PSL_CID = 'dbd6217ffd83c29c077571c5be8eb945418f6cef27ab4ba92f378acb6a1d0080';
   const INSTALLED_KEY = 'psl-wallet-installed-v1';
   const AUTO_LOCK_MS = 5 * 60 * 1000;
-  const defaults = { endpoint: 'https://main.saseul.net', owner: '', space: 'MY TOKEN', cid: '' };
+  const defaults = { endpoint: 'https://main.saseul.net', owner: '', space: 'MY TOKEN', cid: DEFAULT_PSL_CID };
   let config = readJson(CONFIG_KEY, defaults);
+  if (!config.cid) config.cid = DEFAULT_PSL_CID;
   let privateKey = '';
   let wallets = [];
   let activeWalletId = '';
@@ -752,7 +754,7 @@
         const icon = document.createElement('span');
         icon.className = 'history-icon';
         const tokenIcon = document.createElement('img');
-        tokenIcon.src = `images/${isPsl ? 'psl' : 'sl'}-token-icon.png`;
+        tokenIcon.src = `images/${isPsl ? 'psl-token-icon.svg' : 'sl-token-icon.png'}`;
         tokenIcon.alt = `${symbol} 아이콘`;
         icon.append(tokenIcon);
         const details = document.createElement('div');
@@ -1287,5 +1289,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=34', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=35', { updateViaCache: 'none' }).catch(() => {});
 })();
