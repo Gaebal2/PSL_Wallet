@@ -344,9 +344,6 @@
   async function refresh() {
     if (!privateKey || isRefreshing) return;
     isRefreshing = true;
-    $('refreshBtn').disabled = true;
-    $('refreshBtn').classList.add('is-refreshing');
-    $('refreshBtn').setAttribute('aria-busy', 'true');
     $('connectionState').className = 'connection';
     $('connectionState').innerHTML = '<i></i> 연결 확인 중';
     wallets.forEach((wallet) => walletBalances.set(wallet.id, { ...balanceState(wallet.id), loading: true }));
@@ -361,9 +358,6 @@
     $('networkBadge').textContent = config.endpoint.toLowerCase().includes('test') ? 'TESTNET' : 'MAINNET';
     $('connectionState').className = `connection ${online ? 'online' : 'offline'}`;
     $('connectionState').innerHTML = `<i></i> ${online ? '온라인' : '연결 안 됨'}`;
-    $('refreshBtn').disabled = false;
-    $('refreshBtn').classList.remove('is-refreshing');
-    $('refreshBtn').removeAttribute('aria-busy');
     isRefreshing = false;
   }
 
@@ -623,9 +617,27 @@
   $('settingsBtn').onclick = () => $('settingsDialog').showModal();
   $('settingsClose').onclick = () => $('settingsDialog').close();
   $('openAddWalletBtn').onclick = () => {
-    $('addWalletSection').classList.remove('hidden');
-    $('settingsDialog').showModal();
+    $('addWalletDialog').showModal();
     $('additionalWalletName').focus();
+  };
+  $('addWalletClose').onclick = () => $('addWalletDialog').close();
+  $('renameWalletBtn').onclick = async () => {
+    const wallet = activeWallet();
+    if (!wallet) return;
+    const name = prompt('새 지갑 이름을 입력하세요.', wallet.name)?.trim();
+    if (!name || name === wallet.name) return;
+    if (name.length > 24) return toast('지갑 이름은 24자 이하로 입력해 주세요.');
+    const previousName = wallet.name;
+    wallet.name = name;
+    try {
+      await persistWallets();
+      $('activeWalletName').textContent = name;
+      renderWalletList();
+      toast('지갑 이름을 변경했습니다.');
+    } catch (error) {
+      wallet.name = previousName;
+      toast(error.message);
+    }
   };
   $('addWalletBtn').onclick = async () => {
     const key = $('additionalWalletKey').value.trim();
@@ -641,8 +653,7 @@
       await persistWallets();
       $('additionalWalletName').value = '';
       $('additionalWalletKey').value = '';
-      $('addWalletSection').classList.add('hidden');
-      $('settingsDialog').close();
+      $('addWalletDialog').close();
       showWallet();
       toast(`${wallet.name}을 추가했습니다.`);
     } catch (error) {
@@ -697,7 +708,6 @@
 
   $('logoutBtn').onclick = deleteWallet;
   $('resetBtn').onclick = deleteWallet;
-  $('refreshBtn').onclick = refresh;
   $('sendTab').onclick = () => openPanel('sendPanel', 'SL');
   $('receiveTab').onclick = () => openPanel('receivePanel', 'SL');
   $('pslSendTab').onclick = () => openPanel('sendPanel', 'PSL');

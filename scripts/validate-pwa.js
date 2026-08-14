@@ -42,7 +42,7 @@ if ((html.match(/data-password-toggle=/g) || []).length < 5) failures.push('Pass
 if (!html.includes('id="receiveQr"') || !appSource.includes('new QRCode(')) failures.push('Receive QR generation is missing');
 if (!html.includes('id="pslSendTab"') || !html.includes('id="pslReceiveTab"')) failures.push('PSL asset actions are missing');
 if (!html.includes('id="pullRefresh"') || !appSource.includes('PULL_THRESHOLD')) failures.push('Pull-to-refresh is missing');
-if (appSource.includes("setLoading($('refreshBtn')")) failures.push('Refresh button must not replace its icon with loading text');
+if (html.includes('id="refreshBtn"')) failures.push('Redundant refresh button must not be shown');
 if (!html.includes('id="pullRefresh" class="pull-refresh hidden"')) failures.push('Pull-to-refresh must be hidden before CSS and JavaScript are ready');
 if (!appSource.includes('!deferredInstallPrompt')) failures.push('Install dialog must require a real browser install prompt');
 if (!appSource.includes("indexedDB.open(WALLET_DB, 1)")) failures.push('Durable IndexedDB wallet backup is missing');
@@ -50,6 +50,8 @@ if (!appSource.includes('navigator.storage?.persist')) failures.push('Persistent
 if (!html.includes('id="walletList"') || !html.includes('id="openAddWalletBtn"')) failures.push('Multi-wallet list and import controls are missing');
 if (!appSource.includes('version: 2, wallets, activeWalletId')) failures.push('Multi-wallet encrypted vault format is missing');
 if (!appSource.includes("['SL 보내기', 'sendPanel', 'SL']")) failures.push('Per-wallet asset actions are missing');
+if (!html.includes('id="renameWalletBtn"') || !appSource.includes("prompt('새 지갑 이름을 입력하세요.'")) failures.push('Wallet rename control is missing');
+if (!html.includes('id="addWalletDialog"') || !html.includes('아래로 당겼다 놓아')) failures.push('Wallet dialog or pull-to-refresh guidance is missing');
 if (html.includes('\uFFFD') || html.includes('釉') || html.includes('吏')) failures.push('HTML appears to contain mojibake');
 
 if (failures.length) {

@@ -104,8 +104,8 @@
         </section>
         <section class="balance-card" aria-labelledby="portfolioLabel">
           <div class="card-top">
-            <div><p id="portfolioLabel" class="eyebrow light">ACTIVE WALLET</p><strong id="activeWalletName" class="active-wallet-name">지갑 1</strong><br><span id="networkBadge" class="network-badge">MAINNET</span></div>
-            <button id="refreshBtn" class="round-button" type="button" aria-label="잔액 새로고침">↻</button>
+            <div><p id="portfolioLabel" class="eyebrow light">ACTIVE WALLET</p><span class="active-wallet-title"><strong id="activeWalletName" class="active-wallet-name">지갑 1</strong><button id="renameWalletBtn" type="button" aria-label="지갑 이름 변경">이름 변경</button></span><br><span id="networkBadge" class="network-badge">MAINNET</span></div>
+            <span class="pull-refresh-hint">↓ 아래로 당겼다 놓아<br>잔액 새로고침</span>
           </div>
           <p class="balance-label">SL 메인넷 잔액</p>
           <div class="balance"><strong id="slHeroBalance">—</strong><span>SL</span></div>
@@ -181,16 +181,19 @@
       <p class="helper">신뢰하는 HTTPS RPC만 사용하세요. CID가 있으면 발행자와 공간명보다 우선합니다.</p>
       <button class="button primary" value="default">저장하고 연결</button>
       <div class="settings-divider"></div>
-      <section id="addWalletSection" class="add-wallet-section hidden" aria-labelledby="addWalletTitle">
-        <h3 id="addWalletTitle">지갑 추가</h3>
-        <label for="additionalWalletName">지갑 이름</label><input id="additionalWalletName" maxlength="24" placeholder="예: 거래용 지갑">
-        <label for="additionalWalletKey">개인키 (64자리)</label>
-        <div class="password-field"><input id="additionalWalletKey" type="password" maxlength="64" autocomplete="off" spellcheck="false"><button class="password-toggle" type="button" data-password-toggle="additionalWalletKey" aria-label="개인키 표시"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
-        <button id="addWalletBtn" class="button secondary" type="button">암호화하여 추가</button>
-      </section>
       <button id="exportBtn" class="button secondary" type="button">개인키 백업 보기</button>
       <button id="logoutBtn" class="button danger delete-wallet-button" type="button">이 기기에서 모든 지갑 삭제</button>
     </form>
+  </dialog>
+
+  <dialog id="addWalletDialog" aria-labelledby="addWalletTitle">
+    <div class="sheet-head"><div><p class="eyebrow">ADD WALLET</p><h2 id="addWalletTitle">개인키로 지갑 추가</h2></div><button id="addWalletClose" class="close" type="button" aria-label="닫기">×</button></div>
+    <div class="add-wallet-section">
+      <label for="additionalWalletName">지갑 이름</label><input id="additionalWalletName" maxlength="24" placeholder="예: 거래용 지갑">
+      <label for="additionalWalletKey">개인키 (64자리)</label>
+      <div class="password-field"><input id="additionalWalletKey" type="password" maxlength="64" autocomplete="off" spellcheck="false"><button class="password-toggle" type="button" data-password-toggle="additionalWalletKey" aria-label="개인키 표시"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+      <button id="addWalletBtn" class="button primary" type="button">암호화하여 추가</button>
+    </div>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
