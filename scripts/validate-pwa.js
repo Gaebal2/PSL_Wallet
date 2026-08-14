@@ -4,7 +4,7 @@ const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
 const pwa = path.join(root, 'pwa');
-const required = ['index.html', 'styles.css', 'wallets.css', 'install.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon.svg', 'images/psl-wallet-social-v2.png', 'vendor/qrcode.min.js'];
+const required = ['index.html', 'styles.css', 'wallets.css', 'install.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon.svg', 'images/psl-wallet-social-v2.png', 'images/psl-token-icon.png', 'images/sl-token-icon.png', 'vendor/qrcode.min.js'];
 const failures = [];
 
 for (const file of required) {
@@ -38,7 +38,7 @@ if (missingIds.length) failures.push(`JavaScript references missing HTML ids: ${
 if (!html.includes('Content-Security-Policy')) failures.push('HTML CSP is missing');
 if (!html.includes('property="og:image"')) failures.push('Open Graph image metadata is missing');
 if (!html.includes('https://gaebal2.github.io/PSL_Wallet/images/psl-wallet-social-v2.png')) failures.push('Open Graph image must use the public absolute URL');
-if (!appSource.includes("notation: 'compact'")) failures.push('Compact balance formatting is missing');
+if (!appSource.includes('formatCompactUnits') || !appSource.includes("[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']")) failures.push('Compact balance formatting is missing');
 if ((html.match(/data-password-toggle=/g) || []).length < 5) failures.push('Password visibility toggles are missing');
 if (!html.includes('id="receiveQr"') || !appSource.includes('new QRCode(')) failures.push('Receive QR generation is missing');
 if (!html.includes('id="activePslSend"') || !html.includes('id="activePslReceive"')) failures.push('PSL asset actions are missing');
@@ -62,7 +62,7 @@ if (!appSource.includes('removeWallet') || !appSource.includes('syncDialogScroll
 if (!appSource.includes('formatDisplayUnits') || !appSource.includes('submitTransaction') || !html.includes('id="transferSuccessDialog"')) failures.push('Exact grouped amounts or resilient transfer completion UI is missing');
 if (!appSource.includes('Promise.any(requests)') || !appSource.includes('result.data ?? {}') || !appSource.includes("'받는 주소' : '보낸 주소'")) failures.push('Resilient empty history handling or counterparty labels are missing');
 if (!html.includes('id="transferReviewDialog"') || !appSource.includes('confirmTransfer') || !appSource.includes('formatAmountInput') || !appSource.includes("selectedAsset === 'SL' ? amount : formatUnits(amount, decimals)") || !appSource.includes('parseTokenUnits(balanceResult.data.balance, token.decimal)')) failures.push('Custom transfer review, grouped input, or PSL contract units are missing');
-if (!html.includes('app.js?v=22') || !appSource.includes("sw.js?v=22") || !swSource.includes("cache: 'reload'")) failures.push('Versioned app assets or forced service-worker refresh are missing');
+if (!html.includes('app.js?v=27') || !appSource.includes("sw.js?v=27") || !swSource.includes("cache: 'reload'")) failures.push('Versioned app assets or forced service-worker refresh are missing');
 if (!appSource.includes('parseTokenUnits') || !appSource.includes('keep SL and history available')) failures.push('Token balance parsing or refresh isolation is missing');
 if (!appSource.includes('https://explorer.saseul.com/?ic=tx&h=')) failures.push('Explorer transaction links are missing');
 if (!html.includes('id="activePslSend"') || !html.includes('id="activeSlReceive"')) failures.push('Active wallet asset actions are missing');
