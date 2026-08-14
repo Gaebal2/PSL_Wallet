@@ -56,6 +56,8 @@ if (!html.includes('ACTIVE WALLET') || !html.includes('id="editWalletsBtn"') || 
 if (html.includes('class="asset-section"') || html.includes('class="quick-actions"')) failures.push('Legacy asset detail sections must stay removed');
 if (!appSource.includes('validatePslTransfer') || !appSource.includes('formatCompactUnits(balances.sl, 18, 9)')) failures.push('PSL preflight or 9-decimal SL display is missing');
 if (!html.includes('id="historyList"') || !html.includes('id="historyPagination"') || !appSource.includes("data: 'fullList', type: 'Send'")) failures.push('Paginated transaction history is missing');
+if (!appSource.includes('normalizeBalance') || !appSource.includes('nextBody.set')) failures.push('Decimal PSL balances or history look-ahead are not handled');
+if (!appSource.includes('removeWallet') || !appSource.includes('syncDialogScrollLock')) failures.push('Per-wallet deletion or dialog scroll locking is missing');
 if (!appSource.includes('https://explorer.saseul.com/?ic=tx&h=')) failures.push('Explorer transaction links are missing');
 if (!html.includes('id="activePslSend"') || !html.includes('id="activeSlReceive"')) failures.push('Active wallet asset actions are missing');
 if (html.includes('\uFFFD') || html.includes('釉') || html.includes('吏')) failures.push('HTML appears to contain mojibake');

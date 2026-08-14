@@ -27,6 +27,7 @@
   let historyPage = 1;
   let historyLoading = false;
   let historyRequestId = 0;
+  let dialogScrollY = 0;
   let pullStart = null;
   let pullDistance = 0;
   let suppressLockClickUntil = 0;
@@ -206,6 +207,14 @@
     return '네트워크 요청에 실패했습니다.';
   }
 
+  function normalizeBalance(value, decimals) {
+    const text = String(value ?? '0').trim();
+    if (!text.includes('.')) return BigInt(text || '0').toString();
+    const [whole, fraction = ''] = text.split('.');
+    const significantFraction = fraction.replace(/0+$/, '');
+    return parseUnits(significantFraction ? `${whole}.${significantFraction}` : whole, decimals);
+  }
+
   async function validatePslTransfer() {
     let cid;
     try { cid = contractId(); }
@@ -218,7 +227,7 @@
     if (infoResult.code !== 200) throw new Error(`PSL 컨트랙트를 확인할 수 없습니다: ${rpcError(infoResult)}`);
     if (balanceResult.code !== 200) throw new Error(`PSL 잔액을 확인할 수 없습니다: ${rpcError(balanceResult)}`);
     token = { symbol: infoResult.data.symbol || 'PSL', decimal: Number(infoResult.data.decimal || 0) };
-    rawBalance = String(balanceResult.data.balance || '0');
+    rawBalance = normalizeBalance(balanceResult.data.balance, token.decimal);
     return cid;
   }
 
@@ -291,12 +300,17 @@
       const selectButton = document.createElement('button');
       selectButton.type = 'button';
       selectButton.className = 'wallet-choose-button';
-      selectButton.textContent = wallet.id === activeWalletId ? '선택됨' : '선택';
+      selectButton.textContent = '선택';
       selectButton.disabled = wallet.id === activeWalletId;
       selectButton.onclick = async () => { await switchWallet(wallet.id, false); $('walletManagerDialog').close(); };
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'wallet-delete-button';
+      deleteButton.textContent = '삭제';
+      deleteButton.onclick = () => removeWallet(wallet.id);
       const row = document.createElement('div');
       row.className = 'wallet-select-row';
-      row.append(details, selectButton);
+      row.append(details, selectButton, deleteButton);
       const actions = document.createElement('div');
       actions.className = 'wallet-item-actions single-action';
       [['이름 변경', '', '']].forEach(([label, panel, asset]) => {
@@ -315,6 +329,45 @@
       container.append(item);
     });
     $('walletCount').textContent = String(wallets.length);
+  }
+
+  async function removeWallet(walletId) {
+    const wallet = wallets.find((item) => item.id === walletId);
+    if (!wallet) return;
+    if (wallets.length === 1) return toast('마지막 지갑은 여기서 삭제할 수 없습니다. 설정의 “이 기기에서 지갑 삭제”를 이용해 주세요.');
+    if (!confirm(`${wallet.name} 지갑을 삭제할까요?\n\n백업하지 않은 개인키는 복구할 수 없습니다.`)) return;
+    const previousWallets = wallets.slice();
+    const previousActiveWalletId = activeWalletId;
+    wallets = wallets.filter((item) => item.id !== walletId);
+    walletBalances.delete(walletId);
+    if (walletId === activeWalletId) {
+      activeWalletId = wallets[0].id;
+      privateKey = wallets[0].privateKey;
+    }
+    try {
+      await persistWallets();
+      showWallet();
+      toast(`${wallet.name} 지갑을 삭제했습니다.`);
+    } catch (error) {
+      wallets = previousWallets;
+      activeWalletId = previousActiveWalletId;
+      privateKey = activeWallet()?.privateKey || '';
+      renderWalletList();
+      toast(error.message);
+    }
+  }
+
+  function syncDialogScrollLock() {
+    const hasOpenDialog = Boolean(document.querySelector('dialog[open]'));
+    if (hasOpenDialog && !document.body.classList.contains('dialog-open')) {
+      dialogScrollY = window.scrollY;
+      document.body.style.top = `-${dialogScrollY}px`;
+      document.body.classList.add('dialog-open');
+    } else if (!hasOpenDialog && document.body.classList.contains('dialog-open')) {
+      document.body.classList.remove('dialog-open');
+      document.body.style.top = '';
+      window.scrollTo(0, dialogScrollY);
+    }
   }
 
   async function switchWallet(walletId, scroll = true) {
@@ -370,7 +423,7 @@
       const [infoResult, balanceResult] = pslState.value;
       if (infoResult.code === 200 && balanceResult.code === 200) {
         token = { symbol: infoResult.data.symbol || 'PSL', decimal: Number(infoResult.data.decimal || 0) };
-        psl = String(balanceResult.data.balance || '0');
+        psl = normalizeBalance(balanceResult.data.balance, token.decimal);
         online = true;
       }
     }
@@ -431,7 +484,7 @@
     return { hash, transaction };
   }
 
-  function renderHistory(entries, page) {
+  function renderHistory(entries, page, hasNext = false) {
     const container = $('historyList');
     container.replaceChildren();
     const currentAddress = address();
@@ -467,7 +520,7 @@
         const value = document.createElement('div');
         value.className = 'history-value';
         const amount = document.createElement('strong');
-        amount.textContent = `${sent ? '-' : '+'}${formatCompactUnits(String(transaction.amount || '0'), decimals, isPsl ? 6 : 9)} ${symbol}`;
+        amount.textContent = `${sent ? '-' : '+'}${formatCompactUnits(normalizeBalance(transaction.amount, decimals), decimals, isPsl ? 6 : 9)} ${symbol}`;
         const time = document.createElement('small');
         const timestamp = Number(transaction.timestamp || 0);
         time.textContent = timestamp ? new Intl.DateTimeFormat('ko-KR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(timestamp / 1000)) : '';
@@ -486,8 +539,8 @@
     $('historyPage').textContent = String(page);
     $('historyPageBadge').textContent = String(page);
     $('historyPrev').disabled = page <= 1;
-    $('historyNext').disabled = entries.length < 10;
-    $('historyPagination').classList.toggle('hidden', page === 1 && entries.length < 10);
+    $('historyNext').disabled = !hasNext;
+    $('historyPagination').classList.toggle('hidden', page === 1 && !hasNext);
   }
 
   async function refreshHistory(page = historyPage) {
@@ -507,7 +560,17 @@
       const data = await requestHistory(body);
       if (requestId !== historyRequestId) return;
       const entries = Array.isArray(data) ? data.map((entry) => [entry.hash || '', entry]) : Object.entries(data || {});
-      renderHistory(entries, page);
+      let hasNext = false;
+      if (entries.length >= 10) {
+        try {
+          const nextBody = new URLSearchParams(body);
+          nextBody.set('page', String(page));
+          const nextData = await requestHistory(nextBody);
+          if (requestId !== historyRequestId) return;
+          hasNext = (Array.isArray(nextData) ? nextData.length : Object.keys(nextData || {}).length) > 0;
+        } catch { /* keep the current page visible when look-ahead fails */ }
+      }
+      renderHistory(entries, page, hasNext);
     } catch {
       if (requestId !== historyRequestId) return;
       $('historyStatus').textContent = '거래 이력을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
@@ -871,6 +934,7 @@
   $('logoutBtn').onclick = deleteWallet;
   $('resetBtn').onclick = deleteWallet;
   document.querySelectorAll('[data-close]').forEach((button) => { button.onclick = () => button.closest('dialog').close(); });
+  new MutationObserver(syncDialogScrollLock).observe(document.body, { attributes: true, attributeFilter: ['open'], subtree: true });
   $('copyAddress').onclick = () => copy(address());
   $('copyAccount').onclick = () => copy(address());
   $('maxBtn').onclick = () => {
