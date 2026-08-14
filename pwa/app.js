@@ -5,6 +5,8 @@
   const VAULT_KEY = 'psl-wallet-vault-v1';
   const CONFIG_KEY = 'psl-wallet-config-v1';
   const LEGACY_KEY = 'psl-wallet-key';
+  const WALLET_DB = 'psl-wallet-storage-v1';
+  const WALLET_STORE = 'wallet';
   const INSTALLED_KEY = 'psl-wallet-installed-v1';
   const AUTO_LOCK_MS = 5 * 60 * 1000;
   const defaults = { endpoint: 'https://main.saseul.net', owner: '', space: 'MY TOKEN', cid: '' };
@@ -20,6 +22,7 @@
   let pullStart = null;
   let pullDistance = 0;
   let suppressLockClickUntil = 0;
+  let walletVault = null;
   const PULL_THRESHOLD = 72;
 
   function readJson(key, fallback) {
@@ -44,6 +47,44 @@
     return Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
   }
 
+  function openWalletDb() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error('IndexedDB is unavailable'));
+      const request = indexedDB.open(WALLET_DB, 1);
+      request.onupgradeneeded = () => request.result.createObjectStore(WALLET_STORE);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async function durableVault(action, value) {
+    const db = await openWalletDb();
+    try {
+      return await new Promise((resolve, reject) => {
+        const transaction = db.transaction(WALLET_STORE, action === 'get' ? 'readonly' : 'readwrite');
+        const store = transaction.objectStore(WALLET_STORE);
+        const request = action === 'get' ? store.get(VAULT_KEY)
+          : action === 'put' ? store.put(value, VAULT_KEY) : store.delete(VAULT_KEY);
+        request.onsuccess = () => resolve(action === 'get' ? request.result || null : undefined);
+        request.onerror = () => reject(request.error);
+      });
+    } finally { db.close(); }
+  }
+
+  async function initializeVault() {
+    const localVault = localStorage.getItem(VAULT_KEY);
+    let indexedVault = null;
+    try { indexedVault = await durableVault('get'); } catch { /* localStorage is the fallback */ }
+    walletVault = localVault || indexedVault;
+    if (walletVault && !localVault) localStorage.setItem(VAULT_KEY, walletVault);
+    if (walletVault && !indexedVault) {
+      try { await durableVault('put', walletVault); } catch { /* best-effort redundant copy */ }
+    }
+    if (walletVault && navigator.storage?.persist) {
+      try { await navigator.storage.persist(); } catch { /* browser-controlled */ }
+    }
+  }
+
   async function passwordKey(password, salt) {
     const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
     return crypto.subtle.deriveKey(
@@ -61,11 +102,16 @@
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const derivedKey = await passwordKey(password, salt);
     const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, derivedKey, new TextEncoder().encode(key));
-    localStorage.setItem(VAULT_KEY, JSON.stringify({ version: 1, kdf: 'PBKDF2-SHA256', iterations: 310000, salt: bytesToBase64(salt), iv: bytesToBase64(iv), ciphertext: bytesToBase64(new Uint8Array(ciphertext)) }));
+    walletVault = JSON.stringify({ version: 1, kdf: 'PBKDF2-SHA256', iterations: 310000, salt: bytesToBase64(salt), iv: bytesToBase64(iv), ciphertext: bytesToBase64(new Uint8Array(ciphertext)) });
+    localStorage.setItem(VAULT_KEY, walletVault);
+    try { await durableVault('put', walletVault); } catch { /* local copy is still usable */ }
+    if (navigator.storage?.persist) {
+      try { await navigator.storage.persist(); } catch { /* browser-controlled */ }
+    }
   }
 
   async function decryptVault(password) {
-    const vault = JSON.parse(localStorage.getItem(VAULT_KEY));
+    const vault = JSON.parse(walletVault || localStorage.getItem(VAULT_KEY));
     if (!vault || vault.version !== 1) throw new Error('지원하지 않는 지갑 데이터입니다.');
     const key = await passwordKey(password, base64ToBytes(vault.salt));
     const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: base64ToBytes(vault.iv) }, key, base64ToBytes(vault.ciphertext));
@@ -149,7 +195,7 @@
   function lockWallet(notify = true) {
     privateKey = '';
     clearTimeout(autoLockTimer);
-    if (localStorage.getItem(VAULT_KEY)) showOnly('unlock'); else showOnly('onboarding');
+    if (walletVault) showOnly('unlock'); else showOnly('onboarding');
     $('unlockForm').reset();
     if (notify) toast('지갑을 잠갔습니다.');
   }
@@ -489,12 +535,14 @@
     resetAutoLock();
   };
 
-  function deleteWallet() {
-    if (!localStorage.getItem(VAULT_KEY)) return;
+  async function deleteWallet() {
+    if (!walletVault) return;
     const phrase = prompt('백업하지 않은 지갑은 복구할 수 없습니다. 삭제하려면 "삭제"를 입력하세요.');
     if (phrase !== '삭제') return toast('삭제를 취소했습니다.');
     localStorage.removeItem(VAULT_KEY);
     localStorage.removeItem(LEGACY_KEY);
+    try { await durableVault('delete'); } catch { /* local deletion still succeeds */ }
+    walletVault = null;
     privateKey = '';
     $('settingsDialog').close();
     showOnly('onboarding');
@@ -546,11 +594,16 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden && privateKey) resetAutoLock(); });
   window.addEventListener('offline', () => { $('connectionState').className = 'connection offline'; $('connectionState').innerHTML = '<i></i> 오프라인'; });
 
-  applyConfig();
-  if (localStorage.getItem(LEGACY_KEY) && !localStorage.getItem(VAULT_KEY)) {
-    localStorage.removeItem(LEGACY_KEY);
-    toast('보안을 위해 기존 평문 키를 제거했습니다. 백업 키를 다시 가져와 주세요.');
+  async function start() {
+    applyConfig();
+    await initializeVault();
+    if (localStorage.getItem(LEGACY_KEY) && !walletVault) {
+      localStorage.removeItem(LEGACY_KEY);
+      toast('보안을 위해 기존 평문 키를 제거했습니다. 백업 키를 다시 가져와 주세요.');
+    }
+    showOnly(walletVault ? 'unlock' : 'onboarding');
   }
-  showOnly(localStorage.getItem(VAULT_KEY) ? 'unlock' : 'onboarding');
+
+  start();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(() => {});
 })();

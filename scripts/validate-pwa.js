@@ -45,6 +45,8 @@ if (!html.includes('id="pullRefresh"') || !appSource.includes('PULL_THRESHOLD'))
 if (appSource.includes("setLoading($('refreshBtn')")) failures.push('Refresh button must not replace its icon with loading text');
 if (!html.includes('id="pullRefresh" class="pull-refresh hidden"')) failures.push('Pull-to-refresh must be hidden before CSS and JavaScript are ready');
 if (!appSource.includes('!deferredInstallPrompt')) failures.push('Install dialog must require a real browser install prompt');
+if (!appSource.includes("indexedDB.open(WALLET_DB, 1)")) failures.push('Durable IndexedDB wallet backup is missing');
+if (!appSource.includes('navigator.storage?.persist')) failures.push('Persistent browser storage request is missing');
 if (html.includes('\uFFFD') || html.includes('釉') || html.includes('吏')) failures.push('HTML appears to contain mojibake');
 
 if (failures.length) {
