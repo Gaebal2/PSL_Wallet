@@ -27,9 +27,9 @@
   <meta name="apple-mobile-web-app-title" content="PSL Wallet">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=27">
-  <link rel="stylesheet" href="wallets.css?v=27">
-  <link rel="stylesheet" href="install.css?v=27">
+  <link rel="stylesheet" href="styles.css?v=31">
+  <link rel="stylesheet" href="wallets.css?v=31">
+  <link rel="stylesheet" href="install.css?v=31">
   <title>PSL Wallet</title>
 </head>
 <body>
@@ -216,12 +216,20 @@
     <button id="transferSuccessClose" class="button primary" type="button">확인</button>
   </dialog>
 
+  <dialog id="appAlertDialog" class="transfer-success-dialog app-alert-dialog" aria-labelledby="appAlertTitle">
+    <div class="app-alert-mark" aria-hidden="true">!</div>
+    <p class="eyebrow">NOTICE</p>
+    <h2 id="appAlertTitle">확인해 주세요</h2>
+    <p id="appAlertMessage" class="helper center"></p>
+    <button id="appAlertClose" class="button primary" type="button">확인</button>
+  </dialog>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="vendor/crypto-js.min.js"></script>
   <script src="vendor/nacl-fast.min.js"></script>
   <script src="vendor/axios.min.js"></script>
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
-  <script src="app.js?v=27"></script>
+  <script src="app.js?v=31"></script>
 </body>
 </html>

@@ -184,19 +184,22 @@
     return `${negative ? '-' : ''}${integer}${fraction ? `.${fraction}` : ''}`;
   }
 
-  function formatCompactUnits(value, decimals, maxFraction = 6) {
+  function formatCompactUnits(value, decimals, maxFraction = 9) {
     const exact = formatUnits(value, decimals);
+    const raw = BigInt(value);
+    const magnitude = raw < 0n ? -raw : raw;
+    const units = [[12, 'T'], [9, 'B'], [6, 'M'], [3, 'K']];
+    const unit = units.find(([power]) => magnitude >= 10n ** BigInt(decimals + power));
+    if (unit) {
+      const [power, suffix] = unit;
+      const [integer, fraction = ''] = formatUnits(value, decimals + power).split('.');
+      const visibleFraction = fraction.slice(0, maxFraction).replace(/0+$/, '');
+      return `${integer}${visibleFraction ? `.${visibleFraction}` : ''}${suffix}`;
+    }
     const numeric = Number(exact);
     if (!Number.isFinite(numeric)) return exact;
     const absolute = Math.abs(numeric);
     if (absolute > 0 && absolute < 10 ** -maxFraction) return `< ${`0.${'0'.repeat(maxFraction - 1)}1`}`;
-    if (absolute >= 1000) {
-      const units = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
-      const [divisor, suffix] = units.find(([threshold]) => absolute >= threshold);
-      const precision = 1000;
-      const compact = Math.trunc((numeric / divisor) * precision) / precision;
-      return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 }).format(compact)}${suffix}`;
-    }
     return new Intl.NumberFormat('en-US', { maximumFractionDigits: Math.min(decimals, maxFraction) }).format(numeric);
   }
 
@@ -291,6 +294,30 @@
       $('transferReviewConfirm').onclick = () => finish(true);
       dialog.addEventListener('cancel', onCancel);
     });
+  }
+
+  function showAlert(message, title = '확인해 주세요') {
+    const dialog = $('appAlertDialog');
+    $('appAlertTitle').textContent = title;
+    $('appAlertMessage').textContent = message;
+    dialog.showModal();
+    return new Promise((resolve) => {
+      const finish = () => {
+        dialog.removeEventListener('cancel', onCancel);
+        dialog.close();
+        resolve();
+      };
+      const onCancel = (event) => { event.preventDefault(); finish(); };
+      $('appAlertClose').onclick = finish;
+      dialog.addEventListener('cancel', onCancel);
+    });
+  }
+
+  function isInvalidPslTransferAmount(value) {
+    const text = String(value).replace(/,/g, '').trim();
+    if (!/^\d+(\.\d+)?$/.test(text)) return false;
+    const [whole, fraction = ''] = text.split('.');
+    return BigInt(whole) < 1n || fraction.length > 0;
   }
 
   async function validatePslTransfer() {
@@ -1046,7 +1073,7 @@
   $('copyAccount').onclick = () => copy(address());
   $('maxBtn').onclick = () => {
     if (selectedAsset === 'SL') return toast('SL은 수수료를 남기고 수량을 입력해 주세요.');
-    $('amount').value = formatDisplayUnits(rawBalance, token.decimal);
+    $('amount').value = formatAmountInput(formatUnits(rawBalance, token.decimal).split('.')[0]);
   };
   $('amount').addEventListener('input', (event) => {
     const formatted = formatAmountInput(event.target.value);
@@ -1061,6 +1088,10 @@
     event.preventDefault();
     $('sendError').textContent = '';
     const to = $('toAddress').value.trim();
+    if (selectedAsset !== 'SL' && isInvalidPslTransferAmount($('amount').value)) {
+      await showAlert('PSL은 소수점 이하 단위로 전송할 수 없습니다. 최소 송금 가능 금액은 1 PSL입니다.', 'PSL 송금 수량 확인');
+      return;
+    }
     try {
       if (!SASEUL.Sign.addressValidity(to)) throw new Error('받는 주소가 올바르지 않습니다.');
       if (to === address()) throw new Error('내 주소로는 전송할 수 없습니다.');
@@ -1104,5 +1135,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=27', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=31', { updateViaCache: 'none' }).catch(() => {});
 })();
