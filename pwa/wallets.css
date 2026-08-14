@@ -65,6 +65,7 @@
 .history-details,.history-value { min-width: 0; }
 .history-details strong,.history-details small,.history-value strong,.history-value small { display: block; }
 .history-details small,.history-value small { margin-top: 4px; color: var(--muted); font-size: 9px; }
+.history-counterparty { overflow-wrap: anywhere; line-height: 1.45; }
 .history-value { text-align: right; }
 .history-value strong { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
 .history-row.sent .history-value strong { color: var(--danger); }

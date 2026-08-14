@@ -488,17 +488,21 @@
   }
 
   async function requestHistory(body) {
-    let lastError;
-    for (const endpoint of transactionEndpoints()) {
+    const requests = transactionEndpoints().map(async (endpoint) => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
       try {
-        const response = await fetch(endpoint, { method: 'POST', body });
+        const response = await fetch(endpoint, { method: 'POST', body: new URLSearchParams(body), signal: controller.signal });
+        if (response.status === 204 || response.status === 404) return {};
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const result = await response.json();
-        if (result.code !== 200 || !result.data) throw new Error(rpcError(result));
-        return result.data;
-      } catch (error) { lastError = error; }
-    }
-    throw lastError || new Error('거래 조회 노드에 연결할 수 없습니다.');
+        if (result.code === 200) return result.data ?? {};
+        if (result.code === 204 || result.code === 404) return {};
+        throw new Error(rpcError(result));
+      } finally { clearTimeout(timeout); }
+    });
+    try { return await Promise.any(requests); }
+    catch (error) { throw error?.errors?.[0] || error || new Error('거래 조회 노드에 연결할 수 없습니다.'); }
   }
 
   function historyTransaction(entry, fallbackHash = '') {
@@ -543,7 +547,11 @@
         const title = document.createElement('strong');
         title.textContent = `${symbol} ${sent ? '보냄' : '받음'}`;
         const addressText = document.createElement('small');
-        addressText.textContent = `${counterparty?.slice(0, 8) || '알 수 없음'}…${counterparty?.slice(-6) || ''}`;
+        addressText.className = 'history-counterparty';
+        addressText.textContent = counterparty
+          ? `${sent ? '받는 주소' : '보낸 주소'}: ${counterparty}`
+          : `${sent ? '받는 주소' : '보낸 주소'}: 알 수 없음`;
+        if (counterparty) addressText.title = counterparty;
         details.append(title, addressText);
         const value = document.createElement('div');
         value.className = 'history-value';
