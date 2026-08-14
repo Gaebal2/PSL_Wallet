@@ -191,6 +191,12 @@
     ).format(numeric);
   }
 
+  function formatDisplayUnits(value, decimals) {
+    const [integer, fraction] = formatUnits(value, decimals).split('.');
+    const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return fraction ? `${grouped}.${fraction}` : grouped;
+  }
+
   function parseUnits(value, decimals) {
     const text = String(value).trim();
     if (!/^\d+(\.\d+)?$/.test(text)) throw new Error('수량을 숫자로 입력해 주세요.');
@@ -205,6 +211,28 @@
     if (typeof error?.data?.msg === 'string') return error.data.msg;
     if (typeof error?.data === 'string') return error.data;
     return '네트워크 요청에 실패했습니다.';
+  }
+
+  function transactionAccepted(result) {
+    if (result?.code === 200) return true;
+    return /already|duplicate|exist|중복|이미 (처리|존재|등록)/i.test(rpcError(result));
+  }
+
+  async function submitTransaction(signed) {
+    let directError;
+    try {
+      const result = await SASEUL.Rpc.sendTransaction(signed);
+      if (transactionAccepted(result)) return result;
+      directError = result;
+    } catch (error) { directError = error; }
+    try {
+      const result = await SASEUL.Rpc.broadcastTransaction(signed);
+      if (transactionAccepted(result)) return result;
+      throw result;
+    } catch (error) {
+      if (transactionAccepted(error) || transactionAccepted(directError)) return { code: 200 };
+      throw error?.code || error?.message ? error : directError;
+    }
   }
 
   function normalizeBalance(value, decimals) {
@@ -393,11 +421,11 @@
     const slDisplay = balances.error ? '연결 오류' : formatCompactUnits(balances.sl, 18, 9);
     $('slHeroBalance').textContent = slDisplay;
     $('slHeroBalance').classList.toggle('long-balance', slDisplay.length > 12);
-    $('slHeroBalance').title = `${formatUnits(balances.sl, 18)} SL`;
+    $('slHeroBalance').title = `${formatDisplayUnits(balances.sl, 18)} SL`;
     const pslDisplay = balances.error ? '—' : formatCompactUnits(balances.psl, token.decimal, 6);
     $('pslHeroBalance').textContent = pslDisplay;
     $('pslHeroBalance').classList.toggle('long-balance', pslDisplay.length > 12);
-    $('pslHeroBalance').title = `${formatUnits(balances.psl, token.decimal)} ${token.symbol}`;
+    $('pslHeroBalance').title = `${formatDisplayUnits(balances.psl, token.decimal)} ${token.symbol}`;
     $('pslHeroSymbol').textContent = token.symbol;
   }
 
@@ -416,7 +444,7 @@
     let psl = '0';
     let online = false;
     if (slState.status === 'fulfilled' && slState.value.code === 200) {
-      sl = String(slState.value.data.balance || '0');
+      sl = normalizeBalance(slState.value.data.balance, 18);
       online = true;
     }
     if (pslState.status === 'fulfilled') {
@@ -520,7 +548,7 @@
         const value = document.createElement('div');
         value.className = 'history-value';
         const amount = document.createElement('strong');
-        amount.textContent = `${sent ? '-' : '+'}${formatCompactUnits(normalizeBalance(transaction.amount, decimals), decimals, isPsl ? 6 : 9)} ${symbol}`;
+        amount.textContent = `${sent ? '-' : '+'}${formatDisplayUnits(normalizeBalance(transaction.amount, decimals), decimals)} ${symbol}`;
         const time = document.createElement('small');
         const timestamp = Number(transaction.timestamp || 0);
         time.textContent = timestamp ? new Intl.DateTimeFormat('ko-KR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(timestamp / 1000)) : '';
@@ -839,6 +867,7 @@
   $('activePslReceive').onclick = () => openPanel('receivePanel', 'PSL');
   $('activeSlSend').onclick = () => openPanel('sendPanel', 'SL');
   $('activeSlReceive').onclick = () => openPanel('receivePanel', 'SL');
+  $('transferSuccessClose').onclick = () => $('transferSuccessDialog').close();
   $('historyPrev').onclick = () => refreshHistory(Math.max(1, historyPage - 1));
   $('historyNext').onclick = () => refreshHistory(historyPage + 1);
   $('openAddWalletBtn').onclick = () => {
@@ -956,14 +985,18 @@
       const amount = parseUnits($('amount').value, decimals);
       if (BigInt(amount) <= 0n) throw new Error('0보다 큰 수량을 입력해 주세요.');
       if (BigInt(amount) > BigInt(available)) throw new Error('보유 수량이 부족합니다.');
-      if (!confirm(`${$('amount').value} ${symbol}을 전송할까요?\n\n받는 주소: ${to}\n\n주소와 수량을 다시 확인하세요.`)) return;
+      const displayAmount = formatDisplayUnits(amount, decimals);
+      if (!confirm(`${displayAmount} ${symbol}을 전송할까요?\n\n받는 주소: ${to}\n\n주소와 수량을 다시 확인하세요.`)) return;
       setLoading($('sendBtn'), true, '검토 후 전송');
       const transaction = { type: 'Send', to, amount };
       if (transactionCid) transaction.cid = transactionCid;
-      const result = await SASEUL.Rpc.broadcastTransaction(SASEUL.Rpc.signedTransaction(transaction, privateKey));
-      if (result.code !== 200) throw new Error(`${symbol} 전송 실패: ${rpcError(result)}`);
-      toast('전송 요청이 완료되었습니다.');
+      const signed = SASEUL.Rpc.signedTransaction(transaction, privateKey);
+      const result = await submitTransaction(signed);
+      if (!transactionAccepted(result)) throw new Error(`${symbol} 전송 실패: ${rpcError(result)}`);
       $('sendForm').reset();
+      $('sendPanel').close();
+      $('transferSuccessMessage').textContent = `${displayAmount} ${symbol} 전송 요청이 정상적으로 접수되었습니다.`;
+      $('transferSuccessDialog').showModal();
       setTimeout(refresh, 3000);
     } catch (error) { $('sendError').textContent = rpcError(error); }
     finally { setLoading($('sendBtn'), false, '검토 후 전송'); resetAutoLock(); }

@@ -58,6 +58,7 @@ if (!appSource.includes('validatePslTransfer') || !appSource.includes('formatCom
 if (!html.includes('id="historyList"') || !html.includes('id="historyPagination"') || !appSource.includes("data: 'fullList', type: 'Send'")) failures.push('Paginated transaction history is missing');
 if (!appSource.includes('normalizeBalance') || !appSource.includes('nextBody.set')) failures.push('Decimal PSL balances or history look-ahead are not handled');
 if (!appSource.includes('removeWallet') || !appSource.includes('syncDialogScrollLock')) failures.push('Per-wallet deletion or dialog scroll locking is missing');
+if (!appSource.includes('formatDisplayUnits') || !appSource.includes('submitTransaction') || !html.includes('id="transferSuccessDialog"')) failures.push('Exact grouped amounts or resilient transfer completion UI is missing');
 if (!appSource.includes('https://explorer.saseul.com/?ic=tx&h=')) failures.push('Explorer transaction links are missing');
 if (!html.includes('id="activePslSend"') || !html.includes('id="activeSlReceive"')) failures.push('Active wallet asset actions are missing');
 if (html.includes('\uFFFD') || html.includes('釉') || html.includes('吏')) failures.push('HTML appears to contain mojibake');

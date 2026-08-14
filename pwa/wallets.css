@@ -79,6 +79,9 @@
 .add-wallet-section .button { margin-top: 14px; }
 .delete-wallet-button { margin-top: 16px; }
 body.dialog-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
+.transfer-success-dialog { text-align: center; }
+.transfer-success-mark { width: 62px; height: 62px; display: grid; margin: 4px auto 18px; place-items: center; border-radius: 22px; background: #e8f8ee; color: #147b43; font-size: 30px; font-weight: 900; }
+.transfer-success-dialog .helper { margin: 12px 0 20px; }
 
 @media (max-width: 390px) {
   .wallet-select { grid-template-columns: 38px minmax(0,1fr); }

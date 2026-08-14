@@ -196,6 +196,14 @@
     <div class="address-box"><code id="receiveAddress"></code><button id="copyAddress" type="button">주소 복사</button></div>
   </dialog>
 
+  <dialog id="transferSuccessDialog" class="transfer-success-dialog" aria-labelledby="transferSuccessTitle">
+    <div class="transfer-success-mark" aria-hidden="true">✓</div>
+    <p class="eyebrow">TRANSFER COMPLETE</p>
+    <h2 id="transferSuccessTitle">전송에 성공했습니다</h2>
+    <p id="transferSuccessMessage" class="helper center"></p>
+    <button id="transferSuccessClose" class="button primary" type="button">확인</button>
+  </dialog>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="vendor/crypto-js.min.js"></script>
   <script src="vendor/nacl-fast.min.js"></script>
