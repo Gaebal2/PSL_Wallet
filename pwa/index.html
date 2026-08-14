@@ -196,6 +196,18 @@
     <div class="address-box"><code id="receiveAddress"></code><button id="copyAddress" type="button">주소 복사</button></div>
   </dialog>
 
+  <dialog id="transferReviewDialog" class="transfer-review-dialog" aria-labelledby="transferReviewTitle">
+    <div class="transfer-review-mark" aria-hidden="true">↗</div>
+    <p class="eyebrow">CONFIRM TRANSFER</p>
+    <h2 id="transferReviewTitle">전송 정보를 확인해 주세요</h2>
+    <div class="transfer-review-summary">
+      <div><span>보낼 수량</span><strong id="transferReviewAmount"></strong></div>
+      <div><span>받는 주소</span><code id="transferReviewAddress"></code></div>
+    </div>
+    <p class="helper center">주소와 수량이 정확한지 다시 확인해 주세요.</p>
+    <div class="transfer-review-actions"><button id="transferReviewCancel" class="button secondary" type="button">취소</button><button id="transferReviewConfirm" class="button primary" type="button">전송하기</button></div>
+  </dialog>
+
   <dialog id="transferSuccessDialog" class="transfer-success-dialog" aria-labelledby="transferSuccessTitle">
     <div class="transfer-success-mark" aria-hidden="true">✓</div>
     <p class="eyebrow">TRANSFER COMPLETE</p>

@@ -83,6 +83,15 @@ body.dialog-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hi
 .transfer-success-dialog { text-align: center; }
 .transfer-success-mark { width: 62px; height: 62px; display: grid; margin: 4px auto 18px; place-items: center; border-radius: 22px; background: #e8f8ee; color: #147b43; font-size: 30px; font-weight: 900; }
 .transfer-success-dialog .helper { margin: 12px 0 20px; }
+.transfer-review-dialog { text-align: center; }
+.transfer-review-mark { width: 58px; height: 58px; display: grid; margin: 2px auto 16px; place-items: center; border-radius: 20px; background: #eeeaff; color: var(--violet); font-size: 27px; font-weight: 900; }
+.transfer-review-summary { display: grid; gap: 1px; overflow: hidden; margin: 20px 0 12px; border-radius: 17px; background: var(--line); text-align: left; }
+.transfer-review-summary>div { padding: 14px; background: #f7f7fa; }
+.transfer-review-summary span,.transfer-review-summary strong,.transfer-review-summary code { display: block; }
+.transfer-review-summary span { margin-bottom: 5px; color: var(--muted); font-size: 10px; font-weight: 800; }
+.transfer-review-summary strong { color: var(--violet-dark); font-size: 20px; }
+.transfer-review-summary code { overflow-wrap: anywhere; color: var(--ink); font-size: 10px; line-height: 1.5; }
+.transfer-review-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 18px; }
 
 @media (max-width: 390px) {
   .wallet-select { grid-template-columns: 38px minmax(0,1fr); }

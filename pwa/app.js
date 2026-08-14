@@ -198,7 +198,7 @@
   }
 
   function parseUnits(value, decimals) {
-    const text = String(value).trim();
+    const text = String(value).replace(/,/g, '').trim();
     if (!/^\d+(\.\d+)?$/.test(text)) throw new Error('수량을 숫자로 입력해 주세요.');
     const [whole, fraction = ''] = text.split('.');
     if (fraction.length > decimals) throw new Error(`소수점은 최대 ${decimals}자리까지 입력할 수 있습니다.`);
@@ -206,6 +206,8 @@
   }
 
   function rpcError(error) {
+    const contractMessage = error?.msg || error?.message || error?.data?.msg || error?.data;
+    if (typeof contractMessage === 'string' && /can't send more than what you have/i.test(contractMessage)) return '보유 수량이 부족합니다.';
     if (typeof error?.msg === 'string') return error.msg;
     if (typeof error?.message === 'string') return error.message;
     if (typeof error?.data?.msg === 'string') return error.data.msg;
@@ -243,6 +245,36 @@
     return parseUnits(significantFraction ? `${whole}.${significantFraction}` : whole, decimals);
   }
 
+  function formatAmountInput(value) {
+    const raw = String(value).replace(/,/g, '');
+    if (!/^\d*(\.\d*)?$/.test(raw)) return null;
+    if (!raw) return '';
+    const [integer = '', fraction] = raw.split('.');
+    const grouped = (integer || '0').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return fraction === undefined ? grouped : `${grouped}.${fraction}`;
+  }
+
+  function confirmTransfer(amount, symbol, to) {
+    const dialog = $('transferReviewDialog');
+    $('transferReviewAmount').textContent = `${amount} ${symbol}`;
+    $('transferReviewAddress').textContent = to;
+    dialog.showModal();
+    return new Promise((resolve) => {
+      let settled = false;
+      const onCancel = (event) => { event.preventDefault(); finish(false); };
+      const finish = (confirmed) => {
+        if (settled) return;
+        settled = true;
+        dialog.removeEventListener('cancel', onCancel);
+        dialog.close();
+        resolve(confirmed);
+      };
+      $('transferReviewCancel').onclick = () => finish(false);
+      $('transferReviewConfirm').onclick = () => finish(true);
+      dialog.addEventListener('cancel', onCancel);
+    });
+  }
+
   async function validatePslTransfer() {
     let cid;
     try { cid = contractId(); }
@@ -255,7 +287,7 @@
     if (infoResult.code !== 200) throw new Error(`PSL 컨트랙트를 확인할 수 없습니다: ${rpcError(infoResult)}`);
     if (balanceResult.code !== 200) throw new Error(`PSL 잔액을 확인할 수 없습니다: ${rpcError(balanceResult)}`);
     token = { symbol: infoResult.data.symbol || 'PSL', decimal: Number(infoResult.data.decimal || 0) };
-    rawBalance = normalizeBalance(balanceResult.data.balance, token.decimal);
+    rawBalance = parseUnits(String(balanceResult.data.balance ?? '0'), token.decimal);
     return cid;
   }
 
@@ -451,7 +483,7 @@
       const [infoResult, balanceResult] = pslState.value;
       if (infoResult.code === 200 && balanceResult.code === 200) {
         token = { symbol: infoResult.data.symbol || 'PSL', decimal: Number(infoResult.data.decimal || 0) };
-        psl = normalizeBalance(balanceResult.data.balance, token.decimal);
+        psl = parseUnits(String(balanceResult.data.balance ?? '0'), token.decimal);
         online = true;
       }
     }
@@ -556,7 +588,10 @@
         const value = document.createElement('div');
         value.className = 'history-value';
         const amount = document.createElement('strong');
-        amount.textContent = `${sent ? '-' : '+'}${formatDisplayUnits(normalizeBalance(transaction.amount, decimals), decimals)} ${symbol}`;
+        const historyAmount = isPsl
+          ? parseUnits(String(transaction.amount || '0'), decimals)
+          : normalizeBalance(transaction.amount, decimals);
+        amount.textContent = `${sent ? '-' : '+'}${formatDisplayUnits(historyAmount, decimals)} ${symbol}`;
         const time = document.createElement('small');
         const timestamp = Number(transaction.timestamp || 0);
         time.textContent = timestamp ? new Intl.DateTimeFormat('ko-KR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(timestamp / 1000)) : '';
@@ -976,8 +1011,16 @@
   $('copyAccount').onclick = () => copy(address());
   $('maxBtn').onclick = () => {
     if (selectedAsset === 'SL') return toast('SL은 수수료를 남기고 수량을 입력해 주세요.');
-    $('amount').value = formatUnits(rawBalance, token.decimal);
+    $('amount').value = formatDisplayUnits(rawBalance, token.decimal);
   };
+  $('amount').addEventListener('input', (event) => {
+    const formatted = formatAmountInput(event.target.value);
+    if (formatted === null) event.target.value = event.target.dataset.previousValue || '';
+    else {
+      event.target.value = formatted;
+      event.target.dataset.previousValue = formatted;
+    }
+  });
 
   $('sendForm').onsubmit = async (event) => {
     event.preventDefault();
@@ -994,9 +1037,10 @@
       if (BigInt(amount) <= 0n) throw new Error('0보다 큰 수량을 입력해 주세요.');
       if (BigInt(amount) > BigInt(available)) throw new Error('보유 수량이 부족합니다.');
       const displayAmount = formatDisplayUnits(amount, decimals);
-      if (!confirm(`${displayAmount} ${symbol}을 전송할까요?\n\n받는 주소: ${to}\n\n주소와 수량을 다시 확인하세요.`)) return;
+      if (!await confirmTransfer(displayAmount, symbol, to)) return;
       setLoading($('sendBtn'), true, '검토 후 전송');
-      const transaction = { type: 'Send', to, amount };
+      const transactionAmount = selectedAsset === 'SL' ? amount : formatUnits(amount, decimals);
+      const transaction = { type: 'Send', to, amount: transactionAmount };
       if (transactionCid) transaction.cid = transactionCid;
       const signed = SASEUL.Rpc.signedTransaction(transaction, privateKey);
       const result = await submitTransaction(signed);
