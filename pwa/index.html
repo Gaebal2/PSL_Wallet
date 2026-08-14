@@ -27,10 +27,10 @@
   <meta name="apple-mobile-web-app-title" content="PSL Wallet">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=32">
-  <link rel="stylesheet" href="wallets.css?v=32">
-  <link rel="stylesheet" href="install.css?v=32">
-  <link rel="stylesheet" href="history.css?v=32">
+  <link rel="stylesheet" href="styles.css?v=33">
+  <link rel="stylesheet" href="wallets.css?v=33">
+  <link rel="stylesheet" href="install.css?v=33">
+  <link rel="stylesheet" href="history.css?v=33">
   <title>PSL Wallet</title>
 </head>
 <body>
@@ -86,7 +86,7 @@
       </section>
 
       <section id="unlock" class="auth-view hidden" aria-labelledby="unlockTitle">
-        <div class="orb small" aria-hidden="true"><span>⌁</span></div>
+        <div class="orb small unlock-orb" aria-hidden="true"><span><svg viewBox="0 0 24 24"><path d="M7 10V7a5 5 0 0 1 9.7-1.7"/><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M12 14v2"/></svg></span></div>
         <p class="eyebrow">WELCOME BACK</p>
         <h1 id="unlockTitle">지갑 잠금 해제</h1>
         <p class="lead">보호 비밀번호는 이 기기 안에서만 확인됩니다.</p>
@@ -102,12 +102,12 @@
       <section id="wallet" class="dashboard hidden">
         <section class="balance-card" aria-labelledby="portfolioLabel">
           <div class="card-top">
-            <div><p id="portfolioLabel" class="eyebrow light active-wallet-heading">ACTIVE WALLET <span id="networkBadge" class="network-badge">MAINNET</span></p><strong id="activeWalletName" class="active-wallet-name">지갑 1</strong></div>
+            <div class="active-wallet-identity"><p id="portfolioLabel" class="eyebrow light active-wallet-heading">ACTIVE WALLET <span id="networkBadge" class="network-badge">MAINNET</span></p><div class="active-wallet-name-row"><strong id="activeWalletName" class="active-wallet-name">지갑 1</strong><code id="accountAddress"></code><button id="copyAccount" type="button">복사</button></div></div>
             <button id="editWalletsBtn" class="wallet-edit-button" type="button">지갑 편집</button>
           </div>
           <div class="active-assets">
-            <div class="active-primary-balance"><small>PSL 토큰 잔액</small><div><strong id="pslHeroBalance">—</strong><span class="hero-asset-symbol"><img src="images/psl-token-icon.png" alt=""><span id="pslHeroSymbol">PSL</span></span></div></div>
-            <div class="active-secondary-balance"><span>SL 메인넷 잔액</span><strong><b id="slHeroBalance">—</b><span class="hero-asset-symbol sl-symbol"><img src="images/sl-token-icon.png" alt="">SL</span></strong></div>
+            <div class="active-primary-balance"><small>PSL 토큰 잔액</small><div><img class="hero-balance-icon psl-balance-icon" src="images/psl-token-icon.png" alt=""><strong id="pslHeroBalance">—</strong><span id="pslHeroSymbol" class="hero-balance-symbol">PSL</span></div></div>
+            <div class="active-secondary-balance"><span>SL 메인넷 잔액</span><strong><img class="hero-balance-icon sl-balance-icon" src="images/sl-token-icon.png" alt=""><b id="slHeroBalance">—</b><span class="hero-balance-symbol">SL</span></strong></div>
           </div>
           <div class="active-card-actions" aria-label="활성 지갑 작업">
             <button id="activePslSend" type="button"><span>↗</span>PSL 보내기</button>
@@ -115,7 +115,6 @@
             <button id="activeSlSend" type="button"><span>↗</span>SL 보내기</button>
             <button id="activeSlReceive" type="button"><span>↙</span>SL 받기</button>
           </div>
-          <div class="address-pill"><code id="accountAddress"></code><button id="copyAccount" type="button">복사</button></div>
         </section>
         <p class="pull-refresh-hint">↓ 아래로 당겼다 놓으면 모든 지갑의 잔액이 새로고침됩니다.</p>
         <aside class="security-note"><span>✓</span><div><strong>로컬 암호화 보관</strong><p>개인키는 AES-GCM으로 암호화되어 이 기기에만 저장됩니다.</p></div></aside>
@@ -226,12 +225,25 @@
     <button id="appAlertClose" class="button primary" type="button">확인</button>
   </dialog>
 
+  <dialog id="dangerConfirmDialog" class="transfer-review-dialog danger-confirm-dialog" aria-labelledby="dangerConfirmTitle">
+    <div class="danger-confirm-mark" aria-hidden="true">!</div>
+    <p class="eyebrow">SECURITY CHECK</p>
+    <h2 id="dangerConfirmTitle">지갑을 삭제할까요?</h2>
+    <p id="dangerConfirmMessage" class="helper center"></p>
+    <div id="dangerConfirmPhraseWrap" class="danger-confirm-phrase hidden">
+      <label for="dangerConfirmPhrase">확인을 위해 “삭제”를 입력해 주세요.</label>
+      <input id="dangerConfirmPhrase" autocomplete="off" placeholder="삭제">
+      <p id="dangerConfirmError" class="error" role="alert"></p>
+    </div>
+    <div class="transfer-review-actions"><button id="dangerConfirmCancel" class="button secondary" type="button">취소</button><button id="dangerConfirmAccept" class="button danger" type="button">삭제</button></div>
+  </dialog>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="vendor/crypto-js.min.js"></script>
   <script src="vendor/nacl-fast.min.js"></script>
   <script src="vendor/axios.min.js"></script>
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
-  <script src="app.js?v=32"></script>
+  <script src="app.js?v=33"></script>
 </body>
 </html>
