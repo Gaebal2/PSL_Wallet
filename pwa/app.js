@@ -144,6 +144,11 @@
     return SASEUL.Sign.address(SASEUL.Sign.publicKey(wallet.privateKey));
   }
 
+  function shortenAddress(value) {
+    const text = String(value || '');
+    return text.length > 10 ? `${text.slice(0, 5)}…${text.slice(-5)}` : text;
+  }
+
   function makeWallet(key, name) {
     const privateKeyValue = key.toLowerCase();
     const walletAddressValue = walletAddress({ privateKey: privateKeyValue });
@@ -185,10 +190,14 @@
     if (!Number.isFinite(numeric)) return exact;
     const absolute = Math.abs(numeric);
     if (absolute > 0 && absolute < 10 ** -maxFraction) return `< ${`0.${'0'.repeat(maxFraction - 1)}1`}`;
-    return new Intl.NumberFormat('en-US', absolute >= 1000
-      ? { notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 2 }
-      : { maximumFractionDigits: Math.min(decimals, maxFraction) }
-    ).format(numeric);
+    if (absolute >= 1000) {
+      const units = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+      const [divisor, suffix] = units.find(([threshold]) => absolute >= threshold);
+      const precision = 1000;
+      const compact = Math.trunc((numeric / divisor) * precision) / precision;
+      return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 }).format(compact)}${suffix}`;
+    }
+    return new Intl.NumberFormat('en-US', { maximumFractionDigits: Math.min(decimals, maxFraction) }).format(numeric);
   }
 
   function formatDisplayUnits(value, decimals) {
@@ -321,7 +330,7 @@
     privateKey = current.privateKey;
     showOnly('wallet');
     $('activeWalletName').textContent = current.name;
-    $('accountAddress').textContent = address();
+    $('accountAddress').textContent = shortenAddress(address());
     $('receiveAddress').textContent = address();
     renderWalletList();
     resetAutoLock();
@@ -360,10 +369,11 @@
       item.dataset.walletId = wallet.id;
       const details = document.createElement('div');
       details.className = 'wallet-select';
-      details.innerHTML = '<span class="wallet-avatar"></span><span class="wallet-meta"><strong></strong><code></code></span><span class="wallet-balances"><strong></strong><small></small></span>';
+      details.innerHTML = '<span class="wallet-avatar"></span><span class="wallet-meta"><strong></strong><span class="wallet-address"><code></code><button type="button">복사</button></span></span><span class="wallet-balances"><strong></strong><small></small></span>';
       details.querySelector('.wallet-avatar').textContent = wallet.name.slice(0, 1).toUpperCase();
       details.querySelector('.wallet-meta strong').textContent = wallet.name;
-      details.querySelector('code').textContent = `${wallet.id.slice(0, 8)}…${wallet.id.slice(-6)}`;
+      details.querySelector('code').textContent = shortenAddress(wallet.id);
+      details.querySelector('.wallet-address button').onclick = () => copy(wallet.id);
       details.querySelector('.wallet-balances strong').textContent = balances.loading ? '조회 중' : `${formatCompactUnits(balances.sl, 18, 9)} SL`;
       details.querySelector('.wallet-balances small').textContent = balances.loading ? '—' : `${formatCompactUnits(balances.psl, token.decimal)} ${token.symbol}`;
       const selectButton = document.createElement('button');
@@ -445,7 +455,7 @@
     activeWalletId = wallet.id;
     privateKey = wallet.privateKey;
     $('activeWalletName').textContent = wallet.name;
-    $('accountAddress').textContent = address();
+    $('accountAddress').textContent = shortenAddress(address());
     $('receiveAddress').textContent = address();
     const balances = balanceState(wallet.id);
     updateActiveBalances(balances);
@@ -1094,5 +1104,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=22', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=27', { updateViaCache: 'none' }).catch(() => {});
 })();
