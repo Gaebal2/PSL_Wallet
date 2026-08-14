@@ -220,8 +220,6 @@
     activeWalletId = current.id;
     privateKey = current.privateKey;
     showOnly('wallet');
-    $('activeWalletName').textContent = current.name;
-    $('accountAddress').textContent = address();
     $('receiveAddress').textContent = address();
     renderWalletList();
     resetAutoLock();
@@ -270,11 +268,15 @@
       details.onclick = () => switchWallet(wallet.id);
       const actions = document.createElement('div');
       actions.className = 'wallet-item-actions';
-      [['SL 보내기', 'sendPanel', 'SL'], ['SL 받기', 'receivePanel', 'SL'], ['PSL 보내기', 'sendPanel', 'PSL'], ['PSL 받기', 'receivePanel', 'PSL']].forEach(([label, panel, asset]) => {
+      [['이름 변경', '', ''], ['SL 보내기', 'sendPanel', 'SL'], ['SL 받기', 'receivePanel', 'SL'], ['PSL 보내기', 'sendPanel', 'PSL'], ['PSL 받기', 'receivePanel', 'PSL']].forEach(([label, panel, asset]) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = label;
-        button.onclick = async () => { await switchWallet(wallet.id, false); openPanel(panel, asset); };
+        button.onclick = async () => {
+          if (!panel) return renameWallet(wallet.id);
+          await switchWallet(wallet.id, false);
+          openPanel(panel, asset);
+        };
         actions.append(button);
       });
       item.append(details, actions);
@@ -288,12 +290,8 @@
     if (!wallet) return;
     activeWalletId = wallet.id;
     privateKey = wallet.privateKey;
-    $('activeWalletName').textContent = wallet.name;
-    $('accountAddress').textContent = address();
     $('receiveAddress').textContent = address();
     const balances = balanceState(wallet.id);
-    rawSlBalance = balances.sl;
-    rawBalance = balances.psl;
     updateActiveBalances(balances);
     renderWalletList();
     try { await persistWallets(); } catch { /* selection remains valid for this session */ }
@@ -302,13 +300,8 @@
   }
 
   function updateActiveBalances(balances) {
-    const slText = balances.error ? '연결 오류' : formatCompactUnits(balances.sl, 18);
-    const pslText = balances.error ? '—' : formatCompactUnits(balances.psl, token.decimal);
-    $('slHeroBalance').textContent = slText;
-    $('slBalance').textContent = slText;
-    $('balanceShort').textContent = pslText;
-    $('assetSymbol').textContent = token.symbol;
-    $('assetValueStatus').textContent = balances.error ? '토큰 설정 확인' : '실시간 잔액';
+    rawSlBalance = balances.sl;
+    rawBalance = balances.psl;
   }
 
   async function fetchWalletBalance(wallet) {
@@ -350,12 +343,9 @@
     renderWalletList();
     const results = await Promise.all(wallets.map(fetchWalletBalance));
     const balances = balanceState(activeWalletId);
-    rawSlBalance = balances.sl;
-    rawBalance = balances.psl;
     updateActiveBalances(balances);
     renderWalletList();
     const online = results.some(Boolean);
-    $('networkBadge').textContent = config.endpoint.toLowerCase().includes('test') ? 'TESTNET' : 'MAINNET';
     $('connectionState').className = `connection ${online ? 'online' : 'offline'}`;
     $('connectionState').innerHTML = `<i></i> ${online ? '온라인' : '연결 안 됨'}`;
     isRefreshing = false;
@@ -425,9 +415,9 @@
 
   document.addEventListener('touchcancel', () => resetPullIndicator(), { passive: true });
 
-  async function saveWallet(key, password) {
+  async function saveWallet(key, password, name = '') {
     if (!SASEUL.Sign.keyValidity(key)) throw new Error('개인키는 64자리 16진수여야 합니다.');
-    const wallet = makeWallet(key, '지갑 1');
+    const wallet = makeWallet(key, name || '지갑 1');
     wallets = [wallet];
     activeWalletId = wallet.id;
     vaultPassword = password;
@@ -450,9 +440,8 @@
 
   function openPanel(id, asset) {
     selectAsset(asset);
-    ['sendPanel', 'receivePanel'].forEach((panel) => $(panel).classList.toggle('hidden', panel !== id));
     if (id === 'receivePanel') renderReceiveQr();
-    $(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $(id).showModal();
   }
 
   function renderReceiveQr() {
@@ -587,7 +576,7 @@
     const button = event.submitter;
     try {
       setLoading(button, true, '암호화하여 가져오기');
-      await saveWallet($('importKey').value.trim(), $('importPassword').value);
+      await saveWallet($('importKey').value.trim(), $('importPassword').value, $('importName').value.trim());
       $('importForm').reset();
       toast('지갑을 안전하게 가져왔습니다.');
     } catch (error) { toast(error.message); }
@@ -621,8 +610,8 @@
     $('additionalWalletName').focus();
   };
   $('addWalletClose').onclick = () => $('addWalletDialog').close();
-  $('renameWalletBtn').onclick = async () => {
-    const wallet = activeWallet();
+  async function renameWallet(walletId) {
+    const wallet = wallets.find((item) => item.id === walletId);
     if (!wallet) return;
     const name = prompt('새 지갑 이름을 입력하세요.', wallet.name)?.trim();
     if (!name || name === wallet.name) return;
@@ -631,14 +620,13 @@
     wallet.name = name;
     try {
       await persistWallets();
-      $('activeWalletName').textContent = name;
       renderWalletList();
       toast('지갑 이름을 변경했습니다.');
     } catch (error) {
       wallet.name = previousName;
       toast(error.message);
     }
-  };
+  }
   $('addWalletBtn').onclick = async () => {
     const key = $('additionalWalletKey').value.trim();
     if (!SASEUL.Sign.keyValidity(key)) return toast('개인키는 64자리 16진수여야 합니다.');
@@ -708,13 +696,8 @@
 
   $('logoutBtn').onclick = deleteWallet;
   $('resetBtn').onclick = deleteWallet;
-  $('sendTab').onclick = () => openPanel('sendPanel', 'SL');
-  $('receiveTab').onclick = () => openPanel('receivePanel', 'SL');
-  $('pslSendTab').onclick = () => openPanel('sendPanel', 'PSL');
-  $('pslReceiveTab').onclick = () => openPanel('receivePanel', 'PSL');
-  document.querySelectorAll('[data-close]').forEach((button) => { button.onclick = () => button.closest('.sheet').classList.add('hidden'); });
+  document.querySelectorAll('[data-close]').forEach((button) => { button.onclick = () => button.closest('dialog').close(); });
   $('copyAddress').onclick = () => copy(address());
-  $('copyAccount').onclick = () => copy(address());
   $('maxBtn').onclick = () => {
     if (selectedAsset === 'SL') return toast('SL은 수수료를 남기고 수량을 입력해 주세요.');
     $('amount').value = formatUnits(rawBalance, token.decimal);

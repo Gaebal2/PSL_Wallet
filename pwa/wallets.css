@@ -16,13 +16,9 @@
 .wallet-balances { text-align: right; }
 .wallet-balances strong { font-size: 12px; }
 .wallet-balances small { margin-top: 4px; color: var(--muted); font-size: 10px; }
-.wallet-item-actions { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; border-top: 1px solid var(--line); background: var(--line); }
+.wallet-item-actions { display: grid; grid-template-columns: repeat(5,1fr); gap: 1px; border-top: 1px solid var(--line); background: var(--line); }
 .wallet-item-actions button { border: 0; padding: 9px 3px; background: #f8f8fb; color: var(--ink); font-size: 9px; font-weight: 750; cursor: pointer; }
 .add-wallet-button { margin-top: 12px; min-height: 44px; padding: 10px; }
-.active-wallet-name { font-size: 15px; }
-.active-wallet-title { display: inline-flex; align-items: center; gap: 7px; }
-.active-wallet-title button { border: 1px solid #ffffff2e; border-radius: 99px; padding: 4px 7px; background: #ffffff0e; color: #d7d2e8; font-size: 9px; font-weight: 750; cursor: pointer; }
-.pull-refresh-hint { color: #aaa6b7; font-size: 9px; line-height: 1.45; text-align: right; }
 .add-wallet-section { margin-top: 14px; padding: 16px; border-radius: 18px; background: #f5f3ff; }
 .add-wallet-section h3 { margin: 0; }
 .add-wallet-section .button { margin-top: 14px; }
@@ -31,5 +27,5 @@
 @media (max-width: 390px) {
   .wallet-select { grid-template-columns: 38px minmax(0,1fr); }
   .wallet-balances { grid-column: 2; text-align: left; }
-  .wallet-item-actions { grid-template-columns: 1fr 1fr; }
+  .wallet-item-actions { grid-template-columns: repeat(2,1fr); }
 }

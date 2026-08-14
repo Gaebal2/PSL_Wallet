@@ -74,6 +74,8 @@
         </form>
         <form id="importForm" class="auth-form hidden">
           <h2>기존 지갑 가져오기</h2>
+          <label for="importName">지갑 이름</label>
+          <input id="importName" maxlength="24" placeholder="SASEUL에서 사용하던 지갑 이름">
           <label for="importKey">개인키 (64자리)</label>
           <div class="password-field"><input id="importKey" type="password" maxlength="64" autocomplete="off" spellcheck="false" required><button class="password-toggle" type="button" data-password-toggle="importKey" aria-label="개인키 표시"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <label for="importPassword">새 보호 비밀번호</label>
@@ -102,53 +104,6 @@
           <div id="walletList" class="wallet-list"></div>
           <button id="openAddWalletBtn" class="button secondary add-wallet-button" type="button">+ 개인키로 지갑 추가</button>
         </section>
-        <section class="balance-card" aria-labelledby="portfolioLabel">
-          <div class="card-top">
-            <div><p id="portfolioLabel" class="eyebrow light">ACTIVE WALLET</p><span class="active-wallet-title"><strong id="activeWalletName" class="active-wallet-name">지갑 1</strong><button id="renameWalletBtn" type="button" aria-label="지갑 이름 변경">이름 변경</button></span><br><span id="networkBadge" class="network-badge">MAINNET</span></div>
-            <span class="pull-refresh-hint">↓ 아래로 당겼다 놓아<br>잔액 새로고침</span>
-          </div>
-          <p class="balance-label">SL 메인넷 잔액</p>
-          <div class="balance"><strong id="slHeroBalance">—</strong><span>SL</span></div>
-          <div class="address-pill"><code id="accountAddress"></code><button id="copyAccount" type="button">복사</button></div>
-        </section>
-
-        <div class="quick-actions" aria-label="빠른 작업">
-          <button id="sendTab" type="button"><span>↗</span><strong>SL 보내기</strong><small>메인넷 전송</small></button>
-          <button id="receiveTab" type="button"><span>↙</span><strong>SL 받기</strong><small>주소·QR 공유</small></button>
-        </div>
-
-        <section class="asset-section">
-          <div class="section-heading"><div><p class="eyebrow">ASSETS</p><h2>내 자산</h2></div><span>2</span></div>
-          <article class="asset-row">
-            <div class="coin sl">S</div><div class="asset-name"><strong>SL</strong><small>SASEUL Mainnet</small></div>
-            <div class="asset-value"><strong id="slBalance">—</strong><small>메인넷 자산</small></div>
-          </article>
-          <article class="asset-row">
-            <div class="coin psl">P</div><div class="asset-name"><strong id="assetSymbol">PSL</strong><small>SASEUL Token</small></div>
-            <div class="asset-value"><strong id="balanceShort">—</strong><small id="assetValueStatus">실시간 잔액</small></div>
-          </article>
-          <div class="native-actions"><button id="pslSendTab" type="button">PSL 보내기</button><button id="pslReceiveTab" type="button">PSL 받기</button></div>
-        </section>
-
-        <section id="sendPanel" class="sheet hidden" aria-labelledby="sendTitle">
-          <div class="sheet-head"><div><p class="eyebrow">TRANSFER</p><h2 id="sendTitle">PSL 보내기</h2></div><button class="close" data-close type="button" aria-label="닫기">×</button></div>
-          <form id="sendForm">
-            <label for="toAddress">받는 주소</label>
-            <input id="toAddress" maxlength="44" placeholder="44자리 SASEUL 주소" autocomplete="off" spellcheck="false" required>
-            <div class="label-row"><label for="amount">수량</label><button id="maxBtn" type="button">최대</button></div>
-            <div class="amount-input"><input id="amount" inputmode="decimal" placeholder="0" required><span id="amountSymbol">PSL</span></div>
-            <p id="sendError" class="error" role="alert"></p>
-            <button id="sendBtn" class="button primary" type="submit">검토 후 전송</button>
-          </form>
-        </section>
-
-        <section id="receivePanel" class="sheet hidden" aria-labelledby="receiveTitle">
-          <div class="sheet-head"><div><p class="eyebrow">RECEIVE</p><h2 id="receiveTitle">SL 받기</h2></div><button class="close" data-close type="button" aria-label="닫기">×</button></div>
-          <div class="qr-frame"><div id="receiveQr" class="qr-code" role="img" aria-label="지갑 주소 QR 코드"></div></div>
-          <p id="receiveHelp" class="center helper">아래 SASEUL 주소를 보내는 사람에게 공유하세요.</p>
-          <div class="address-box"><code id="receiveAddress"></code><button id="copyAddress" type="button">주소 복사</button></div>
-        </section>
-
         <aside class="security-note"><span>✓</span><div><strong>로컬 암호화 보관</strong><p>개인키는 AES-GCM으로 암호화되어 이 기기에만 저장됩니다.</p></div></aside>
       </section>
     </main>
@@ -194,6 +149,25 @@
       <div class="password-field"><input id="additionalWalletKey" type="password" maxlength="64" autocomplete="off" spellcheck="false"><button class="password-toggle" type="button" data-password-toggle="additionalWalletKey" aria-label="개인키 표시"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
       <button id="addWalletBtn" class="button primary" type="button">암호화하여 추가</button>
     </div>
+  </dialog>
+
+  <dialog id="sendPanel" class="sheet" aria-labelledby="sendTitle">
+    <div class="sheet-head"><div><p class="eyebrow">TRANSFER</p><h2 id="sendTitle">PSL 보내기</h2></div><button class="close" data-close type="button" aria-label="닫기">×</button></div>
+    <form id="sendForm">
+      <label for="toAddress">받는 주소</label>
+      <input id="toAddress" maxlength="44" placeholder="44자리 SASEUL 주소" autocomplete="off" spellcheck="false" required>
+      <div class="label-row"><label for="amount">수량</label><button id="maxBtn" type="button">최대</button></div>
+      <div class="amount-input"><input id="amount" inputmode="decimal" placeholder="0" required><span id="amountSymbol">PSL</span></div>
+      <p id="sendError" class="error" role="alert"></p>
+      <button id="sendBtn" class="button primary" type="submit">검토 후 전송</button>
+    </form>
+  </dialog>
+
+  <dialog id="receivePanel" class="sheet" aria-labelledby="receiveTitle">
+    <div class="sheet-head"><div><p class="eyebrow">RECEIVE</p><h2 id="receiveTitle">SL 받기</h2></div><button class="close" data-close type="button" aria-label="닫기">×</button></div>
+    <div class="qr-frame"><div id="receiveQr" class="qr-code" role="img" aria-label="지갑 주소 QR 코드"></div></div>
+    <p id="receiveHelp" class="center helper">아래 SASEUL 주소를 보내는 사람에게 공유하세요.</p>
+    <div class="address-box"><code id="receiveAddress"></code><button id="copyAddress" type="button">주소 복사</button></div>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
