@@ -43,7 +43,7 @@
 .active-wallet-heading .network-badge { margin-top: 0; padding: 3px 7px; font-size: 8px; }
 .active-wallet-name { grid-column: 1/-1; min-width: 0; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; white-space: normal; }
 .active-wallet-name-row { display: grid; width: 100%; min-width: 0; grid-template-columns: minmax(0,1fr) auto; align-items: center; column-gap: 8px; row-gap: 5px; }
-.active-wallet-name-row code { display: block; width: 100%; min-width: 0; overflow: hidden; color: #bbb7c9; font-size: 9px; line-height: 1.2; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.active-wallet-name-row code { display: block; width: 100%; min-width: 0; overflow: hidden; color: #bbb7c9; font-size: 9px; line-height: 1.2; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .active-wallet-name-row button { flex: none; border: 0; border-radius: 7px; padding: 5px 7px; background: #ffffff16; color: #fff; font: inherit; font-size: 9px; font-weight: 850; line-height: 1.2; cursor: pointer; }
 .wallet-edit-button { flex: none; }
 .balance-card { min-height: 0; }
