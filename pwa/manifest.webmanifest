@@ -14,9 +14,9 @@
   "theme_color": "#f4f6fb",
   "categories": ["finance", "utilities"],
   "icons": [
-    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "shortcuts": [
-    { "name": "지갑 열기", "short_name": "열기", "url": "./", "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }] }
+    { "name": "지갑 열기", "short_name": "열기", "url": "./", "icons": [{ "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }] }
   ]
 }
