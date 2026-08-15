@@ -62,4 +62,4 @@ npm start
 
 ## 기여와 라이선스
 
-[CONTRIBUTING.md](CONTRIBUTING.md)를 따라 이슈와 Pull Request를 보내주세요. MIT License로 배포됩니다. PSL Wallet은 Gaebal2가 관리하는 독립 프로젝트이며 ArtiFriends의 공식 제품이 아닙니다. 포함된 SASEUL 샘플 코드의 출처와 저작권은 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)에 명시합니다.
+[CONTRIBUTING.md](CONTRIBUTING.md)를 따라 이슈와 Pull Request를 보내주세요. MIT License로 배포됩니다. PSL Wallet은 Gaebal2가 관리하는 독립 프로젝트입니다. 포함된 SASEUL 샘플 코드의 출처와 저작권은 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)에 명시합니다.
