@@ -1,6 +1,9 @@
 (() => {
   'use strict';
 
+  if (window.top !== window.self) return;
+  document.documentElement.classList.add('app-context-verified');
+
   const $ = (id) => document.getElementById(id);
   const VAULT_KEY = 'psl-wallet-vault-v1';
   const CONFIG_KEY = 'psl-wallet-config-v1';
@@ -191,6 +194,17 @@
     const raw = BigInt(value);
     const magnitude = raw < 0n ? -raw : raw;
     const units = [[12, 'T'], [9, 'B'], [6, 'M'], [3, 'K']];
+    if (maxFraction === 0) {
+      const divisor = 10n ** BigInt(decimals);
+      const whole = raw / divisor;
+      const wholeMagnitude = whole < 0n ? -whole : whole;
+      const wholeUnit = units.find(([power]) => wholeMagnitude >= 10n ** BigInt(power));
+      if (wholeUnit) {
+        const [power, suffix] = wholeUnit;
+        return `${whole / (10n ** BigInt(power))}${suffix}`;
+      }
+      return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(whole);
+    }
     const unit = units.find(([power]) => magnitude >= 10n ** BigInt(decimals + power));
     if (unit) {
       const [power, suffix] = unit;
@@ -209,6 +223,10 @@
     const [integer, fraction] = formatUnits(value, decimals).split('.');
     const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     return fraction ? `${grouped}.${fraction}` : grouped;
+  }
+
+  function formatPslBalance(value) {
+    return formatCompactUnits(value, token.decimal);
   }
 
   function parseUnits(value, decimals) {
@@ -520,7 +538,7 @@
         copy(wallet.id);
       };
       details.querySelector('.wallet-balances strong').textContent = balances.loading ? '조회 중' : `${formatCompactUnits(balances.sl, 18, 9)} SL`;
-      details.querySelector('.wallet-balances small').textContent = balances.loading ? '—' : `${formatCompactUnits(balances.psl, token.decimal)} ${token.symbol}`;
+      details.querySelector('.wallet-balances small').textContent = balances.loading ? '—' : `${formatPslBalance(balances.psl)} ${token.symbol}`;
       const selectButton = document.createElement('button');
       selectButton.type = 'button';
       selectButton.className = 'wallet-choose-button';
@@ -618,7 +636,7 @@
     $('slHeroBalance').textContent = slDisplay;
     $('slHeroBalance').classList.toggle('long-balance', slDisplay.length > 12);
     $('slHeroBalance').title = `${formatDisplayUnits(balances.sl, 18)} SL`;
-    const pslDisplay = balances.error ? '—' : formatCompactUnits(balances.psl, token.decimal, 6);
+    const pslDisplay = balances.error ? '—' : formatCompactUnits(balances.psl, token.decimal, 0);
     $('pslHeroBalance').textContent = pslDisplay;
     $('pslHeroBalance').classList.toggle('long-balance', pslDisplay.length > 12);
     $('pslHeroBalance').title = `${formatDisplayUnits(balances.psl, token.decimal)} ${token.symbol}`;
@@ -1103,8 +1121,12 @@
     $('settingsDialog').close();
     $('uninstallGuideDialog').showModal();
   };
-  $('uninstallGuideClose').onclick = () => $('uninstallGuideDialog').close();
-  $('uninstallGuideDialog').oncancel = (event) => { event.preventDefault(); $('uninstallGuideDialog').close(); };
+  const closeUninstallGuide = () => {
+    $('uninstallGuideDialog').close();
+    setTimeout(() => $('settingsDialog').showModal(), 0);
+  };
+  $('uninstallGuideClose').onclick = closeUninstallGuide;
+  $('uninstallGuideDialog').oncancel = (event) => { event.preventDefault(); closeUninstallGuide(); };
   $('uninstallGuideBackup').onclick = async () => {
     $('uninstallGuideDialog').close();
     if (!privateKey) return toast('먼저 지갑 잠금을 해제해 주세요.');
@@ -1310,5 +1332,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=45', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=47', { updateViaCache: 'none' }).catch(() => {});
 })();
