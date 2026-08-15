@@ -40,9 +40,9 @@
 .active-wallet-identity { min-width: 0; }
 .active-wallet-heading { display: flex; align-items: center; gap: 8px; }
 .active-wallet-heading .network-badge { margin-top: 0; padding: 3px 7px; font-size: 8px; }
-.active-wallet-name { min-width: 0; max-width: 120px; overflow: hidden; margin-top: 2px; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
-.active-wallet-name-row { display: flex; min-width: 0; align-items: center; gap: 7px; }
-.active-wallet-name-row code { color: #bbb7c9; font-size: 9px; white-space: nowrap; }
+.active-wallet-name { min-width: 0; overflow: hidden; margin-top: 2px; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.active-wallet-name-row { display: grid; min-width: 0; grid-template-columns: minmax(64px,auto) minmax(0,1fr) auto; align-items: center; column-gap: 7px; }
+.active-wallet-name-row code { min-width: 0; overflow: hidden; color: #bbb7c9; font-size: 9px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 .active-wallet-name-row button { flex: none; border: 0; border-radius: 7px; padding: 5px 7px; background: #ffffff16; color: #fff; font: inherit; font-size: 9px; font-weight: 850; cursor: pointer; }
 .balance-card { min-height: 0; }
 .active-assets { position: relative; z-index: 1; margin-top: 16px; }

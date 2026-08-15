@@ -764,7 +764,7 @@
         const details = document.createElement('div');
         details.className = 'history-details';
         const title = document.createElement('strong');
-        title.textContent = `${symbol} ${sent ? '보냄' : '받음'}`;
+        title.textContent = `${symbol} ${sent ? '보냄 ↗' : '받음 ↙'}`;
         const addressText = document.createElement('small');
         addressText.className = 'history-counterparty';
         addressText.textContent = counterparty
@@ -1293,5 +1293,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=36', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=37', { updateViaCache: 'none' }).catch(() => {});
 })();
