@@ -23,15 +23,16 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="PSL Wallet">
+  <meta name="application-name" content="Wallet">
+  <meta name="apple-mobile-web-app-title" content="Wallet">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-512.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/icon-512.png">
-  <link rel="stylesheet" href="styles.css?v=43">
-  <link rel="stylesheet" href="wallets.css?v=43">
-  <link rel="stylesheet" href="install.css?v=43">
-  <link rel="stylesheet" href="history.css?v=43">
-  <title>PSL Wallet</title>
+  <link rel="stylesheet" href="styles.css?v=45">
+  <link rel="stylesheet" href="wallets.css?v=45">
+  <link rel="stylesheet" href="install.css?v=45">
+  <link rel="stylesheet" href="history.css?v=45">
+  <title>Wallet</title>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -134,7 +135,7 @@
       <span class="install-arrow">↓</span>
     </div>
     <p class="eyebrow">QUICK ACCESS</p>
-    <h2 id="installTitle">PSL Wallet을 설치할까요?</h2>
+    <h2 id="installTitle">Wallet을 설치할까요?</h2>
     <p id="installDescription" class="install-description">홈 화면이나 바탕화면에서 앱처럼 빠르게 열 수 있습니다.</p>
     <div id="iosInstallHelp" class="install-help hidden">
       Safari 하단의 <strong>공유</strong> 버튼을 누른 뒤 <strong>홈 화면에 추가</strong>를 선택하세요.
@@ -155,9 +156,26 @@
       <p class="helper">신뢰하는 HTTPS RPC만 사용하세요. CID가 있으면 발행자와 공간명보다 우선합니다.</p>
       <button class="button primary" value="default">저장하고 연결</button>
       <div class="settings-divider"></div>
+      <button id="uninstallGuideBtn" class="button secondary" type="button">앱 제거 · 저장소 안내</button>
       <button id="exportBtn" class="button secondary" type="button">개인키 백업 보기</button>
       <button id="logoutBtn" class="button danger delete-wallet-button" type="button">이 기기에서 모든 지갑 삭제</button>
     </form>
+  </dialog>
+
+  <dialog id="uninstallGuideDialog" class="transfer-review-dialog uninstall-guide-dialog" aria-labelledby="uninstallGuideTitle">
+    <div class="uninstall-guide-mark" aria-hidden="true">i</div>
+    <p class="eyebrow">APP REMOVAL &amp; STORAGE</p>
+    <h2 id="uninstallGuideTitle">앱을 제거하기 전에 확인해 주세요</h2>
+    <div class="uninstall-guide-summary">
+      <div><strong>사이트 저장소 유지</strong><p>암호화된 개인키가 브라우저 저장소에 남아 있으면 나중에 Wallet을 다시 설치한 뒤 기존 잠금 해제 비밀번호로 지갑을 사용할 수 있습니다.</p></div>
+      <div class="danger-note"><strong>사이트 저장소 삭제</strong><p>암호화된 개인키도 함께 삭제됩니다. 개인키를 백업하지 않았다면 지갑을 복구할 수 없습니다.</p></div>
+    </div>
+    <p class="helper center">Android 또는 브라우저가 앱 제거 시 사이트 저장소를 함께 삭제할 수도 있으므로, 앱을 제거하기 전에 개인키를 반드시 백업해 주세요.</p>
+    <div class="uninstall-guide-actions">
+      <button id="uninstallGuideBackup" class="button primary" type="button">개인키 백업</button>
+      <button id="uninstallGuideDelete" class="button danger" type="button">지갑 데이터 삭제</button>
+      <button id="uninstallGuideClose" class="button secondary" type="button">닫기</button>
+    </div>
   </dialog>
 
   <dialog id="addWalletDialog" aria-labelledby="addWalletTitle">
@@ -269,6 +287,6 @@
   <script src="vendor/axios.min.js"></script>
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
-  <script src="app.js?v=43"></script>
+  <script src="app.js?v=45"></script>
 </body>
 </html>

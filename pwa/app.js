@@ -1000,7 +1000,7 @@
     deferredInstallPrompt = null;
     localStorage.setItem(INSTALLED_KEY, 'true');
     if ($('installDialog').open) $('installDialog').close();
-    toast('PSL Wallet을 설치했습니다.');
+    toast('Wallet을 설치했습니다.');
   });
 
   $('installBtn').onclick = async () => {
@@ -1099,6 +1099,19 @@
 
   $('settingsBtn').onclick = () => $('settingsDialog').showModal();
   $('settingsClose').onclick = () => $('settingsDialog').close();
+  $('uninstallGuideBtn').onclick = () => {
+    $('settingsDialog').close();
+    $('uninstallGuideDialog').showModal();
+  };
+  $('uninstallGuideClose').onclick = () => $('uninstallGuideDialog').close();
+  $('uninstallGuideDialog').oncancel = (event) => { event.preventDefault(); $('uninstallGuideDialog').close(); };
+  $('uninstallGuideBackup').onclick = async () => {
+    $('uninstallGuideDialog').close();
+    if (!privateKey) return toast('먼저 지갑 잠금을 해제해 주세요.');
+    if (!await confirmPrivateKeyBackup()) return;
+    showPrivateKeyBackup(privateKey);
+    resetAutoLock();
+  };
   $('editWalletsBtn').onclick = () => $('walletManagerDialog').showModal();
   $('walletManagerClose').onclick = () => $('walletManagerDialog').close();
   $('activePslSend').onclick = () => openPanel('sendPanel', 'PSL');
@@ -1201,6 +1214,10 @@
   }
 
   $('logoutBtn').onclick = deleteWallet;
+  $('uninstallGuideDelete').onclick = async () => {
+    $('uninstallGuideDialog').close();
+    await deleteWallet();
+  };
   $('resetBtn').onclick = deleteWallet;
   document.querySelectorAll('[data-close]').forEach((button) => { button.onclick = () => button.closest('dialog').close(); });
   new MutationObserver(syncDialogScrollLock).observe(document.body, { attributes: true, attributeFilter: ['open'], subtree: true });
@@ -1293,5 +1310,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=43', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=45', { updateViaCache: 'none' }).catch(() => {});
 })();

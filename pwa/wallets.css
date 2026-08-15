@@ -115,6 +115,13 @@ body.dialog-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hi
 .dialog-field label { margin-top: 0; }
 .backup-dialog-mark { width: 58px; height: 58px; display: grid; margin: 2px auto 16px; place-items: center; border-radius: 20px; background: #eeeaff; color: var(--violet); font-size: 27px; font-weight: 900; }
 .backup-dialog .helper { margin: 12px 0 18px; }
+.uninstall-guide-mark { width: 58px; height: 58px; display: grid; margin: 2px auto 16px; place-items: center; border-radius: 20px; background: #eeeaff; color: var(--violet); font-size: 27px; font-weight: 900; }
+.uninstall-guide-summary { display: grid; gap: 9px; margin: 18px 0 12px; text-align: left; }
+.uninstall-guide-summary>div { padding: 14px; border: 1px solid #dcd7ff; border-radius: 15px; background: #f7f5ff; }
+.uninstall-guide-summary .danger-note { border-color: #f1c7cc; background: #fff5f6; }
+.uninstall-guide-summary strong { font-size: 12px; }
+.uninstall-guide-summary p { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.uninstall-guide-actions { display: grid; gap: 8px; margin-top: 18px; }
 .private-key-box { display: flex; align-items: center; gap: 8px; margin: 18px 0; padding: 13px; border-radius: 15px; background: #f1f2f6; text-align: left; }
 .private-key-box code { min-width: 0; flex: 1; overflow-wrap: anywhere; font-size: 10px; line-height: 1.5; }
 .private-key-box button { flex: none; border: 0; border-radius: 9px; padding: 8px 10px; background: var(--ink); color: #fff; font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
