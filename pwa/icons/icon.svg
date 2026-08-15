@@ -1,6 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="PSL Wallet">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#917cff"/><stop offset="1" stop-color="#5137e8"/></linearGradient></defs>
-  <rect width="512" height="512" rx="116" fill="#f4f6fb"/>
-  <rect x="56" y="56" width="400" height="400" rx="104" fill="url(#g)"/>
-  <path fill="#fff" d="M161 131h118c83 0 125 39 125 108 0 72-46 112-129 112h-34v66h-80V131zm80 68v85h34c33 0 50-14 50-43 0-28-17-42-50-42h-34z"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#917cff"/><stop offset="1" stop-color="#5137e8"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#g)"/>
+  <g transform="translate(64 64) scale(1.5)" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="20" y="34" width="112" height="58" rx="29" transform="rotate(-18 76 63)"/>
+    <rect x="124" y="34" width="112" height="58" rx="29" transform="rotate(18 180 63)"/>
+    <path d="M94 66h68"/>
+  </g>
+  <g transform="translate(64 64) scale(1.5)" fill="#fff">
+    <rect x="32" y="138" width="192" height="28" rx="14"/>
+    <rect x="64" y="152" width="28" height="72" rx="14"/>
+    <rect x="164" y="152" width="28" height="72" rx="14"/>
+  </g>
 </svg>

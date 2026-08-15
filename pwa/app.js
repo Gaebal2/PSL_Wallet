@@ -1293,5 +1293,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=41', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=42', { updateViaCache: 'none' }).catch(() => {});
 })();
