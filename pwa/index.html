@@ -28,11 +28,11 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-512.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/icon-512.png">
-  <link rel="stylesheet" href="framing.css?v=48">
-  <link rel="stylesheet" href="styles.css?v=48">
-  <link rel="stylesheet" href="wallets.css?v=48">
-  <link rel="stylesheet" href="install.css?v=48">
-  <link rel="stylesheet" href="history.css?v=48">
+  <link rel="stylesheet" href="framing.css?v=49">
+  <link rel="stylesheet" href="styles.css?v=49">
+  <link rel="stylesheet" href="wallets.css?v=49">
+  <link rel="stylesheet" href="install.css?v=49">
+  <link rel="stylesheet" href="history.css?v=49">
   <title>Wallet</title>
 </head>
 <body>
@@ -197,6 +197,14 @@
     <button id="createAdditionalWalletBtn" class="button secondary add-wallet-button" type="button">+ 새 지갑 생성</button>
   </dialog>
 
+  <dialog id="createWalletConfirmDialog" class="transfer-review-dialog" aria-labelledby="createWalletConfirmTitle">
+    <div class="transfer-review-mark" aria-hidden="true">＋</div>
+    <p class="eyebrow">CREATE WALLET</p>
+    <h2 id="createWalletConfirmTitle">새 지갑을 생성하시겠습니까?</h2>
+    <p class="helper center">새 개인키가 이 기기에서 안전하게 생성되고 현재 비밀번호로 암호화됩니다. 생성 후 개인키를 반드시 백업해 주세요.</p>
+    <div class="transfer-review-actions"><button id="createWalletConfirmCancel" class="button secondary" type="button">취소</button><button id="createWalletConfirmAccept" class="button primary" type="button">생성</button></div>
+  </dialog>
+
   <dialog id="sendPanel" class="sheet" aria-labelledby="sendTitle">
     <div class="sheet-head"><div><p class="eyebrow">TRANSFER</p><h2 id="sendTitle">PSL 보내기</h2></div><button class="close" data-close type="button" aria-label="닫기">×</button></div>
     <form id="sendForm">
@@ -289,6 +297,6 @@
   <script src="vendor/axios.min.js"></script>
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
-  <script src="app.js?v=48"></script>
+  <script src="app.js?v=49"></script>
 </body>
 </html>

@@ -225,6 +225,12 @@
     return fraction ? `${grouped}.${fraction}` : grouped;
   }
 
+  function generatePrivateKey() {
+    if (!globalThis.crypto?.getRandomValues) throw new Error('이 브라우저는 안전한 지갑 생성을 지원하지 않습니다.');
+    const seed = crypto.getRandomValues(new Uint8Array(32));
+    return Array.from(seed, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  }
+
   function formatPslBalance(value) {
     return formatCompactUnits(value, token.decimal);
   }
@@ -1075,8 +1081,7 @@
     const button = event.submitter;
     try {
       setLoading(button, true, '안전하게 생성');
-      const pair = SASEUL.Sign.keyPair();
-      await saveWallet(pair.private_key, password);
+      await saveWallet(generatePrivateKey(), password);
       toast('지갑을 만들었습니다. 지금 개인키를 백업하세요.');
       setTimeout(() => $('settingsDialog').showModal(), 350);
     } catch (error) { toast(error.message); }
@@ -1148,7 +1153,12 @@
     $('addWalletDialog').showModal();
     $('additionalWalletName').focus();
   };
-  $('addWalletClose').onclick = () => $('addWalletDialog').close();
+  const returnToWalletManager = (dialog) => {
+    dialog.close();
+    setTimeout(() => $('walletManagerDialog').showModal(), 0);
+  };
+  $('addWalletClose').onclick = () => returnToWalletManager($('addWalletDialog'));
+  $('addWalletDialog').oncancel = (event) => { event.preventDefault(); returnToWalletManager($('addWalletDialog')); };
   async function renameWallet(walletId) {
     const wallet = wallets.find((item) => item.id === walletId);
     if (!wallet) return;
@@ -1241,23 +1251,31 @@
     await deleteWallet();
   };
   $('createAdditionalWalletBtn').onclick = async () => {
-    const wallet = makeWallet(SASEUL.Sign.privateKey());
+    $('walletManagerDialog').close();
+    $('createWalletConfirmDialog').showModal();
+  };
+  const cancelWalletCreation = () => returnToWalletManager($('createWalletConfirmDialog'));
+  $('createWalletConfirmCancel').onclick = cancelWalletCreation;
+  $('createWalletConfirmDialog').oncancel = (event) => { event.preventDefault(); cancelWalletCreation(); };
+  $('createWalletConfirmAccept').onclick = async () => {
+    let wallet = null;
     const previousWalletId = activeWalletId;
     try {
-      setLoading($('createAdditionalWalletBtn'), true, '새 지갑 생성');
+      setLoading($('createWalletConfirmAccept'), true, '생성');
+      wallet = makeWallet(generatePrivateKey());
       wallets.push(wallet);
       activeWalletId = wallet.id;
       privateKey = wallet.privateKey;
       await persistWallets();
-      $('walletManagerDialog').close();
+      $('createWalletConfirmDialog').close();
       showWallet();
       toast(`${wallet.name}을 생성했습니다. 개인키를 꼭 백업하세요.`);
     } catch (error) {
-      wallets = wallets.filter((item) => item.id !== wallet.id);
+      if (wallet) wallets = wallets.filter((item) => item.id !== wallet.id);
       activeWalletId = previousWalletId;
       privateKey = activeWallet()?.privateKey || '';
       toast(error.message);
-    } finally { setLoading($('createAdditionalWalletBtn'), false, '새 지갑 생성'); }
+    } finally { setLoading($('createWalletConfirmAccept'), false, '생성'); }
   };
   $('resetBtn').onclick = deleteWallet;
   document.querySelectorAll('[data-close]').forEach((button) => { button.onclick = () => button.closest('dialog').close(); });
@@ -1351,5 +1369,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=48', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=49', { updateViaCache: 'none' }).catch(() => {});
 })();
