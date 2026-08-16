@@ -5,6 +5,19 @@
   document.documentElement.classList.add('app-context-verified');
 
   const $ = (id) => document.getElementById(id);
+
+  function disableInputSuggestions() {
+    document.querySelectorAll('form').forEach((form) => form.setAttribute('autocomplete', 'off'));
+    document.querySelectorAll('input:not([type="checkbox"])').forEach((input) => {
+      input.setAttribute('autocomplete', 'off');
+      input.setAttribute('autocorrect', 'off');
+      input.setAttribute('autocapitalize', 'off');
+      input.setAttribute('spellcheck', 'false');
+      input.setAttribute('aria-autocomplete', 'none');
+    });
+  }
+
+  disableInputSuggestions();
   const VAULT_KEY = 'psl-wallet-vault-v1';
   const CONFIG_KEY = 'psl-wallet-config-v1';
   const LEGACY_KEY = 'psl-wallet-key';
@@ -739,6 +752,45 @@
     catch (error) { throw error?.errors?.[0] || error || new Error('거래 조회 노드에 연결할 수 없습니다.'); }
   }
 
+  function historyEntries(data) {
+    return Array.isArray(data) ? data.map((entry) => [entry.hash || '', entry]) : Object.entries(data || {});
+  }
+
+  async function waitForExplorerTransaction(expectedHash, walletAddress, attempts = 10) {
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      const requestKey = generatePrivateKey();
+      const timestamp = SASEUL.Util.utime();
+      const body = new URLSearchParams({
+        data: 'fullList', type: 'Send', address: walletAddress, page: '0', count: '20',
+        timestamp: String(timestamp), public_key: SASEUL.Sign.publicKey(requestKey), signature: SASEUL.Sign.signature(timestamp, requestKey)
+      });
+      try {
+        const entries = historyEntries(await requestHistory(body));
+        if (entries.some(([hash, entry]) => historyTransaction(entry, hash)?.hash === expectedHash)) return true;
+      } catch { /* retry another explorer index endpoint */ }
+      if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+    return false;
+  }
+
+  function showTransferStatus(status, message) {
+    const dialog = $('transferSuccessDialog');
+    const states = {
+      processing: { mark: '…', title: '보내기(처리중...)', eyebrow: 'CHECKING TRANSACTION' },
+      success: { mark: '✓', title: '보내기(성공)', eyebrow: 'TRANSFER COMPLETE' },
+      failed: { mark: '!', title: '보내기(실패)', eyebrow: 'TRANSFER FAILED' }
+    };
+    const state = states[status];
+    dialog.classList.remove('processing', 'success', 'failed');
+    dialog.classList.add(status);
+    $('transferSuccessMark').textContent = state.mark;
+    $('transferSuccessTitle').textContent = state.title;
+    $('transferSuccessEyebrow').textContent = state.eyebrow;
+    $('transferSuccessMessage').textContent = message;
+    $('transferSuccessClose').disabled = status === 'processing';
+    if (!dialog.open) dialog.showModal();
+  }
+
   function historyTransaction(entry, fallbackHash = '') {
     let value = entry;
     if (typeof entry?.data === 'string') {
@@ -849,7 +901,7 @@
       });
       const data = await requestHistory(body);
       if (requestId !== historyRequestId) return;
-      const entries = Array.isArray(data) ? data.map((entry) => [entry.hash || '', entry]) : Object.entries(data || {});
+      const entries = historyEntries(data);
       let hasNext = false;
       if (entries.length >= 10) {
         try {
@@ -1146,6 +1198,9 @@
   $('activeSlSend').onclick = () => openPanel('sendPanel', 'SL');
   $('activeSlReceive').onclick = () => openPanel('receivePanel', 'SL');
   $('transferSuccessClose').onclick = () => $('transferSuccessDialog').close();
+  $('transferSuccessDialog').oncancel = (event) => {
+    if ($('transferSuccessClose').disabled) event.preventDefault();
+  };
   $('historyPrev').onclick = () => refreshHistory(Math.max(1, historyPage - 1));
   $('historyNext').onclick = () => refreshHistory(historyPage + 1);
   $('openAddWalletBtn').onclick = () => {
@@ -1252,7 +1307,9 @@
   };
   $('createAdditionalWalletBtn').onclick = async () => {
     $('walletManagerDialog').close();
+    $('createWalletName').value = '';
     $('createWalletConfirmDialog').showModal();
+    setTimeout(() => $('createWalletName').focus(), 0);
   };
   const cancelWalletCreation = () => returnToWalletManager($('createWalletConfirmDialog'));
   $('createWalletConfirmCancel').onclick = cancelWalletCreation;
@@ -1262,7 +1319,7 @@
     const previousWalletId = activeWalletId;
     try {
       setLoading($('createWalletConfirmAccept'), true, '생성');
-      wallet = makeWallet(generatePrivateKey());
+      wallet = makeWallet(generatePrivateKey(), $('createWalletName').value.trim());
       wallets.push(wallet);
       activeWalletId = wallet.id;
       privateKey = wallet.privateKey;
@@ -1343,13 +1400,20 @@
       if (selectedAsset !== 'SL' && BigInt(fee) > BigInt(rawSlBalance)) throw new Error(`PSL 전송 수수료 ${formatSlFee(fee)}를 낼 SL 잔액이 부족합니다.`);
       if (!await confirmTransfer(displayAmount, symbol, to, fee)) return;
       setLoading($('sendBtn'), true, '검토 후 전송');
-      const result = await submitTransaction(signed);
-      if (!transactionAccepted(result)) throw new Error(`${symbol} 전송 실패: ${rpcError(result)}`);
-      $('sendForm').reset();
       $('sendPanel').close();
-      $('transferSuccessMessage').textContent = `${displayAmount} ${symbol} 전송 요청이 정상적으로 접수되었습니다.`;
-      $('transferSuccessDialog').showModal();
-      setTimeout(refresh, 3000);
+      showTransferStatus('processing', `${displayAmount} ${symbol} 전송 요청을 처리하고 익스플로러에서 거래 해시를 확인하고 있습니다.`);
+      try {
+        const result = await submitTransaction(signed);
+        if (!transactionAccepted(result)) throw new Error(rpcError(result));
+        const expectedHash = SASEUL.Enc.txHash(signed.transaction);
+        const confirmed = await waitForExplorerTransaction(expectedHash, address());
+        if (!confirmed) throw new Error('거래 해시를 확인할 수 없습니다. 이력 또는 익스플로러를 확인한 뒤 나중에 다시 시도해 주세요.');
+        $('sendForm').reset();
+        showTransferStatus('success', `${displayAmount} ${symbol} 전송이 확인되었습니다. 거래 해시: ${expectedHash}`);
+        refresh();
+      } catch (error) {
+        showTransferStatus('failed', `${rpcError(error)} 중복 전송을 피하려면 이력 또는 익스플로러를 먼저 확인해 주세요.`);
+      }
     } catch (error) { $('sendError').textContent = rpcError(error); }
     finally { setLoading($('sendBtn'), false, '검토 후 전송'); resetAutoLock(); }
   };
@@ -1369,5 +1433,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=50', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=53', { updateViaCache: 'none' }).catch(() => {});
 })();

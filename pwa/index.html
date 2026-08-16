@@ -28,11 +28,11 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-512.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/icon-512.png">
-  <link rel="stylesheet" href="framing.css?v=50">
-  <link rel="stylesheet" href="styles.css?v=50">
-  <link rel="stylesheet" href="wallets.css?v=50">
-  <link rel="stylesheet" href="install.css?v=50">
-  <link rel="stylesheet" href="history.css?v=50">
+  <link rel="stylesheet" href="framing.css?v=53">
+  <link rel="stylesheet" href="styles.css?v=53">
+  <link rel="stylesheet" href="wallets.css?v=53">
+  <link rel="stylesheet" href="install.css?v=53">
+  <link rel="stylesheet" href="history.css?v=53">
   <title>Wallet</title>
 </head>
 <body>
@@ -65,11 +65,11 @@
           <button id="createBtn" class="button primary" type="button">새 지갑 만들기</button>
           <button id="showImportBtn" class="button secondary" type="button">기존 지갑 가져오기</button>
         </div>
-        <form id="createForm" class="auth-form hidden">
+        <form id="createForm" class="auth-form hidden" autocomplete="off">
           <h2>지갑 보호 비밀번호</h2>
           <p class="helper">12자 이상을 권장합니다. 비밀번호는 복구할 수 없습니다.</p>
           <label for="createPassword">비밀번호</label>
-          <div class="password-field"><input id="createPassword" type="password" minlength="10" autocomplete="new-password" required><button class="password-toggle" type="button" data-password-toggle="createPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+          <div class="password-field"><input id="createPassword" type="password" minlength="10" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" required><button class="password-toggle" type="button" data-password-toggle="createPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <label for="createPasswordConfirm">비밀번호 확인</label>
           <div class="password-field"><input id="createPasswordConfirm" type="password" minlength="10" autocomplete="new-password" required><button class="password-toggle" type="button" data-password-toggle="createPasswordConfirm" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <label class="check"><input id="createAck" type="checkbox" required> 비밀번호와 개인키를 잃으면 자산을 복구할 수 없음을 이해했습니다.</label>
@@ -202,6 +202,7 @@
     <p class="eyebrow">CREATE WALLET</p>
     <h2 id="createWalletConfirmTitle">새 지갑을 생성하시겠습니까?</h2>
     <p class="helper center">새 개인키가 이 기기에서 안전하게 생성되고 현재 비밀번호로 암호화됩니다. 생성 후 개인키를 반드시 백업해 주세요.</p>
+    <div class="dialog-field"><label for="createWalletName">지갑 이름</label><input id="createWalletName" maxlength="24" placeholder="예: 새 지갑" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none"></div>
     <div class="transfer-review-actions"><button id="createWalletConfirmCancel" class="button secondary" type="button">취소</button><button id="createWalletConfirmAccept" class="button primary" type="button">생성</button></div>
   </dialog>
 
@@ -238,11 +239,11 @@
   </dialog>
 
   <dialog id="transferSuccessDialog" class="transfer-success-dialog" aria-labelledby="transferSuccessTitle">
-    <div class="transfer-success-mark" aria-hidden="true">✓</div>
-    <p class="eyebrow">TRANSFER COMPLETE</p>
-    <h2 id="transferSuccessTitle">전송에 성공했습니다</h2>
+    <div id="transferSuccessMark" class="transfer-success-mark" aria-hidden="true">…</div>
+    <p id="transferSuccessEyebrow" class="eyebrow">TRANSFER STATUS</p>
+    <h2 id="transferSuccessTitle">보내기(처리중...)</h2>
     <p id="transferSuccessMessage" class="helper center"></p>
-    <button id="transferSuccessClose" class="button primary" type="button">확인</button>
+    <button id="transferSuccessClose" class="button primary" type="button" disabled>확인</button>
   </dialog>
 
   <dialog id="appAlertDialog" class="transfer-success-dialog app-alert-dialog" aria-labelledby="appAlertTitle">
@@ -297,6 +298,6 @@
   <script src="vendor/axios.min.js"></script>
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
-  <script src="app.js?v=50"></script>
+  <script src="app.js?v=53"></script>
 </body>
 </html>
