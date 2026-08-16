@@ -28,11 +28,11 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-512.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/icon-512.png">
-  <link rel="stylesheet" href="framing.css?v=49">
-  <link rel="stylesheet" href="styles.css?v=49">
-  <link rel="stylesheet" href="wallets.css?v=49">
-  <link rel="stylesheet" href="install.css?v=49">
-  <link rel="stylesheet" href="history.css?v=49">
+  <link rel="stylesheet" href="framing.css?v=50">
+  <link rel="stylesheet" href="styles.css?v=50">
+  <link rel="stylesheet" href="wallets.css?v=50">
+  <link rel="stylesheet" href="install.css?v=50">
+  <link rel="stylesheet" href="history.css?v=50">
   <title>Wallet</title>
 </head>
 <body>
@@ -207,11 +207,11 @@
 
   <dialog id="sendPanel" class="sheet" aria-labelledby="sendTitle">
     <div class="sheet-head"><div><p class="eyebrow">TRANSFER</p><h2 id="sendTitle">PSL 보내기</h2></div><button class="close" data-close type="button" aria-label="닫기">×</button></div>
-    <form id="sendForm">
+    <form id="sendForm" autocomplete="off">
       <label for="toAddress">받는 주소</label>
       <input id="toAddress" maxlength="44" placeholder="44자리 SASEUL 주소" autocomplete="off" spellcheck="false" required>
       <div class="label-row"><label for="amount">수량</label><button id="maxBtn" type="button">최대</button></div>
-      <div class="amount-input"><input id="amount" inputmode="decimal" placeholder="0" required><span id="amountSymbol">PSL</span></div>
+      <div class="amount-input"><input id="amount" inputmode="decimal" placeholder="0" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" required><span id="amountSymbol">PSL</span></div>
       <p id="sendError" class="error" role="alert"></p>
       <button id="sendBtn" class="button primary" type="submit">검토 후 전송</button>
     </form>
@@ -297,6 +297,6 @@
   <script src="vendor/axios.min.js"></script>
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
-  <script src="app.js?v=49"></script>
+  <script src="app.js?v=50"></script>
 </body>
 </html>
