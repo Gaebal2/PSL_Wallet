@@ -28,11 +28,11 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-512.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/icon-512.png">
-  <link rel="stylesheet" href="framing.css?v=47">
-  <link rel="stylesheet" href="styles.css?v=47">
-  <link rel="stylesheet" href="wallets.css?v=47">
-  <link rel="stylesheet" href="install.css?v=47">
-  <link rel="stylesheet" href="history.css?v=47">
+  <link rel="stylesheet" href="framing.css?v=48">
+  <link rel="stylesheet" href="styles.css?v=48">
+  <link rel="stylesheet" href="wallets.css?v=48">
+  <link rel="stylesheet" href="install.css?v=48">
+  <link rel="stylesheet" href="history.css?v=48">
   <title>Wallet</title>
 </head>
 <body>
@@ -42,9 +42,9 @@
   </div>
   <div class="app-shell">
     <header class="topbar">
-      <a class="brand" href="./" aria-label="PSL Wallet 홈">
-        <span class="brand-mark" aria-hidden="true">P</span>
-        <span><small>SASEUL</small><strong>PSL Wallet</strong></span>
+      <a class="brand" href="./" aria-label="PSL Token Wallet 홈">
+        <img class="brand-mark" src="icons/icon.svg" alt="">
+        <span><small>SASEUL BLOCK CAHIN</small><strong>PSL Token Wallet</strong></span>
       </a>
       <div class="header-actions">
         <span id="connectionState" class="connection"><i></i> 연결 확인 중</span>
@@ -194,6 +194,7 @@
     <div class="wallet-manager-count"><span>등록된 지갑</span><strong id="walletCount">1</strong></div>
     <div id="walletList" class="wallet-list"></div>
     <button id="openAddWalletBtn" class="button secondary add-wallet-button" type="button">+ 개인키로 지갑 추가</button>
+    <button id="createAdditionalWalletBtn" class="button secondary add-wallet-button" type="button">+ 새 지갑 생성</button>
   </dialog>
 
   <dialog id="sendPanel" class="sheet" aria-labelledby="sendTitle">
@@ -288,6 +289,6 @@
   <script src="vendor/axios.min.js"></script>
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
-  <script src="app.js?v=47"></script>
+  <script src="app.js?v=48"></script>
 </body>
 </html>

@@ -537,8 +537,8 @@
         event.stopPropagation();
         copy(wallet.id);
       };
-      details.querySelector('.wallet-balances strong').textContent = balances.loading ? '조회 중' : `${formatCompactUnits(balances.sl, 18, 9)} SL`;
-      details.querySelector('.wallet-balances small').textContent = balances.loading ? '—' : `${formatPslBalance(balances.psl)} ${token.symbol}`;
+      details.querySelector('.wallet-balances strong').textContent = balances.loading ? '조회 중' : `${formatPslBalance(balances.psl)} ${token.symbol}`;
+      details.querySelector('.wallet-balances small').textContent = balances.loading ? '—' : `${formatCompactUnits(balances.sl, 18, 9)} SL`;
       const selectButton = document.createElement('button');
       selectButton.type = 'button';
       selectButton.className = 'wallet-choose-button';
@@ -1240,6 +1240,25 @@
     $('uninstallGuideDialog').close();
     await deleteWallet();
   };
+  $('createAdditionalWalletBtn').onclick = async () => {
+    const wallet = makeWallet(SASEUL.Sign.privateKey());
+    const previousWalletId = activeWalletId;
+    try {
+      setLoading($('createAdditionalWalletBtn'), true, '새 지갑 생성');
+      wallets.push(wallet);
+      activeWalletId = wallet.id;
+      privateKey = wallet.privateKey;
+      await persistWallets();
+      $('walletManagerDialog').close();
+      showWallet();
+      toast(`${wallet.name}을 생성했습니다. 개인키를 꼭 백업하세요.`);
+    } catch (error) {
+      wallets = wallets.filter((item) => item.id !== wallet.id);
+      activeWalletId = previousWalletId;
+      privateKey = activeWallet()?.privateKey || '';
+      toast(error.message);
+    } finally { setLoading($('createAdditionalWalletBtn'), false, '새 지갑 생성'); }
+  };
   $('resetBtn').onclick = deleteWallet;
   document.querySelectorAll('[data-close]').forEach((button) => { button.onclick = () => button.closest('dialog').close(); });
   new MutationObserver(syncDialogScrollLock).observe(document.body, { attributes: true, attributeFilter: ['open'], subtree: true });
@@ -1332,5 +1351,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=47', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=48', { updateViaCache: 'none' }).catch(() => {});
 })();

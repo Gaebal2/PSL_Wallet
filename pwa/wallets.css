@@ -12,7 +12,7 @@
 .wallet-list-item { overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
 .wallet-list-item.active { border-color: var(--violet); box-shadow: 0 0 0 3px #7157ff12; }
 .wallet-select-row { display: flex; align-items: flex-start; gap: 6px; padding-right: 12px; }
-.wallet-select { width: 100%; display: grid; grid-template-columns: 42px minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 13px; border: 0; background: transparent; text-align: left; cursor: pointer; }
+.wallet-select { width: 100%; display: grid; grid-template-columns: 42px minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 13px; border: 0; background: transparent; text-align: left; cursor: default; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
 .wallet-choose-button { flex: none; margin-top: 12px; border: 0; border-radius: 99px; padding: 7px 11px; background: linear-gradient(135deg,var(--violet),var(--violet-dark)); color: #fff; font-size: 10px; font-weight: 850; cursor: pointer; box-shadow: 0 7px 16px #7157ff35; }
 .wallet-choose-button:disabled { background: #ece9ff; color: var(--violet); box-shadow: none; cursor: default; }
 .wallet-delete-button { flex: none; margin-top: 12px; border: 1px solid #f1c7cc; border-radius: 99px; padding: 6px 10px; background: #fff1f2; color: var(--danger); font-size: 10px; font-weight: 850; cursor: pointer; }
@@ -36,6 +36,7 @@
 .psl-send-action { background: #e9e4ff; color: var(--violet-dark)!important; }
 .psl-receive-action { background: #f2efff; color: var(--violet-dark)!important; }
 .add-wallet-button { margin-top: 12px; min-height: 44px; padding: 10px; }
+.brand-mark { display: block; object-fit: cover; color: transparent; }
 .wallet-edit-button { border: 1px solid #ffffff2e; border-radius: 12px; padding: 9px 12px; background: #ffffff12; color: #fff; font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
 .balance-card .card-top { gap: 12px; }
 .active-wallet-identity { min-width: 0; flex: 1 1 auto; overflow: hidden; }
