@@ -4,7 +4,7 @@ const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
 const pwa = path.join(root, 'pwa');
-const required = ['index.html', 'framing.css', 'styles.css', 'wallets.css', 'install.css', 'history.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon-512.png', 'images/psl-wallet-social-v2.png', 'images/psl-token-icon.svg', 'images/sl-token-icon.png', 'vendor/qrcode.min.js'];
+const required = ['index.html', 'framing.css', 'styles.css', 'wallets.css', 'install.css', 'history.css', 'overlays.css', 'app.js', 'sw.js', 'manifest.webmanifest', 'icons/icon-512.png', 'images/psl-wallet-social-v3.png', 'images/psl-token-icon.svg', 'images/sl-token-icon.png', 'vendor/qrcode.min.js'];
 const failures = [];
 
 for (const file of required) {
@@ -40,7 +40,7 @@ if (missingIds.length) failures.push(`JavaScript references missing HTML ids: ${
 if (!html.includes('Content-Security-Policy')) failures.push('HTML CSP is missing');
 if (!appSource.includes('window.top !== window.self') || !appSource.includes("classList.add('app-context-verified')") || !framingSource.includes('html.app-context-verified')) failures.push('Framing protection is missing');
 if (!html.includes('property="og:image"')) failures.push('Open Graph image metadata is missing');
-if (!html.includes('https://gaebal2.github.io/PSL_Wallet/images/psl-wallet-social-v2.png')) failures.push('Open Graph image must use the public absolute URL');
+if (!html.includes('https://gaebal2.github.io/PSL_Wallet/images/psl-wallet-social-v3.png')) failures.push('Open Graph image must use the public absolute URL');
 if (!appSource.includes('formatCompactUnits') || !appSource.includes("[12, 'T'], [9, 'B'], [6, 'M'], [3, 'K']") || !appSource.includes('visibleFraction')) failures.push('Adaptive compact balance formatting is missing');
 if ((html.match(/data-password-toggle=/g) || []).length < 5) failures.push('Password visibility toggles are missing');
 if (!html.includes('id="receiveQr"') || !appSource.includes('new QRCode(')) failures.push('Receive QR generation is missing');
@@ -65,7 +65,7 @@ if (!appSource.includes('removeWallet') || !appSource.includes('syncDialogScroll
 if (!appSource.includes('formatDisplayUnits') || !appSource.includes('submitTransaction') || !html.includes('id="transferSuccessDialog"')) failures.push('Exact grouped amounts or resilient transfer completion UI is missing');
 if (!appSource.includes('Promise.any(requests)') || !appSource.includes('result.data ?? {}') || !appSource.includes("'받는 주소' : '보낸 주소'")) failures.push('Resilient empty history handling or counterparty labels are missing');
 if (!html.includes('id="transferReviewDialog"') || !appSource.includes('confirmTransfer') || !appSource.includes('formatAmountInput') || !appSource.includes("selectedAsset === 'SL' ? amount : formatUnits(amount, decimals)") || !appSource.includes('parseTokenUnits(balanceResult.data.balance, token.decimal)')) failures.push('Custom transfer review, grouped input, or PSL contract units are missing');
-if (!html.includes('app.js?v=53') || !appSource.includes("sw.js?v=53") || !swSource.includes("cache: 'reload'")) failures.push('Versioned app assets or forced service-worker refresh are missing');
+if (!html.includes('app.js?v=55') || !appSource.includes("sw.js?v=55") || !swSource.includes("cache: 'reload'")) failures.push('Versioned app assets or forced service-worker refresh are missing');
 if (!html.includes('id="appAlertDialog"') || !appSource.includes('isInvalidPslTransferAmount') || !appSource.includes('최소 송금 가능 금액은 1 PSL')) failures.push('Whole-unit PSL transfer warning is missing');
 if (!html.includes('id="transferReviewFee"') || !appSource.includes('estimatedFee') || !appSource.includes('history-fee') || !appSource.includes("'psl-token-icon.svg' : 'sl-token-icon.png'")) failures.push('Transfer fee preview or token-aware history is missing');
 if (!html.includes('id="dangerConfirmDialog"') || !appSource.includes('confirmDanger') || appSource.includes('if (!confirm(`${wallet.name}')) failures.push('Custom wallet deletion confirmation is missing');
@@ -80,7 +80,8 @@ if (/\b(?:window\.)?(?:alert|confirm|prompt)\s*\(/.test(appSource.replace(/promp
 if (!appSource.includes('parseTokenUnits') || !appSource.includes('keep SL and history available')) failures.push('Token balance parsing or refresh isolation is missing');
 if (!appSource.includes('function generatePrivateKey()') || !appSource.includes('crypto.getRandomValues(new Uint8Array(32))')) failures.push('Cryptographically secure private-key generation is missing');
 if (!html.includes('id="sendForm" autocomplete="off"') || !html.includes('id="amount" inputmode="decimal" placeholder="0" autocomplete="off" autocorrect="off"')) failures.push('Transfer amount suggestions are not disabled');
-if (!appSource.includes('function disableInputSuggestions()') || !appSource.includes("input:not([type=\"checkbox\"])") || !appSource.includes("setAttribute('aria-autocomplete', 'none')")) failures.push('Global input suggestion suppression is missing');
+if (!appSource.includes('function disableInputSuggestions(root = document)') || !appSource.includes("input:not([type=\"checkbox\"])") || !appSource.includes("setAttribute('aria-autocomplete', 'none')") || !appSource.includes('new MutationObserver(')) failures.push('Global input suggestion suppression is missing');
+if (!html.includes('id="toast" class="toast" role="status" aria-live="polite" popover="manual"') || !appSource.includes('toastElement.showPopover()')) failures.push('Toast top-layer presentation is missing');
 if (!html.includes('id="createWalletName"') || !appSource.includes("makeWallet(generatePrivateKey(), $('createWalletName').value.trim())")) failures.push('New wallet name input is missing');
 if (!appSource.includes('waitForExplorerTransaction') || !appSource.includes("showTransferStatus('processing'") || !appSource.includes("showTransferStatus('success'") || !appSource.includes("showTransferStatus('failed'")) failures.push('Explorer-confirmed transfer status flow is missing');
 if (!appSource.includes('https://explorer.saseul.com/?ic=tx&h=')) failures.push('Explorer transaction links are missing');

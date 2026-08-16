@@ -1,0 +1,18 @@
+.toast[popover] {
+  inset: auto auto max(24px, env(safe-area-inset-bottom)) 50%;
+  margin: 0;
+  border: 0;
+}
+
+.orb:not(.unlock-orb) img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.balance-card::after {
+  content: "PSL";
+  right: -24px;
+  font-size: 116px;
+}

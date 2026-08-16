@@ -6,9 +6,9 @@
 
   const $ = (id) => document.getElementById(id);
 
-  function disableInputSuggestions() {
-    document.querySelectorAll('form').forEach((form) => form.setAttribute('autocomplete', 'off'));
-    document.querySelectorAll('input:not([type="checkbox"])').forEach((input) => {
+  function disableInputSuggestions(root = document) {
+    root.querySelectorAll('form').forEach((form) => form.setAttribute('autocomplete', 'off'));
+    root.querySelectorAll('input:not([type="checkbox"]), textarea').forEach((input) => {
       input.setAttribute('autocomplete', 'off');
       input.setAttribute('autocorrect', 'off');
       input.setAttribute('autocapitalize', 'off');
@@ -18,6 +18,13 @@
   }
 
   disableInputSuggestions();
+  new MutationObserver((mutations) => {
+    mutations.forEach(({ addedNodes }) => addedNodes.forEach((node) => {
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+      if (node.matches('form, input:not([type="checkbox"]), textarea')) disableInputSuggestions(node.parentElement || document);
+      else disableInputSuggestions(node);
+    }));
+  }).observe(document.body, { childList: true, subtree: true });
   const VAULT_KEY = 'psl-wallet-vault-v1';
   const CONFIG_KEY = 'psl-wallet-config-v1';
   const LEGACY_KEY = 'psl-wallet-key';
@@ -58,10 +65,15 @@
   }
 
   function toast(message) {
-    $('toast').textContent = message;
-    $('toast').classList.add('show');
+    const toastElement = $('toast');
+    toastElement.textContent = message;
+    if (typeof toastElement.showPopover === 'function' && !toastElement.matches(':popover-open')) toastElement.showPopover();
+    toastElement.classList.add('show');
     clearTimeout(toast.timer);
-    toast.timer = setTimeout(() => $('toast').classList.remove('show'), 2600);
+    toast.timer = setTimeout(() => {
+      toastElement.classList.remove('show');
+      if (typeof toastElement.hidePopover === 'function' && toastElement.matches(':popover-open')) toastElement.hidePopover();
+    }, 2600);
   }
 
   function bytesToBase64(bytes) {
@@ -1433,5 +1445,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=53', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=55', { updateViaCache: 'none' }).catch(() => {});
 })();
