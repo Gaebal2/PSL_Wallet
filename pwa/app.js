@@ -1570,6 +1570,7 @@
         const confirmed = await waitForExplorerTransaction(expectedHash, address());
         if (!confirmed) {
           showTransferStatus('pending', `네트워크가 전송을 접수했지만 탐색기 반영을 기다리고 있습니다. 중복 전송하지 마세요. 거래 해시: ${expectedHash}`);
+          refreshHistory(1);
           return;
         }
         forgetPendingTransfer(expectedHash);
@@ -1583,6 +1584,7 @@
           refreshHistory(1);
         } else {
           showTransferStatus('failed', `${rpcError(error)} 중복 전송을 피하려면 이력 또는 익스플로러를 먼저 확인해 주세요.`);
+          refreshHistory(1);
         }
       }
     } catch (error) { $('sendError').textContent = rpcError(error); }
@@ -1604,5 +1606,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=58', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=59', { updateViaCache: 'none' }).catch(() => {});
 })();
