@@ -33,6 +33,8 @@
   const SL_SYSTEM_CID = '19bd191ea2da3fd599528b4b831206ec5cf958d6cdbea0188a22d7d44673dd58';
   const DEFAULT_PSL_CID = 'dbd6217ffd83c29c077571c5be8eb945418f6cef27ab4ba92f378acb6a1d0080';
   const INSTALLED_KEY = 'psl-wallet-installed-v1';
+  const PENDING_TRANSFERS_KEY = 'psl-wallet-pending-transfers-v1';
+  const PENDING_TRANSFER_TTL = 24 * 60 * 60 * 1000;
   const AUTO_LOCK_MS = 5 * 60 * 1000;
   const defaults = { endpoint: 'https://main.saseul.net', owner: '', space: 'MY TOKEN', cid: DEFAULT_PSL_CID };
   let config = readJson(CONFIG_KEY, defaults);
@@ -57,6 +59,7 @@
   let pullDistance = 0;
   let suppressLockClickUntil = 0;
   let walletVault = null;
+  let transferInFlight = false;
   const PULL_THRESHOLD = 72;
 
   function readJson(key, fallback) {
@@ -785,9 +788,36 @@
     return false;
   }
 
+  function pendingTransfers() {
+    try {
+      const now = Date.now();
+      return JSON.parse(localStorage.getItem(PENDING_TRANSFERS_KEY) || '[]')
+        .filter((item) => item?.hash && now - Number(item.createdAt) < PENDING_TRANSFER_TTL);
+    } catch { return []; }
+  }
+
+  function savePendingTransfers(items) {
+    localStorage.setItem(PENDING_TRANSFERS_KEY, JSON.stringify(items));
+  }
+
+  function pendingTransferKey(walletAddress, asset, cid, to, amount) {
+    return [walletAddress, asset, cid || '', to, amount].join(':');
+  }
+
+  function rememberPendingTransfer(item) {
+    const items = pendingTransfers().filter(({ hash }) => hash !== item.hash);
+    items.push(item);
+    savePendingTransfers(items);
+  }
+
+  function forgetPendingTransfer(hash) {
+    savePendingTransfers(pendingTransfers().filter((item) => item.hash !== hash));
+  }
+
   function showTransferStatus(status, message) {
     const dialog = $('transferSuccessDialog');
     const states = {
+      pending: { mark: '…', title: '전송 확인 중', eyebrow: 'TRANSFER PENDING' },
       processing: { mark: '…', title: '보내기(처리중...)', eyebrow: 'CHECKING TRANSACTION' },
       success: { mark: '✓', title: '보내기(성공)', eyebrow: 'TRANSFER COMPLETE' },
       failed: { mark: '!', title: '보내기(실패)', eyebrow: 'TRANSFER FAILED' }
@@ -1386,12 +1416,14 @@
 
   $('sendForm').onsubmit = async (event) => {
     event.preventDefault();
+    if (transferInFlight) return;
     $('sendError').textContent = '';
     const to = $('toAddress').value.trim();
     if (selectedAsset !== 'SL' && isInvalidPslTransferAmount($('amount').value)) {
       await showAlert('PSL은 소수점 이하 단위로 전송할 수 없습니다. 최소 송금 가능 금액은 1 PSL입니다.', 'PSL 송금 수량 확인');
       return;
     }
+    transferInFlight = true;
     try {
       if (!SASEUL.Sign.addressValidity(to)) throw new Error('받는 주소가 올바르지 않습니다.');
       if (to === address()) throw new Error('내 주소로는 전송할 수 없습니다.');
@@ -1406,6 +1438,19 @@
       const transactionAmount = selectedAsset === 'SL' ? amount : formatUnits(amount, decimals);
       const transaction = { type: 'Send', to, amount: transactionAmount };
       if (transactionCid) transaction.cid = transactionCid;
+      const transferKey = pendingTransferKey(address(), selectedAsset, transactionCid, to, transactionAmount);
+      const existingPending = pendingTransfers().find((item) => item.key === transferKey);
+      if (existingPending) {
+        const confirmed = await waitForExplorerTransaction(existingPending.hash, address(), 1);
+        if (confirmed) {
+          forgetPendingTransfer(existingPending.hash);
+          showTransferStatus('success', `이미 접수된 동일 전송이 확인되었습니다. 거래 해시: ${existingPending.hash}`);
+          refresh();
+        } else {
+          showTransferStatus('pending', `동일한 전송이 이미 네트워크에 접수되어 확인 중입니다. 중복 전송을 막기 위해 다시 보내지 않았습니다. 거래 해시: ${existingPending.hash}`);
+        }
+        return;
+      }
       const signed = SASEUL.Rpc.signedTransaction(transaction, privateKey);
       const fee = await estimateTransactionFee(signed);
       if (selectedAsset === 'SL' && BigInt(amount) + BigInt(fee) > BigInt(rawSlBalance)) throw new Error('SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니다.');
@@ -1418,8 +1463,13 @@
         const result = await submitTransaction(signed);
         if (!transactionAccepted(result)) throw new Error(rpcError(result));
         const expectedHash = SASEUL.Enc.txHash(signed.transaction);
+        rememberPendingTransfer({ key: transferKey, hash: expectedHash, createdAt: Date.now() });
         const confirmed = await waitForExplorerTransaction(expectedHash, address());
-        if (!confirmed) throw new Error('거래 해시를 확인할 수 없습니다. 이력 또는 익스플로러를 확인한 뒤 나중에 다시 시도해 주세요.');
+        if (!confirmed) {
+          showTransferStatus('pending', `네트워크가 전송을 접수했지만 탐색기 반영을 기다리고 있습니다. 중복 전송하지 마세요. 거래 해시: ${expectedHash}`);
+          return;
+        }
+        forgetPendingTransfer(expectedHash);
         $('sendForm').reset();
         showTransferStatus('success', `${displayAmount} ${symbol} 전송이 확인되었습니다. 거래 해시: ${expectedHash}`);
         refresh();
@@ -1427,7 +1477,7 @@
         showTransferStatus('failed', `${rpcError(error)} 중복 전송을 피하려면 이력 또는 익스플로러를 먼저 확인해 주세요.`);
       }
     } catch (error) { $('sendError').textContent = rpcError(error); }
-    finally { setLoading($('sendBtn'), false, '검토 후 전송'); resetAutoLock(); }
+    finally { transferInFlight = false; setLoading($('sendBtn'), false, '검토 후 전송'); resetAutoLock(); }
   };
 
   ['pointerdown', 'keydown', 'touchstart'].forEach((eventName) => document.addEventListener(eventName, resetAutoLock, { passive: true }));
@@ -1445,5 +1495,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=55', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=56', { updateViaCache: 'none' }).catch(() => {});
 })();
