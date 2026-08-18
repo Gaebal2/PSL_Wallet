@@ -812,6 +812,24 @@
     savePendingTransfers(pendingTransfers().filter((item) => item.hash !== hash));
   }
 
+  function updatePendingTransfer(hash, changes) {
+    savePendingTransfers(pendingTransfers().map((item) => item.hash === hash ? { ...item, ...changes } : item));
+  }
+
+  function transactionTimestampExpired(error) {
+    return /timestamp must be greater than \d+ and less than \d+/i.test(rpcError(error));
+  }
+
+  function prepareReplacementTransfer(item) {
+    forgetPendingTransfer(item.hash);
+    openPanel('sendPanel', item.asset === 'SL' ? 'SL' : 'PSL');
+    $('toAddress').value = item.to || '';
+    $('amount').value = formatAmountInput(item.displayAmount || '') || '';
+    $('amount').dataset.previousValue = $('amount').value;
+    toast('만료된 거래는 다시 체결되지 않습니다. 내용을 확인한 뒤 새 거래를 전송하세요.');
+    refreshHistory(1);
+  }
+
   async function rebroadcastPendingTransfer(item, button) {
     if (!item?.signed?.transaction || SASEUL.Enc.txHash(item.signed.transaction) !== item.hash) {
       forgetPendingTransfer(item?.hash);
@@ -834,7 +852,13 @@
         refreshHistory(1);
       }
     } catch (error) {
-      showTransferStatus('pending', `${rpcError(error)} 기존 해시는 보존되며 새 거래는 생성되지 않았습니다. 거래 해시: ${item.hash}`);
+      if (transactionTimestampExpired(error)) {
+        updatePendingTransfer(item.hash, { status: 'expired', expiredAt: Date.now() });
+        showTransferStatus('expired', `기존 거래의 유효 시간이 지나 노드가 거절했습니다. 이 해시는 더 이상 다시 전파하거나 체결할 수 없습니다. 거래 해시: ${item.hash}`);
+        refreshHistory(1);
+      } else {
+        showTransferStatus('pending', `${rpcError(error)} 기존 해시는 보존되며 새 거래는 생성되지 않았습니다. 거래 해시: ${item.hash}`);
+      }
     } finally {
       button.disabled = false;
       button.textContent = '동일 해시 다시 전파';
@@ -843,14 +867,15 @@
 
   function renderPendingTransfer(container, item) {
     const row = document.createElement('article');
-    row.className = 'history-row sent pending-transfer';
+    const expired = item.status === 'expired';
+    row.className = `history-row sent pending-transfer${expired ? ' expired' : ''}`;
     const icon = document.createElement('span');
     icon.className = 'history-icon';
-    icon.textContent = '…';
+    icon.textContent = expired ? '!' : '…';
     const details = document.createElement('div');
     details.className = 'history-details';
     const title = document.createElement('strong');
-    title.textContent = `${item.symbol || item.asset} 전송 확인 중`;
+    title.textContent = `${item.symbol || item.asset} ${expired ? '전송 만료됨' : '전송 확인 중'}`;
     const addressText = document.createElement('small');
     addressText.className = 'history-counterparty';
     addressText.textContent = `받는 주소: ${item.to}`;
@@ -860,7 +885,7 @@
     const amount = document.createElement('strong');
     amount.textContent = `-${item.displayAmount} ${item.symbol || item.asset}`;
     const time = document.createElement('small');
-    time.textContent = '네트워크 확인 대기 중';
+    time.textContent = expired ? '유효시간 만료 · 체결 불가' : '네트워크 확인 대기 중';
     value.append(amount, time);
     const actions = document.createElement('div');
     actions.className = 'pending-transfer-actions';
@@ -873,8 +898,8 @@
     const rebroadcast = document.createElement('button');
     rebroadcast.type = 'button';
     rebroadcast.className = 'pending-rebroadcast';
-    rebroadcast.textContent = '동일 해시 다시 전파';
-    rebroadcast.onclick = () => rebroadcastPendingTransfer(item, rebroadcast);
+    rebroadcast.textContent = expired ? '새 거래 작성' : '동일 해시 다시 전파';
+    rebroadcast.onclick = () => expired ? prepareReplacementTransfer(item) : rebroadcastPendingTransfer(item, rebroadcast);
     actions.append(explorer, rebroadcast);
     row.append(icon, details, value, actions);
     container.append(row);
@@ -884,12 +909,13 @@
     const dialog = $('transferSuccessDialog');
     const states = {
       pending: { mark: '…', title: '전송 확인 중', eyebrow: 'TRANSFER PENDING' },
+      expired: { mark: '!', title: '전송 만료됨', eyebrow: 'TRANSFER EXPIRED' },
       processing: { mark: '…', title: '보내기(처리중...)', eyebrow: 'CHECKING TRANSACTION' },
       success: { mark: '✓', title: '보내기(성공)', eyebrow: 'TRANSFER COMPLETE' },
       failed: { mark: '!', title: '보내기(실패)', eyebrow: 'TRANSFER FAILED' }
     };
     const state = states[status];
-    dialog.classList.remove('pending', 'processing', 'success', 'failed');
+    dialog.classList.remove('pending', 'expired', 'processing', 'success', 'failed');
     dialog.classList.add(status);
     $('transferSuccessMark').textContent = state.mark;
     $('transferSuccessTitle').textContent = state.title;
@@ -1551,7 +1577,13 @@
         showTransferStatus('success', `${displayAmount} ${symbol} 전송이 확인되었습니다. 거래 해시: ${expectedHash}`);
         refresh();
       } catch (error) {
-        showTransferStatus('failed', `${rpcError(error)} 중복 전송을 피하려면 이력 또는 익스플로러를 먼저 확인해 주세요.`);
+        if (transactionTimestampExpired(error)) {
+          updatePendingTransfer(expectedHash, { status: 'expired', expiredAt: Date.now() });
+          showTransferStatus('expired', `거래 유효 시간이 지나 노드가 거절했습니다. 이 거래는 체결되지 않으며 이력에서 새 거래를 작성할 수 있습니다. 거래 해시: ${expectedHash}`);
+          refreshHistory(1);
+        } else {
+          showTransferStatus('failed', `${rpcError(error)} 중복 전송을 피하려면 이력 또는 익스플로러를 먼저 확인해 주세요.`);
+        }
       }
     } catch (error) { $('sendError').textContent = rpcError(error); }
     finally { transferInFlight = false; setLoading($('sendBtn'), false, '검토 후 전송'); resetAutoLock(); }
@@ -1572,5 +1604,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=57', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=58', { updateViaCache: 'none' }).catch(() => {});
 })();

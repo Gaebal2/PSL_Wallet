@@ -89,6 +89,8 @@
 .history-hash { grid-column: 2/4; color: var(--violet); font-size: 9px; font-weight: 750; text-decoration: none; }
 .pending-transfer { border: 1px solid #eadcff; border-radius: 14px; padding: 12px; margin-bottom: 8px; background: #fbf8ff; }
 .pending-transfer .history-icon { font-weight: 900; color: var(--violet); }
+.pending-transfer.expired { border-color: #f2c7cb; background: #fff8f8; }
+.pending-transfer.expired .history-icon { color: var(--danger); background: #fff0f1; }
 .pending-transfer-actions { grid-column: 2/4; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .pending-transfer-actions .history-hash { grid-column: auto; }
 .pending-rebroadcast { border: 1px solid #d8c2ff; border-radius: 999px; padding: 7px 10px; background: #fff; color: var(--violet); font-size: 10px; font-weight: 800; cursor: pointer; }
