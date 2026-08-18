@@ -87,6 +87,12 @@
 .history-row.sent .history-value strong { color: var(--danger); }
 .history-row.received .history-value strong { color: #147b43; }
 .history-hash { grid-column: 2/4; color: var(--violet); font-size: 9px; font-weight: 750; text-decoration: none; }
+.pending-transfer { border: 1px solid #eadcff; border-radius: 14px; padding: 12px; margin-bottom: 8px; background: #fbf8ff; }
+.pending-transfer .history-icon { font-weight: 900; color: var(--violet); }
+.pending-transfer-actions { grid-column: 2/4; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pending-transfer-actions .history-hash { grid-column: auto; }
+.pending-rebroadcast { border: 1px solid #d8c2ff; border-radius: 999px; padding: 7px 10px; background: #fff; color: var(--violet); font-size: 10px; font-weight: 800; cursor: pointer; }
+.pending-rebroadcast:disabled { cursor: wait; opacity: .6; }
 .history-pagination { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; margin-top: 16px; }
 .history-pagination button { border: 0; border-radius: 11px; padding: 10px; background: #f0f1f5; font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
 .history-pagination button:disabled { opacity: .4; cursor: default; }

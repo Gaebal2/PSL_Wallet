@@ -34,7 +34,6 @@
   const DEFAULT_PSL_CID = 'dbd6217ffd83c29c077571c5be8eb945418f6cef27ab4ba92f378acb6a1d0080';
   const INSTALLED_KEY = 'psl-wallet-installed-v1';
   const PENDING_TRANSFERS_KEY = 'psl-wallet-pending-transfers-v1';
-  const PENDING_TRANSFER_TTL = 24 * 60 * 60 * 1000;
   const AUTO_LOCK_MS = 5 * 60 * 1000;
   const defaults = { endpoint: 'https://main.saseul.net', owner: '', space: 'MY TOKEN', cid: DEFAULT_PSL_CID };
   let config = readJson(CONFIG_KEY, defaults);
@@ -790,9 +789,8 @@
 
   function pendingTransfers() {
     try {
-      const now = Date.now();
       return JSON.parse(localStorage.getItem(PENDING_TRANSFERS_KEY) || '[]')
-        .filter((item) => item?.hash && now - Number(item.createdAt) < PENDING_TRANSFER_TTL);
+        .filter((item) => item?.hash);
     } catch { return []; }
   }
 
@@ -814,6 +812,74 @@
     savePendingTransfers(pendingTransfers().filter((item) => item.hash !== hash));
   }
 
+  async function rebroadcastPendingTransfer(item, button) {
+    if (!item?.signed?.transaction || SASEUL.Enc.txHash(item.signed.transaction) !== item.hash) {
+      forgetPendingTransfer(item?.hash);
+      await showAlert('저장된 거래 정보가 올바르지 않아 다시 전파할 수 없습니다.', '거래 확인');
+      refreshHistory(1);
+      return;
+    }
+    button.disabled = true;
+    button.textContent = '다시 전파 중…';
+    showTransferStatus('processing', `기존 거래를 동일한 해시로 다시 전파하고 있습니다. 거래 해시: ${item.hash}`);
+    try {
+      await submitTransaction(item.signed);
+      const confirmed = await waitForExplorerTransaction(item.hash, item.walletAddress, 3);
+      if (confirmed) {
+        forgetPendingTransfer(item.hash);
+        showTransferStatus('success', `기존 거래가 확인되었습니다. 거래 해시: ${item.hash}`);
+        refresh();
+      } else {
+        showTransferStatus('pending', `기존 거래를 다시 전파했지만 아직 확인 중입니다. 새 거래는 생성되지 않았습니다. 거래 해시: ${item.hash}`);
+        refreshHistory(1);
+      }
+    } catch (error) {
+      showTransferStatus('pending', `${rpcError(error)} 기존 해시는 보존되며 새 거래는 생성되지 않았습니다. 거래 해시: ${item.hash}`);
+    } finally {
+      button.disabled = false;
+      button.textContent = '동일 해시 다시 전파';
+    }
+  }
+
+  function renderPendingTransfer(container, item) {
+    const row = document.createElement('article');
+    row.className = 'history-row sent pending-transfer';
+    const icon = document.createElement('span');
+    icon.className = 'history-icon';
+    icon.textContent = '…';
+    const details = document.createElement('div');
+    details.className = 'history-details';
+    const title = document.createElement('strong');
+    title.textContent = `${item.symbol || item.asset} 전송 확인 중`;
+    const addressText = document.createElement('small');
+    addressText.className = 'history-counterparty';
+    addressText.textContent = `받는 주소: ${item.to}`;
+    details.append(title, addressText);
+    const value = document.createElement('div');
+    value.className = 'history-value';
+    const amount = document.createElement('strong');
+    amount.textContent = `-${item.displayAmount} ${item.symbol || item.asset}`;
+    const time = document.createElement('small');
+    time.textContent = '네트워크 확인 대기 중';
+    value.append(amount, time);
+    const actions = document.createElement('div');
+    actions.className = 'pending-transfer-actions';
+    const explorer = document.createElement('a');
+    explorer.className = 'history-hash';
+    explorer.href = `https://explorer.saseul.com/?ic=tx&h=${encodeURIComponent(item.hash)}&ia=detail`;
+    explorer.target = '_blank';
+    explorer.rel = 'noopener noreferrer';
+    explorer.textContent = `${item.hash.slice(0, 10)}…${item.hash.slice(-8)} ↗`;
+    const rebroadcast = document.createElement('button');
+    rebroadcast.type = 'button';
+    rebroadcast.className = 'pending-rebroadcast';
+    rebroadcast.textContent = '동일 해시 다시 전파';
+    rebroadcast.onclick = () => rebroadcastPendingTransfer(item, rebroadcast);
+    actions.append(explorer, rebroadcast);
+    row.append(icon, details, value, actions);
+    container.append(row);
+  }
+
   function showTransferStatus(status, message) {
     const dialog = $('transferSuccessDialog');
     const states = {
@@ -823,7 +889,7 @@
       failed: { mark: '!', title: '보내기(실패)', eyebrow: 'TRANSFER FAILED' }
     };
     const state = states[status];
-    dialog.classList.remove('processing', 'success', 'failed');
+    dialog.classList.remove('pending', 'processing', 'success', 'failed');
     dialog.classList.add(status);
     $('transferSuccessMark').textContent = state.mark;
     $('transferSuccessTitle').textContent = state.title;
@@ -861,7 +927,15 @@
       const supportedAsset = !transaction.cid || transaction.cid === SL_SYSTEM_CID || (pslCid && transaction.cid === pslCid);
       return involvesWallet && supportedAsset;
     }).slice(0, 10);
-    if (!transactions.length) {
+    const confirmedHashes = new Set(transactions.map(({ hash }) => hash));
+    const allPending = pendingTransfers();
+    const confirmedPending = allPending.filter(({ hash }) => confirmedHashes.has(hash));
+    confirmedPending.forEach(({ hash }) => forgetPendingTransfer(hash));
+    const pending = page === 1
+      ? allPending.filter((item) => item.walletAddress === currentAddress && !confirmedHashes.has(item.hash))
+      : [];
+    pending.forEach((item) => renderPendingTransfer(container, item));
+    if (!transactions.length && !pending.length) {
       $('historyStatus').textContent = '표시할 SL · PSL 송수신 이력이 없습니다.';
     } else {
       $('historyStatus').textContent = '';
@@ -1459,11 +1533,14 @@
       setLoading($('sendBtn'), true, '검토 후 전송');
       $('sendPanel').close();
       showTransferStatus('processing', `${displayAmount} ${symbol} 전송 요청을 처리하고 익스플로러에서 거래 해시를 확인하고 있습니다.`);
+      const expectedHash = SASEUL.Enc.txHash(signed.transaction);
+      rememberPendingTransfer({
+        key: transferKey, hash: expectedHash, createdAt: Date.now(), signed,
+        walletAddress: address(), asset: selectedAsset, symbol, to, displayAmount
+      });
       try {
         const result = await submitTransaction(signed);
         if (!transactionAccepted(result)) throw new Error(rpcError(result));
-        const expectedHash = SASEUL.Enc.txHash(signed.transaction);
-        rememberPendingTransfer({ key: transferKey, hash: expectedHash, createdAt: Date.now() });
         const confirmed = await waitForExplorerTransaction(expectedHash, address());
         if (!confirmed) {
           showTransferStatus('pending', `네트워크가 전송을 접수했지만 탐색기 반영을 기다리고 있습니다. 중복 전송하지 마세요. 거래 해시: ${expectedHash}`);
@@ -1495,5 +1572,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=56', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=57', { updateViaCache: 'none' }).catch(() => {});
 })();
