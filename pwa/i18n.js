@@ -1,7 +1,7 @@
 /* UI-only localization. Wallet data, keys and input values are never translated. */
 globalThis.WalletI18n = (() => {
   const pairs = `
-기기에 개인키 백업후 사용가능|Available after backing up private keys on device
+기기에 개인키 백업 후 사용가능|Available after backing up private keys on device
 기존 백업의 지갑명|Wallet names in the existing backup
 업데이트할 지갑명|Wallet names after update
 백업용 비밀번호를 입력하고 ‘새 백업 파일 저장 후 확인’을 누르세요. 저장 후 파일을 다시 선택하여 확인하면 백업한 지갑을 사용할 수 있습니다.|Enter a backup password and select “Save and verify a new backup file”. Reopen the saved file to verify it and enable the backed-up wallets.
@@ -22,6 +22,14 @@ globalThis.WalletI18n = (() => {
 파일명|File name
 저장 위치: 파일 저장 시 선택한 폴더 또는 기기의 다운로드 폴더를 확인해 주세요. 브라우저에서는 전체 폴더 경로를 제공하지 않습니다.|Location: Check the folder chosen when saving or your device's Downloads folder. Browsers do not provide the full folder path.
 마지막으로 확인한 파일 내용과 현재 지갑 목록이 일치합니다. 파일을 이동하거나 삭제했다면 다시 확인해 주세요.|The last verified file matches your current wallets. Verify again if you moved or deleted the file.
+양호|Good
+주의|Caution
+경고|Warning
+개인키 기기에 백업 완료|Private keys backed up on device
+기기에 백업된 개인키 업데이트 필요|Update the private key backup on device
+개인키 기기에 백업 안됨|Private keys not backed up on device
+해결하기|Resolve
+확인하기|View details
 (양호O) 개인키 기기에 백업 완료|(Good O) Private keys backed up on device
 (주의!) 기기에 백업된 개인키 업데이트 필요|(Caution!) Update the private key backup on device
 (경고!) 개인키 기기에 백업 안됨|(Warning!) Private keys not backed up on device

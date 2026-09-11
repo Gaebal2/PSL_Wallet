@@ -604,7 +604,7 @@
       const selectButton = document.createElement('button');
       selectButton.type = 'button';
       selectButton.className = 'wallet-choose-button';
-      selectButton.textContent = wallet.backupVerified ? '선택' : '기기에 개인키 백업후 사용가능';
+      selectButton.textContent = wallets.length === 1 || wallet.backupVerified ? '선택' : '기기에 개인키 백업 후 사용가능';
       selectButton.disabled = !wallet.backupVerified || wallet.id === activeWalletId;
       selectButton.onclick = async () => { await switchWallet(wallet.id, false); $('walletManagerDialog').close(); };
       const deleteButton = document.createElement('button');
@@ -1290,12 +1290,12 @@
   });
 
   $('createBtn').onclick = () => {
-    $('createForm').classList.toggle('hidden');
-    if (!$('createForm').classList.contains('hidden')) $('createPassword').focus();
+    $('createForm').reset();
+    $('createDialog').showModal();
+    $('createPassword').focus();
   };
 
   $('showImportBtn').onclick = () => {
-    $('createForm').classList.add('hidden');
     $('importForm').reset();
     $('importDialog').showModal();
     $('importName').focus();
@@ -1304,6 +1304,8 @@
   $('importClose').onclick = () => $('importDialog').close();
   $('importCancel').onclick = () => $('importDialog').close();
   $('importDialog').addEventListener('close', () => $('importForm').reset());
+
+  $('createDialog').addEventListener('close', () => $('createForm').reset());
 
   $('createForm').onsubmit = async (event) => {
     event.preventDefault();
@@ -1314,6 +1316,7 @@
     try {
       setLoading(button, true, '안전하게 생성');
       await saveWallet(generatePrivateKey(), password);
+      $('createDialog').close();
       toast('지갑을 만들었습니다. 지금 개인키를 백업하세요.');
     } catch (error) { toast(error.message); }
     finally { setLoading(button, false, '안전하게 생성'); }
@@ -1652,14 +1655,18 @@
   function renderBackupStatus() {
     const status = backupStatus();
     const labels = {
-      good: '(양호O) 개인키 기기에 백업 완료',
-      stale: '(주의!) 기기에 백업된 개인키 업데이트 필요',
-      missing: '(경고!) 개인키 기기에 백업 안됨'
+      good: ['양호', '개인키 기기에 백업 완료', '✓'],
+      stale: ['주의', '기기에 백업된 개인키 업데이트 필요', '!'],
+      missing: ['경고', '개인키 기기에 백업 안됨', '!']
     };
     document.querySelectorAll('[data-device-backup]').forEach(button => {
-      button.classList.remove('backup-good', 'backup-stale', 'backup-missing');
-      button.classList.add('backup-' + status);
-      button.textContent = labels[status];
+      const card = button.closest('.backup-status-card');
+      card.classList.remove('backup-good', 'backup-stale', 'backup-missing');
+      card.classList.add('backup-' + status);
+      card.querySelector('.backup-status-title').textContent = labels[status][0];
+      card.querySelector('.backup-status-description').textContent = labels[status][1];
+      card.querySelector('.backup-status-icon').textContent = labels[status][2];
+      button.textContent = status === 'good' ? '확인하기' : '해결하기';
     });
   }
 
@@ -1993,5 +2000,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=73', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=75', { updateViaCache: 'none' }).catch(() => {});
 })();

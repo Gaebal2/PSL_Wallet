@@ -78,10 +78,16 @@ html[lang="en"] .active-card-actions button { min-height: 48px; }
 
 .language-toggle.korean-label { font-size: 10px; }
 #cid { box-sizing: border-box; width: 100%; resize: none; overflow-wrap: anywhere; word-break: break-all; font: 12px/1.6 monospace; padding: 12px; border: 1px solid #d9dce5; border-radius: 12px; background: #f1f2f6; color: var(--ink); }
-.button.backup-good { background: #e0f3e8; color: #17613b; border: 1px solid #96ccad; }
-.button.backup-stale { background: #fff2c9; color: #735200; border: 1px solid #e3c35f; }
-.button.backup-missing { background: #fce5e5; color: #a12626; border: 1px solid #e2a0a0; }
-[data-device-backup] { white-space: normal; line-height: 1.5; font-size: 12px; padding: 12px 10px; }
+.backup-status-card { --status-tint: #fff0f0; --status-color: #a12626; --status-border: #efc4c4; margin: 16px 0 12px; }
+.backup-status-card.backup-good { --status-tint: #edf8f1; --status-color: #17613b; --status-border: #b7ddc6; }
+.backup-status-card.backup-stale { --status-tint: #fff8e1; --status-color: #735200; --status-border: #ebd48d; }
+.backup-status-message { display: flex; align-items: center; gap: 12px; padding: 17px 16px; border: 1px solid var(--status-border); border-radius: 16px; background: var(--status-tint); color: var(--status-color); text-align: left; }
+.backup-status-icon { display: grid; place-items: center; flex: 0 0 34px; height: 34px; border-radius: 50%; background: var(--status-color); color: #fff; font-size: 20px; font-weight: 850; }
+.backup-status-title { display: block; font-size: 14px; font-weight: 850; }
+.backup-status-description { margin: 5px 0 0; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.backup-status-action { margin-top: 8px; background: var(--status-color); color: #fff; box-shadow: none; min-height: 46px; padding: 12px 16px; font-size: 13px; }
+.backup-status-action:hover { filter: brightness(1.08); }
+.backup-status-action:focus-visible { outline: 3px solid var(--status-color); outline-offset: 3px; }
 .private-key-entry { text-align: left; padding: 14px 0; border-bottom: 1px solid #d9dce5; }
 .private-key-address { display: block; overflow-wrap: anywhere; font-size: 11px; margin-top: 8px; }
 .private-key-entry .private-key-box { margin: 10px 0 0; }
@@ -94,6 +100,7 @@ html[lang="en"] .active-card-actions button { min-height: 48px; }
 #updateBackupSummary p, #updateBackupSummary li { overflow-wrap: anywhere; }
 .wallet-choose-button:disabled { white-space: normal; }
 
+#createDialog .auth-form,
 #importDialog .auth-form { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
 #importForm > button[type="submit"] { margin-top: 20px; }
 #importForm .sheet-head { gap: 12px; margin-bottom: 16px; }

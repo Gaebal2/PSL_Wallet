@@ -33,7 +33,7 @@
   <link rel="stylesheet" href="wallets.css?v=59">
   <link rel="stylesheet" href="install.css?v=55">
   <link rel="stylesheet" href="history.css?v=55">
-  <link rel="stylesheet" href="overlays.css?v=73">
+  <link rel="stylesheet" href="overlays.css?v=75">
   <title>Wallet</title>
 </head>
 <body>
@@ -68,16 +68,7 @@
           <button class="button secondary" type="button" data-restore-backup>백업된 개인키 불러오기</button>
 <button id="showImportBtn" class="button secondary" type="button">기존 지갑 가져오기</button>
         </div>
-        <form id="createForm" class="auth-form hidden" autocomplete="off">
-          <h2>지갑 보호 비밀번호</h2>
-          <p class="helper">12자 이상을 권장합니다. 비밀번호는 복구할 수 없습니다.</p>
-          <label for="createPassword">비밀번호</label>
-          <div class="password-field"><input id="createPassword" type="password" minlength="10" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" required><button class="password-toggle" type="button" data-password-toggle="createPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
-          <label for="createPasswordConfirm">비밀번호 확인</label>
-          <div class="password-field"><input id="createPasswordConfirm" type="password" minlength="10" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" required><button class="password-toggle" type="button" data-password-toggle="createPasswordConfirm" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
-          <label class="check"><input id="createAck" type="checkbox" required> 비밀번호와 개인키를 잃으면 자산을 복구할 수 없음을 이해했습니다.</label>
-          <button class="button primary" type="submit">안전하게 생성</button>
-        </form>
+
 
       </section>
 
@@ -141,6 +132,20 @@
     </div>
   </dialog>
 
+  <dialog id="createDialog" aria-labelledby="createTitle">
+    <div class="sheet-head"><div><p class="eyebrow">CREATE WALLET</p><h2 id="createTitle">지갑 보호 비밀번호</h2></div><button class="close" data-close type="button" aria-label="닫기">×</button></div>
+        <form id="createForm" class="auth-form" autocomplete="off">
+          <p class="helper">12자 이상을 권장합니다. 비밀번호는 복구할 수 없습니다.</p>
+          <label for="createPassword">비밀번호</label>
+          <div class="password-field"><input id="createPassword" type="password" minlength="10" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" required><button class="password-toggle" type="button" data-password-toggle="createPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+          <label for="createPasswordConfirm">비밀번호 확인</label>
+          <div class="password-field"><input id="createPasswordConfirm" type="password" minlength="10" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" required><button class="password-toggle" type="button" data-password-toggle="createPasswordConfirm" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+          <label class="check"><input id="createAck" type="checkbox" required> 비밀번호와 개인키를 잃으면 자산을 복구할 수 없음을 이해했습니다.</label>
+          <button class="button primary" type="submit">안전하게 생성</button>
+          <button class="button secondary" data-close type="button">취소</button>
+        </form>
+  </dialog>
+
   <dialog id="importDialog" aria-labelledby="importTitle">
         <form id="importForm" class="auth-form">
           <div class="sheet-head"><h2 id="importTitle">기존 지갑 가져오기</h2><button id="importClose" class="close" type="button" aria-label="닫기">×</button></div>
@@ -163,7 +168,10 @@
       <p class="helper">신뢰하는 HTTPS RPC만 사용하세요. 변경한 RPC는 자동 저장됩니다.</p>
       <div class="settings-divider"></div>
       <button id="uninstallGuideBtn" class="button secondary" type="button">앱 제거 · 저장소 안내</button>
-      <button class="button secondary" type="button" data-device-backup>개인키 기기에 백업하기</button>
+      <div class="backup-status-card backup-missing">
+      <div class="backup-status-message" role="status"><span class="backup-status-icon" aria-hidden="true">!</span><div><strong class="backup-status-title">경고</strong><p class="backup-status-description">개인키 기기에 백업 안됨</p></div></div>
+      <button class="button backup-status-action" type="button" data-device-backup>해결하기</button>
+    </div>
 <button class="button secondary" type="button" data-restore-backup>백업된 개인키 불러오기</button>
 <button id="exportBtn" class="button secondary" type="button">개인키 보기</button>
       <button id="logoutBtn" class="button danger delete-wallet-button" type="button">이 기기에서 모든 지갑 삭제</button>
@@ -199,7 +207,10 @@
   <dialog id="walletManagerDialog" class="wallet-manager-dialog" aria-labelledby="walletListTitle">
     <div class="sheet-head"><div><p class="eyebrow">WALLETS</p><h2 id="walletListTitle">내 지갑</h2></div><button id="walletManagerClose" class="close" type="button" aria-label="닫기">×</button></div>
     <div class="wallet-manager-count"><span>등록된 지갑</span><strong id="walletCount">1</strong></div>
-    <button class="button secondary" type="button" data-device-backup>개인키 기기에 백업하기</button>
+    <div class="backup-status-card backup-missing">
+      <div class="backup-status-message" role="status"><span class="backup-status-icon" aria-hidden="true">!</span><div><strong class="backup-status-title">경고</strong><p class="backup-status-description">개인키 기기에 백업 안됨</p></div></div>
+      <button class="button backup-status-action" type="button" data-device-backup>해결하기</button>
+    </div>
 <button class="button secondary" type="button" data-restore-backup>백업된 개인키 불러오기</button>
 <div id="walletList" class="wallet-list"></div>
     <button id="openAddWalletBtn" class="button secondary add-wallet-button" type="button">+ 개인키로 지갑 추가</button>
@@ -367,8 +378,8 @@
   <script src="vendor/axios.min.js"></script>
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
-  <script src="backup.js?v=73"></script>
-  <script src="i18n.js?v=73"></script>
-  <script src="app.js?v=73"></script>
+  <script src="backup.js?v=75"></script>
+  <script src="i18n.js?v=75"></script>
+  <script src="app.js?v=75"></script>
 </body>
 </html>
