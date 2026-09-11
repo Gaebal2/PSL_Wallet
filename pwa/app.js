@@ -181,10 +181,10 @@
     return text.length > 10 ? `${text.slice(0, 5)}…${text.slice(-5)}` : text;
   }
 
-  function makeWallet(key, name) {
+  function makeWallet(key, name, backupVerified = false) {
     const privateKeyValue = key.toLowerCase();
     const walletAddressValue = walletAddress({ privateKey: privateKeyValue });
-    return { id: walletAddressValue, name: name || `지갑 ${wallets.length + 1}`, privateKey: privateKeyValue };
+    return { id: walletAddressValue, name: name || `지갑 ${wallets.length + 1}`, privateKey: privateKeyValue, backupVerified: backupVerified === true };
   }
 
   function activeWallet() {
@@ -527,9 +527,13 @@
     renderWalletList();
     resetAutoLock();
     refresh();
+    if (!current.backupVerified) openDeviceBackup();
   }
 
   function lockWallet(notify = true) {
+    document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
+    $('deviceBackupForm').reset();
+    $('restoreBackupForm').reset();
     privateKey = '';
     vaultPassword = '';
     wallets = [];
@@ -658,6 +662,7 @@
     renderWalletList();
     try { await persistWallets(); } catch { /* selection remains valid for this session */ }
     refreshHistory(1);
+    if (!wallet.backupVerified) openDeviceBackup();
     if (scroll) $('wallet').scrollIntoView({ behavior: 'smooth', block: 'start' });
     resetAutoLock();
   }
@@ -831,6 +836,7 @@
   }
 
   async function rebroadcastPendingTransfer(item, button) {
+    if (!activeWallet()?.backupVerified) return openDeviceBackup();
     if (!item?.signed?.transaction || SASEUL.Enc.txHash(item.signed.transaction) !== item.hash) {
       forgetPendingTransfer(item?.hash);
       await showAlert('저장된 거래 정보가 올바르지 않아 다시 전파할 수 없습니다.', '거래 확인');
@@ -1151,6 +1157,7 @@
   }
 
   function openPanel(id, asset) {
+    if (!activeWallet()?.backupVerified) return openDeviceBackup();
     selectAsset(asset);
     if (id === 'receivePanel') renderReceiveQr();
     $(id).showModal();
@@ -1301,7 +1308,7 @@
       setLoading($('unlockBtn'), true, '잠금 해제');
       const password = $('unlockPassword').value;
       const data = await decryptVault(password);
-      wallets = data.wallets.map((wallet, index) => makeWallet(wallet.privateKey, wallet.name || `지갑 ${index + 1}`));
+      wallets = data.wallets.map((wallet, index) => makeWallet(wallet.privateKey, wallet.name || `지갑 ${index + 1}`, wallet.backupVerified));
       activeWalletId = wallets.some((wallet) => wallet.id === data.activeWalletId) ? data.activeWalletId : wallets[0].id;
       vaultPassword = password;
       privateKey = activeWallet().privateKey;
@@ -1516,6 +1523,7 @@
 
   $('sendForm').onsubmit = async (event) => {
     event.preventDefault();
+    if (!activeWallet()?.backupVerified) return openDeviceBackup();
     if (transferInFlight) return;
     $('sendError').textContent = '';
     const to = $('toAddress').value.trim();
@@ -1595,6 +1603,142 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden && privateKey) resetAutoLock(); });
   window.addEventListener('offline', () => { $('connectionState').className = 'connection offline'; $('connectionState').innerHTML = '<i></i> 오프라인'; });
 
+  let backupVerificationId = null;
+  let backupBusy = false;
+
+  function openDeviceBackup() {
+    const wallet = activeWallet();
+    if (!wallet || !vaultPassword) return toast('먼저 지갑 잠금을 해제해 주세요.');
+    document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
+    $('deviceBackupForm').reset();
+    $('deviceBackupError').textContent = '';
+    $('deviceBackupWallet').textContent = `${wallet.name} · ${shortenAddress(wallet.id)}`;
+    $('deviceBackupExit').textContent = wallet.backupVerified ? '닫기' : '지갑 잠그기';
+    $('deviceBackupDialog').showModal();
+  }
+
+  function openRestoreBackup(verify = false) {
+    if (!verify && walletVault && !vaultPassword) {
+      toast('기존 지갑을 보호하기 위해 먼저 잠금을 해제한 후 백업을 불러와 주세요.');
+      $('unlockPassword').focus();
+      return;
+    }
+    backupVerificationId = verify ? activeWalletId : null;
+    $('restoreBackupForm').reset();
+    $('restoreBackupError').textContent = '';
+    $('restoreBackupTitle').textContent = verify ? '저장한 백업 파일 확인하기' : '백업된 개인키 불러오기';
+    $('restoreVaultFields').classList.toggle('hidden', Boolean(vaultPassword));
+    $('restoreVaultPassword').required = !vaultPassword;
+    $('restoreVaultConfirm').required = !vaultPassword;
+    $('restoreBackupDialog').showModal();
+  }
+
+  document.querySelectorAll('[data-device-backup]').forEach((button) => { button.onclick = openDeviceBackup; });
+  document.querySelectorAll('[data-restore-backup]').forEach((button) => { button.onclick = () => openRestoreBackup(); });
+  $('deviceBackupVerify').onclick = () => openRestoreBackup(true);
+  $('walletManagerDialog').addEventListener('close', () => {
+    if (activeWallet() && !activeWallet().backupVerified && !document.querySelector('dialog[open]')) openDeviceBackup();
+  });
+  $('deviceBackupOther').onclick = () => {
+    if (backupBusy) return;
+    $('deviceBackupDialog').close();
+    $('walletManagerDialog').showModal();
+  };
+  $('deviceBackupExit').onclick = () => {
+    if (backupBusy) return;
+    if (activeWallet()?.backupVerified) $('deviceBackupDialog').close();
+    else lockWallet();
+  };
+  $('deviceBackupDialog').oncancel = (event) => {
+    event.preventDefault();
+    if (!backupBusy && activeWallet()?.backupVerified) $('deviceBackupDialog').close();
+  };
+  $('restoreBackupCancel').onclick = () => { if (!backupBusy) $('restoreBackupDialog').close(); };
+  $('restoreBackupDialog').oncancel = (event) => { if (backupBusy) event.preventDefault(); };
+  $('restoreBackupDialog').addEventListener('close', () => $('restoreBackupForm').reset());
+  $('deviceBackupDialog').addEventListener('close', () => $('deviceBackupForm').reset());
+
+  $('deviceBackupForm').onsubmit = async (event) => {
+    event.preventDefault();
+    if (backupBusy) return;
+    const wallet = activeWallet();
+    if (!wallet || !vaultPassword) return lockWallet(false);
+    const password = $('deviceBackupPassword').value;
+    if (password !== $('deviceBackupConfirm').value) {
+      $('deviceBackupError').textContent = '백업 비밀번호가 일치하지 않습니다.';
+      return;
+    }
+    backupBusy = true;
+    setLoading($('deviceBackupSave'), true, '개인키 기기에 백업하기');
+    try {
+      const text = await WalletBackup.encrypt(wallet, password);
+      if (activeWallet() !== wallet || !vaultPassword) return;
+      const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `PSL-wallet-${wallet.id.slice(0, 8)}-${Date.now()}.json`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      $('deviceBackupForm').reset();
+      $('deviceBackupError').textContent = '파일 저장을 요청했습니다. 다운로드 또는 내 파일에서 저장 위치를 확인한 뒤, 아래 버튼으로 해당 파일을 다시 열어 주세요.';
+    } catch {
+      $('deviceBackupError').textContent = '백업 파일을 만들지 못했습니다. 비밀번호는 10자 이상이어야 합니다. 다시 시도해 주세요.';
+    } finally {
+      backupBusy = false;
+      setLoading($('deviceBackupSave'), false, '개인키 기기에 백업하기');
+    }
+  };
+
+  $('restoreBackupForm').onsubmit = async (event) => {
+    event.preventDefault();
+    if (backupBusy) return;
+    const file = $('restoreBackupFile').files[0];
+    if (!file || file.size > 16384) {
+      $('restoreBackupError').textContent = '16KB 이하의 지갑 백업 파일을 선택해 주세요.';
+      return;
+    }
+    const sessionPassword = vaultPassword;
+    const targetId = backupVerificationId;
+    const newPassword = $('restoreVaultPassword').value;
+    if (!sessionPassword && (newPassword.length < 10 || newPassword !== $('restoreVaultConfirm').value)) {
+      $('restoreBackupError').textContent = '새 잠금 비밀번호를 10자 이상 입력하고 동일하게 확인해 주세요.';
+      return;
+    }
+    backupBusy = true;
+    setLoading($('restoreBackupSubmit'), true, '백업된 개인키 불러오기');
+    const previousWallets = wallets;
+    const previousId = activeWalletId;
+    const previousVault = walletVault;
+    try {
+      const data = await WalletBackup.decrypt(await file.text(), $('restoreBackupPassword').value);
+      if (vaultPassword !== sessionPassword || !$('restoreBackupDialog').open) return;
+      const restored = makeWallet(data.privateKey, data.name, true);
+      if (targetId && restored.id !== targetId) throw new Error('선택한 지갑의 백업 파일이 아닙니다.');
+      const existing = wallets.find((wallet) => wallet.id === restored.id);
+      wallets = existing ? wallets.map((wallet) => wallet.id === restored.id ? { ...wallet, backupVerified: true } : wallet) : [...wallets, restored];
+      activeWalletId = restored.id;
+      vaultPassword = sessionPassword || newPassword;
+      try { await persistWallets(); }
+      catch (error) {
+        wallets = previousWallets;
+        activeWalletId = previousId;
+        vaultPassword = sessionPassword;
+        walletVault = previousVault;
+        throw error;
+      }
+      document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
+      showWallet();
+      toast(targetId ? '백업 확인을 완료했습니다. 지갑을 사용할 수 있습니다.' : existing ? '이미 등록된 지갑의 백업을 확인했습니다.' : '백업 파일에서 지갑을 복원했습니다.');
+    } catch (error) {
+      $('restoreBackupError').textContent = error.message === '선택한 지갑의 백업 파일이 아닙니다.' ? error.message : '비밀번호가 잘못되었거나 파일이 손상되었거나 저장 공간이 부족합니다. 기존 지갑은 유지됩니다.';
+    } finally {
+      backupBusy = false;
+      setLoading($('restoreBackupSubmit'), false, '백업된 개인키 불러오기');
+    }
+  };
+
   async function start() {
     applyConfig();
     await initializeVault();
@@ -1606,5 +1750,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=59', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=60', { updateViaCache: 'none' }).catch(() => {});
 })();

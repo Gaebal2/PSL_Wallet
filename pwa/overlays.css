@@ -16,3 +16,25 @@
   right: -24px;
   font-size: 116px;
 }
+
+/* Stacked actions outside the existing grid/flex button groups. */
+dialog > .button + .button,
+dialog > form > .button + .button {
+  margin-top: 10px;
+}
+
+#uninstallGuideBtn {
+  margin-bottom: 0;
+}
+
+#unlock > [data-restore-backup] {
+  margin-top: 14px;
+}
+
+#unlock > [data-restore-backup] + .text-button {
+  margin-top: 10px;
+}
+
+#walletManagerDialog > [data-restore-backup] {
+  margin-bottom: 10px;
+}

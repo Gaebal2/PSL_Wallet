@@ -7,7 +7,7 @@
     "start": "node pwa/server.js",
     "dev": "node pwa/server.js",
     "wallet": "node pwa/server.js",
-    "test": "node scripts/validate-pwa.js"
+    "test": "node scripts/validate-pwa.js && node scripts/test-backup.cjs"
   },
   "dependencies": {
     "config-ini-parser": "^1.6.1",
