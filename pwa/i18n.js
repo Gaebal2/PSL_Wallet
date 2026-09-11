@@ -1,6 +1,11 @@
 /* UI-only localization. Wallet data, keys and input values are never translated. */
 globalThis.WalletI18n = (() => {
   const pairs = `
+기기에 개인키 백업후 사용가능|Available after backing up private keys on device
+기존 백업의 지갑명|Wallet names in the existing backup
+업데이트할 지갑명|Wallet names after update
+백업용 비밀번호를 입력하고 ‘새 백업 파일 저장 후 확인’을 누르세요. 저장 후 파일을 다시 선택하여 확인하면 백업한 지갑을 사용할 수 있습니다.|Enter a backup password and select “Save and verify a new backup file”. Reopen the saved file to verify it and enable the backed-up wallets.
+
 새 백업 파일이 필요하면 백업용 비밀번호를 입력하고 ‘새 백업 파일 저장 후 확인’을 누르세요. ‘개인키 기기에 백업하기’를 누르면 저장한 파일을 선택하여 확인할 수 있습니다. 현재 등록된 모든 지갑의 이름과 개인키를 백업해 주세요.|To create a backup, enter a backup password and select “Save and verify a new backup file”. Select “Back up private key to device” to choose and verify a saved file. Back up every current wallet name and private key.
 
 이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 현재 지갑 목록을 담은 새 백업을 저장합니다.|This browser cannot overwrite existing files. Select a file to save a new backup of your current wallets.

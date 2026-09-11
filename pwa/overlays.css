@@ -87,3 +87,14 @@ html[lang="en"] .active-card-actions button { min-height: 48px; }
 .private-key-entry .private-key-box { margin: 10px 0 0; }
 #backupFileName { overflow-wrap: anywhere; }
 #updateBackupSummary { white-space: pre-line; }
+
+#updateBackupChoose { background: #2563eb; color: #fff; }
+#updateBackupReview:disabled { background: #e6e8ed; color: #7b8190; box-shadow: none; cursor: not-allowed; }
+#updateBackupSummary { white-space: normal; }
+#updateBackupSummary p, #updateBackupSummary li { overflow-wrap: anywhere; }
+.wallet-choose-button:disabled { white-space: normal; }
+
+#importDialog .auth-form { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+#importForm > button[type="submit"] { margin-top: 20px; }
+#importForm .sheet-head { gap: 12px; margin-bottom: 16px; }
+#importForm .sheet-head .close { flex: none; }

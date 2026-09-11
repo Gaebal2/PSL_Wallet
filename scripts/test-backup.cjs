@@ -96,11 +96,11 @@ require('../pwa/backup.js');
   });
   vm.runInContext(['walletAddress', 'makeWallet', 'activeWallet', 'address', 'shortenAddress', 'showWallet', 'mergeVerifiedWallets'].map(extract).join('\n'), context);
   vm.runInContext(`wallets = [makeWallet('${wallet.privateKey}', 'existing')]; showWallet();`, context);
-  assert.equal(context.gated, 1, 'Legacy/new wallets require backup verification');
+  assert.equal(context.gated, 0, 'New wallets do not automatically open backup dialogs');
   vm.runInContext(`wallets = [makeWallet('${wallet.privateKey}', 'restored', true)]; showWallet();`, context);
-  assert.equal(context.gated, 1, 'Verified/restored wallets can open');
+  assert.equal(context.gated, 0, 'Verified/restored wallets can open');
   vm.runInContext(`wallets = JSON.parse(JSON.stringify(wallets)).map(w => makeWallet(w.privateKey, w.name, w.backupVerified)); showWallet();`, context);
-  assert.equal(context.gated, 1, 'Verification survives reload');
+  assert.equal(context.gated, 0, 'Verification survives reload');
   context.WalletBackup = WalletBackup;
   vm.runInContext(['makeBackupRecord', 'backupStatus'].map(extract).join('\n'), context);
   context.backupRecord = null;
@@ -162,5 +162,72 @@ require('../pwa/backup.js');
   element('restoreBackupFile').files = [{ size: encrypted.length, name: 'old.json', text: async () => encrypted }];
   await element('restoreBackupForm').onsubmit({ preventDefault() {} });
   assert.equal(restoreContext.backupRecord, previousRecord, 'Persistence failure rolls back the backup record');
+
+  // Exercise the two-step update UI and the real verified-write handler.
+  function uiElement() {
+    const classes = new Set();
+    return {
+      value: '', textContent: '', disabled: false, open: false, children: [],
+      classList: { add: (...names) => names.forEach(name => classes.add(name)), remove: (...names) => names.forEach(name => classes.delete(name)), contains: name => classes.has(name) },
+      replaceChildren(...children) { this.children = children; },
+      append(...children) { this.children.push(...children); },
+      showModal() { this.open = true; }, close() { this.open = false; },
+      reset() {}, addEventListener() {}, querySelector() { return uiElement(); }, dataset: {}
+    };
+  }
+  const updateElements = new Map();
+  const ui = id => {
+    if (!updateElements.has(id)) updateElements.set(id, uiElement());
+    return updateElements.get(id);
+  };
+  const newlyAdded = { ...wallet2, id: wallet2.privateKey, backupVerified: false };
+  const existing = { ...wallet, id: wallet.privateKey, backupVerified: true };
+  const created = [];
+  const updateContext = vm.createContext({
+    WalletBackup, wallets: [existing, newlyAdded], activeWalletId: existing.id,
+    backupRecord: null, backupBusy: false, updateBackupSelection: null, updateBackupPlan: null,
+    vaultPassword: 'session-password', walletVault: 'old-vault', window: {},
+    $: ui, setLoading(button, loading) { button.disabled = loading; },
+    activeWallet: () => existing, persistWallets: async () => {}, showWallet() {}, toast() {},
+    renderBackupStatus() {}, balanceState: () => ({ loading: true }), shortenAddress: value => value,
+    document: { createElement() { const item = uiElement(); created.push(item); return item; } }
+  });
+  vm.runInContext(['makeBackupRecord', 'renderWalletList'].map(extract).join('\n'), updateContext);
+  updateContext.renderWalletList();
+  let choices = created.filter(item => item.className === 'wallet-choose-button');
+  assert(choices[1].disabled);
+  assert.equal(choices[1].textContent, '기기에 개인키 백업후 사용가능');
+  const updateStart = source.indexOf('  function syncBackupUpdateControls()');
+  const updateEnd = source.indexOf('  function mergeVerifiedWallets(', updateStart);
+  vm.runInContext(source.slice(updateStart, updateEnd), updateContext);
+  updateContext.openBackupUpdate();
+  assert.equal(ui('updateBackupChoose').disabled, false);
+  assert.equal(ui('updateBackupReview').disabled, true);
+  let fileText = await WalletBackup.encrypt([wallet], password);
+  const writableHandle = {
+    name: 'existing.json', requestPermission: async () => 'granted',
+    getFile: async () => ({ name: 'existing.json', size: fileText.length, text: async () => fileText }),
+    createWritable: async () => ({ write: async text => { fileText = text; }, close: async () => {}, abort: async () => {} })
+  };
+  updateContext.updateBackupSelection = { handle: writableHandle };
+  updateContext.syncBackupUpdateControls();
+  assert(ui('updateBackupReview').disabled, 'File alone cannot enable review');
+  ui('updateBackupPassword').value = password;
+  ui('updateBackupPassword').oninput();
+  assert.equal(ui('updateBackupReview').disabled, false);
+  await ui('updateBackupForm').onsubmit({ preventDefault() {} });
+  assert(ui('updateBackupInput').classList.contains('hidden'), 'Review hides file/password controls');
+  assert.equal(ui('updateBackupSummary').classList.contains('hidden'), false);
+  assert.equal(ui('updateBackupFileName').textContent, 'existing.json');
+  assert.deepEqual(ui('updateBackupOldWallets').children.map(item => item.textContent), [wallet.name]);
+  assert.deepEqual(ui('updateBackupNewWallets').children.map(item => item.textContent), [wallet.name, wallet2.name]);
+  await ui('updateBackupAccept').onclick();
+  assert(updateContext.wallets.every(item => item.backupVerified));
+  assert(WalletBackup.matches(updateContext.wallets, (await WalletBackup.decrypt(fileText, password)).wallets));
+  created.length = 0;
+  updateContext.renderWalletList();
+  choices = created.filter(item => item.className === 'wallet-choose-button');
+  assert.equal(choices[1].disabled, false, 'Verified new wallet becomes selectable');
+  assert.equal(choices[1].textContent, '선택');
   console.log('✓ Backup round-trip, wrong password, tampering, malformed input, random encryption and wallet migration/gating passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

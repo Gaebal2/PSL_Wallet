@@ -548,7 +548,7 @@
     renderWalletList();
     resetAutoLock();
     refresh();
-    if (!current.backupVerified) openDeviceBackup();
+
   }
 
   function lockWallet(notify = true) {
@@ -604,8 +604,8 @@
       const selectButton = document.createElement('button');
       selectButton.type = 'button';
       selectButton.className = 'wallet-choose-button';
-      selectButton.textContent = '선택';
-      selectButton.disabled = wallet.id === activeWalletId;
+      selectButton.textContent = wallet.backupVerified ? '선택' : '기기에 개인키 백업후 사용가능';
+      selectButton.disabled = !wallet.backupVerified || wallet.id === activeWalletId;
       selectButton.onclick = async () => { await switchWallet(wallet.id, false); $('walletManagerDialog').close(); };
       const deleteButton = document.createElement('button');
       deleteButton.type = 'button';
@@ -676,7 +676,7 @@
 
   async function switchWallet(walletId, scroll = true) {
     const wallet = wallets.find((item) => item.id === walletId);
-    if (!wallet) return;
+    if (!wallet || !wallet.backupVerified) return;
     activeWalletId = wallet.id;
     privateKey = wallet.privateKey;
     $('activeWalletName').textContent = wallet.name;
@@ -687,7 +687,7 @@
     renderWalletList();
     try { await persistWallets(); } catch { /* selection remains valid for this session */ }
     refreshHistory(1);
-    if (!wallet.backupVerified) openDeviceBackup();
+
     if (scroll) $('wallet').scrollIntoView({ behavior: 'smooth', block: 'start' });
     resetAutoLock();
   }
@@ -1291,15 +1291,19 @@
 
   $('createBtn').onclick = () => {
     $('createForm').classList.toggle('hidden');
-    $('importForm').classList.add('hidden');
     if (!$('createForm').classList.contains('hidden')) $('createPassword').focus();
   };
 
   $('showImportBtn').onclick = () => {
-    $('importForm').classList.toggle('hidden');
     $('createForm').classList.add('hidden');
-    if (!$('importForm').classList.contains('hidden')) $('importKey').focus();
+    $('importForm').reset();
+    $('importDialog').showModal();
+    $('importName').focus();
   };
+
+  $('importClose').onclick = () => $('importDialog').close();
+  $('importCancel').onclick = () => $('importDialog').close();
+  $('importDialog').addEventListener('close', () => $('importForm').reset());
 
   $('createForm').onsubmit = async (event) => {
     event.preventDefault();
@@ -1311,7 +1315,6 @@
       setLoading(button, true, '안전하게 생성');
       await saveWallet(generatePrivateKey(), password);
       toast('지갑을 만들었습니다. 지금 개인키를 백업하세요.');
-      setTimeout(() => $('settingsDialog').showModal(), 350);
     } catch (error) { toast(error.message); }
     finally { setLoading(button, false, '안전하게 생성'); }
   };
@@ -1323,6 +1326,7 @@
       setLoading(button, true, '암호화하여 가져오기');
       await saveWallet($('importKey').value.trim(), $('importPassword').value, $('importName').value.trim());
       $('importForm').reset();
+      $('importDialog').close();
       toast('지갑을 안전하게 가져왔습니다.');
     } catch (error) { toast(error.message); }
     finally { setLoading(button, false, '암호화하여 가져오기'); }
@@ -1417,13 +1421,12 @@
     try {
       setLoading($('addWalletBtn'), true, '암호화하여 추가');
       wallets.push(wallet);
-      activeWalletId = wallet.id;
-      privateKey = wallet.privateKey;
       await persistWallets();
       $('additionalWalletName').value = '';
       $('additionalWalletKey').value = '';
       $('addWalletDialog').close();
       showWallet();
+      $('walletManagerDialog').showModal();
       toast(`${wallet.name}을 추가했습니다.`);
     } catch (error) {
       wallets = wallets.filter((item) => item.id !== wallet.id);
@@ -1499,11 +1502,10 @@
       setLoading($('createWalletConfirmAccept'), true, '생성');
       wallet = makeWallet(generatePrivateKey(), $('createWalletName').value.trim());
       wallets.push(wallet);
-      activeWalletId = wallet.id;
-      privateKey = wallet.privateKey;
       await persistWallets();
       $('createWalletConfirmDialog').close();
       showWallet();
+      $('walletManagerDialog').showModal();
       toast(`${wallet.name}을 생성했습니다. 개인키를 꼭 백업하세요.`);
     } catch (error) {
       if (wallet) wallets = wallets.filter((item) => item.id !== wallet.id);
@@ -1666,37 +1668,51 @@
     if (backupStatus() === 'good') {
       $('backupFileName').textContent = backupRecord.fileName;
       $('backupLocationDialog').showModal();
-    } else if (backupStatus() === 'stale') $('updateBackupOpen').click();
+    } else if (backupStatus() === 'stale') openBackupUpdate();
     else openDeviceBackup();
   }
   $('backupLocationClose').onclick = () => $('backupLocationDialog').close();
   $('backupLocationVerify').onclick = () => openRestoreBackup(true);
 
-  function downloadBackup(text, count) {
+  function backupFileName(now = new Date()) {
+    const pad = value => String(value).padStart(2, '0');
+    const timestamp = String(now.getFullYear()) + pad(now.getMonth() + 1) + pad(now.getDate()) + pad(now.getHours()) + pad(now.getMinutes());
+    const prefix = WalletI18n.language === 'en' ? 'PSL Wallet private key' : 'PSL지갑 개인키';
+    return prefix + '_' + timestamp + '.json';
+  }
+
+  function downloadBackup(text) {
     const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
     const link = document.createElement('a');
     link.href = url;
-    const now = new Date();
-    const pad = value => String(value).padStart(2, '0');
-    const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    const name = (count > 1 ? '다수지갑' : activeWallet()?.name || 'Wallet').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_');
-    link.download = `PSL Wallet [${name}] ${timestamp}.json`;
+    link.download = backupFileName();
     document.body.append(link);
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
 
+  function syncBackupUpdateControls() {
+    $('updateBackupReview').disabled = backupBusy || !updateBackupSelection || !$('updateBackupPassword').value;
+    $('updateBackupChoose').disabled = backupBusy;
+    $('updateBackupPassword').disabled = backupBusy;
+  }
+
   function resetBackupUpdateReview() {
     updateBackupPlan = null;
-    $('updateBackupSummary').textContent = '';
+    $('updateBackupFileName').textContent = '';
+    $('updateBackupOldWallets').replaceChildren();
+    $('updateBackupNewWallets').replaceChildren();
     $('updateBackupAccept').classList.add('hidden');
     $('updateBackupReview').textContent = '업데이트할 지갑 확인';
     $('updateBackupReview').classList.add('primary');
     $('updateBackupReview').classList.remove('secondary');
+    $('updateBackupInput').classList.remove('hidden');
+    $('updateBackupSummary').classList.add('hidden');
+    syncBackupUpdateControls();
   }
 
-  $('updateBackupOpen').onclick = () => {
+  function openBackupUpdate() {
     if (backupBusy || !vaultPassword) return;
     updateBackupSelection = null;
     resetBackupUpdateReview();
@@ -1706,8 +1722,9 @@
     $('updateBackupHelp').textContent = typeof window.showOpenFilePicker === 'function'
       ? '기존 파일을 선택하고 비밀번호를 입력하세요. 내용을 확인하고 동의한 뒤 같은 파일에 저장합니다.'
       : '이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 현재 지갑 목록을 담은 새 백업을 저장합니다.';
+    syncBackupUpdateControls();
     $('updateBackupDialog').showModal();
-  };
+  }
   $('updateBackupChoose').onclick = async () => {
     if (backupBusy) return;
     resetBackupUpdateReview();
@@ -1715,6 +1732,7 @@
     $('updateBackupName').textContent = '';
     $('updateBackupError').textContent = '';
     $('updateBackupForm').reset();
+    syncBackupUpdateControls();
     if (typeof window.showOpenFilePicker !== 'function') {
       $('updateBackupFile').value = '';
       $('updateBackupFile').click();
@@ -1725,16 +1743,19 @@
       if (!vaultPassword || !$('updateBackupDialog').open) return;
       updateBackupSelection = { handle };
       $('updateBackupName').textContent = handle.name;
+      syncBackupUpdateControls();
     } catch (error) {
       if (error.name !== 'AbortError') $('updateBackupError').textContent = '파일 선택 권한을 확인해 주세요. 파일을 변경하지 않았습니다.';
     }
   };
   $('updateBackupFile').onchange = () => {
+    updateBackupSelection = null;
     resetBackupUpdateReview();
     const file = $('updateBackupFile').files[0];
     if (!file || !vaultPassword || !$('updateBackupDialog').open) return;
     updateBackupSelection = { file };
     $('updateBackupName').textContent = file.name;
+    syncBackupUpdateControls();
   };
   $('updateBackupPassword').oninput = resetBackupUpdateReview;
   $('updateBackupCancel').onclick = () => { if (!backupBusy) $('updateBackupDialog').close(); };
@@ -1757,19 +1778,28 @@
     const password = $('updateBackupPassword').value;
     backupBusy = true;
     setLoading($('updateBackupReview'), true, '업데이트할 지갑 확인');
+    syncBackupUpdateControls();
     try {
       const file = selection.handle ? await selection.handle.getFile() : selection.file;
       if (file.size > WalletBackup.maxFileSize) throw new Error('FILE_TOO_LARGE');
       const original = await file.text();
-      await WalletBackup.decrypt(original, password);
+      const old = await WalletBackup.decrypt(original, password);
       const merged = snapshot;
       const updated = await WalletBackup.encrypt(merged, password);
       if (wallets !== snapshot || !vaultPassword || !$('updateBackupDialog').open || selection !== updateBackupSelection) return;
       const writable = Boolean(selection.handle && typeof selection.handle.createWritable === 'function');
       updateBackupPlan = { selection, snapshot, currentWallet, original, updated, count: merged.length, writable };
-      $('updateBackupSummary').textContent = `현재 지갑 ${merged.length}개의 이름과 개인키로 파일을 교체합니다.
-${merged.map(wallet => wallet.name).join("\n")}
-앱에 없는 지갑은 백업에서도 제외됩니다. 저장할까요?`;
+      $('updateBackupFileName').textContent = file.name;
+      for (const [id, entries] of [['updateBackupOldWallets', old.wallets], ['updateBackupNewWallets', merged]]) {
+        $(id).replaceChildren();
+        entries.forEach(wallet => {
+          const item = document.createElement('li');
+          item.textContent = wallet.name;
+          $(id).append(item);
+        });
+      }
+      $('updateBackupInput').classList.add('hidden');
+      $('updateBackupSummary').classList.remove('hidden');
       $('updateBackupAccept').textContent = writable ? '동의하고 같은 파일에 저장' : '동의하고 새 통합 파일 저장';
       if (!writable) $('updateBackupHelp').textContent = '이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 현재 지갑 목록을 담은 새 백업을 저장합니다.';
       $('updateBackupAccept').classList.remove('hidden');
@@ -1778,9 +1808,8 @@ ${merged.map(wallet => wallet.name).join("\n")}
       $('updateBackupError').textContent = '파일 또는 비밀번호를 확인해 주세요. 기존 파일은 변경하지 않았습니다.';
     } finally {
       backupBusy = false;
-      setLoading($('updateBackupReview'), false, updateBackupPlan ? '업데이트할 지갑 다시 확인' : '업데이트할 지갑 확인');
-      $('updateBackupReview').classList.toggle('primary', !updateBackupPlan);
-      $('updateBackupReview').classList.toggle('secondary', Boolean(updateBackupPlan));
+      setLoading($('updateBackupReview'), false, '업데이트할 지갑 확인');
+      syncBackupUpdateControls();
     }
   };
   $('updateBackupAccept').onclick = async () => {
@@ -1807,7 +1836,7 @@ ${merged.map(wallet => wallet.name).join("\n")}
         showWallet();
         toast('기존 백업 파일을 업데이트하고 저장 내용을 확인했습니다. 지갑을 사용할 수 있습니다.');
       } else {
-        downloadBackup(plan.updated, plan.count);
+        downloadBackup(plan.updated);
         $('updateBackupDialog').close();
         openDeviceBackup();
         openRestoreBackup(true);
@@ -1841,7 +1870,7 @@ ${merged.map(wallet => wallet.name).join("\n")}
     $('deviceBackupForm').reset();
     $('deviceBackupError').textContent = '';
     $('deviceBackupWallet').textContent = 'PSL Wallet 사용자들에게…';
-    $('deviceBackupExit').textContent = wallet.backupVerified ? '닫기' : '지갑 잠그기';
+    $('deviceBackupExit').textContent = '취소';
     $('deviceBackupDialog').showModal();
   }
 
@@ -1863,19 +1892,10 @@ ${merged.map(wallet => wallet.name).join("\n")}
 
   document.querySelectorAll('[data-device-backup]').forEach((button) => { button.onclick = handleBackupStatus; });
   document.querySelectorAll('[data-restore-backup]').forEach((button) => { button.onclick = () => openRestoreBackup(); });
-  $('deviceBackupVerify').onclick = () => openRestoreBackup(true);
-  $('walletManagerDialog').addEventListener('close', () => {
-    if (activeWallet() && !activeWallet().backupVerified && !document.querySelector('dialog[open]')) openDeviceBackup();
-  });
   $('deviceBackupExit').onclick = () => {
-    if (backupBusy) return;
-    if (activeWallet()?.backupVerified) $('deviceBackupDialog').close();
-    else lockWallet();
+    if (!backupBusy) $('deviceBackupDialog').close();
   };
-  $('deviceBackupDialog').oncancel = (event) => {
-    event.preventDefault();
-    if (!backupBusy && activeWallet()?.backupVerified) $('deviceBackupDialog').close();
-  };
+  $('deviceBackupDialog').oncancel = event => { if (backupBusy) event.preventDefault(); };
   $('restoreBackupCancel').onclick = () => { if (!backupBusy) $('restoreBackupDialog').close(); };
   $('restoreBackupDialog').oncancel = (event) => { if (backupBusy) event.preventDefault(); };
   $('restoreBackupDialog').addEventListener('close', () => $('restoreBackupForm').reset());
@@ -1896,7 +1916,7 @@ ${merged.map(wallet => wallet.name).join("\n")}
     try {
       const text = await WalletBackup.encrypt(wallets, password);
       if (activeWallet() !== wallet || !vaultPassword) return;
-      downloadBackup(text, wallets.length);
+      downloadBackup(text);
       openRestoreBackup(true);
       $('deviceBackupForm').reset();
       $('deviceBackupError').textContent = '파일 저장을 요청했습니다. 다운로드 또는 내 파일에서 저장 위치를 확인한 뒤, 아래 버튼으로 해당 파일을 다시 열어 주세요.';
@@ -1973,5 +1993,5 @@ ${merged.map(wallet => wallet.name).join("\n")}
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=71', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=73', { updateViaCache: 'none' }).catch(() => {});
 })();
