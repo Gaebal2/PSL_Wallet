@@ -26,6 +26,11 @@ globalThis.WalletBackup = (() => {
   }
   return {
     maxFileSize: 1048576,
+    matches(current, saved) {
+      if (!Array.isArray(saved) || current.length !== saved.length) return false;
+      const entries = new Map(saved.map(wallet => [wallet.privateKey.toLowerCase(), wallet.name]));
+      return entries.size === current.length && current.every(wallet => entries.get(wallet.privateKey.toLowerCase()) === wallet.name);
+    },
     merge(existing, current) {
       // File-only wallets are preserved; existing names win for duplicate keys.
       const merged = new Map();

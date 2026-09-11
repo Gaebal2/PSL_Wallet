@@ -193,7 +193,7 @@
 
   async function persistWallets() {
     if (!vaultPassword || !wallets.length) throw new Error('지갑 잠금을 먼저 해제해 주세요.');
-    await encryptVault(JSON.stringify({ version: 2, wallets, activeWalletId }), vaultPassword);
+    await encryptVault(JSON.stringify({ version: 2, wallets, activeWalletId, backupRecord }), vaultPassword);
   }
 
   function contractId() {
@@ -466,8 +466,31 @@
     });
   }
 
-  function showPrivateKeyBackup(key) {
-    $('privateKeyValue').textContent = key;
+  function showPrivateKeyBackup() {
+    const list = $('privateKeyList');
+    list.replaceChildren();
+    wallets.forEach(wallet => {
+      const item = document.createElement('section');
+      item.className = 'private-key-entry';
+      const name = document.createElement('strong');
+      name.textContent = wallet.name;
+      name.translate = false;
+      const addressValue = document.createElement('code');
+      addressValue.className = 'private-key-address';
+      addressValue.textContent = wallet.id;
+      const row = document.createElement('div');
+      row.className = 'private-key-box';
+      const key = document.createElement('code');
+      key.textContent = wallet.privateKey;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.setAttribute('aria-label', '개인키 복사');
+      button.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M15 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3"/></svg>';
+      button.onclick = () => copy(wallet.privateKey);
+      row.append(key, button);
+      item.append(name, addressValue, row);
+      list.append(item);
+    });
     const dialog = $('privateKeyDialog');
     dialog.oncancel = (event) => { event.preventDefault(); closePrivateKeyBackup(); };
     dialog.showModal();
@@ -475,7 +498,7 @@
 
   function closePrivateKeyBackup() {
     $('privateKeyDialog').close();
-    $('privateKeyValue').textContent = '';
+    $('privateKeyList').replaceChildren();
   }
 
   function isInvalidPslTransferAmount(value) {
@@ -505,8 +528,6 @@
     SASEUL.Rpc.endpoints([config.endpoint]);
     SASEUL.Rpc.timeout(12000);
     $('endpoint').value = config.endpoint;
-    $('contractOwner').value = config.owner;
-    $('space').value = config.space;
     $('cid').value = config.cid;
   }
 
@@ -537,6 +558,9 @@
     privateKey = '';
     vaultPassword = '';
     wallets = [];
+    backupRecord = null;
+    $('privateKeyList').replaceChildren();
+    renderBackupStatus();
     activeWalletId = '';
     walletBalances.clear();
     clearTimeout(autoLockTimer);
@@ -556,6 +580,7 @@
   }
 
   function renderWalletList() {
+    renderBackupStatus();
     const container = $('walletList');
     container.replaceChildren();
     wallets.forEach((wallet) => {
@@ -1311,6 +1336,7 @@
       const password = $('unlockPassword').value;
       const data = await decryptVault(password);
       wallets = data.wallets.map((wallet, index) => makeWallet(wallet.privateKey, wallet.name || `지갑 ${index + 1}`, wallet.backupVerified));
+      backupRecord = data.backupRecord || null;
       activeWalletId = wallets.some((wallet) => wallet.id === data.activeWalletId) ? data.activeWalletId : wallets[0].id;
       vaultPassword = password;
       privateKey = activeWallet().privateKey;
@@ -1410,16 +1436,15 @@
     if (Date.now() < suppressLockClickUntil) return;
     lockWallet(true);
   };
-  $('settingsForm').onsubmit = (event) => {
-    event.preventDefault();
-    const next = { endpoint: $('endpoint').value.trim().replace(/\/$/, ''), owner: $('contractOwner').value.trim(), space: $('space').value.trim(), cid: $('cid').value.trim() };
+  $('settingsForm').onsubmit = event => event.preventDefault();
+  $('endpoint').onchange = () => {
+    const next = { ...config, endpoint: $('endpoint').value.trim().replace(/\/$/, '') };
     if (!next.endpoint.startsWith('https://') && location.hostname !== 'localhost') return toast('배포 환경에서는 HTTPS RPC만 사용할 수 있습니다.');
     if (next.cid && !/^[0-9a-fA-F]{64}$/.test(next.cid)) return toast('CID는 64자리 16진수여야 합니다.');
     if (!next.cid && next.owner && !SASEUL.Sign.addressValidity(next.owner)) return toast('발행자 주소를 확인해 주세요.');
     config = next;
     localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
     applyConfig();
-    $('settingsDialog').close();
     toast('설정을 저장했습니다.');
     if (privateKey) refresh();
   };
@@ -1431,8 +1456,8 @@
     resetAutoLock();
   };
 
-  $('copyPrivateKey').onclick = () => copy($('privateKeyValue').textContent);
   $('privateKeyClose').onclick = closePrivateKeyBackup;
+  $('privateKeyDialog').addEventListener('close', () => $('privateKeyList').replaceChildren());
 
   async function deleteWallet() {
     if (!walletVault) return;
@@ -1444,6 +1469,8 @@
     privateKey = '';
     vaultPassword = '';
     wallets = [];
+    backupRecord = null;
+    $('privateKeyList').replaceChildren();
     activeWalletId = '';
     walletBalances.clear();
     $('settingsDialog').close();
@@ -1605,10 +1632,45 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden && privateKey) resetAutoLock(); });
   window.addEventListener('offline', () => { $('connectionState').className = 'connection offline'; $('connectionState').innerHTML = '<i></i> 오프라인'; });
 
+  let backupRecord = null;
   let backupVerificationId = null;
   let backupBusy = false;
   let updateBackupSelection = null;
   let updateBackupPlan = null;
+
+  function makeBackupRecord(saved, fileName) {
+    return { wallets: saved.map(({ name, privateKey }) => ({ name, privateKey })), fileName };
+  }
+
+  function backupStatus() {
+    if (!backupRecord) return 'missing';
+    return WalletBackup.matches(wallets, backupRecord.wallets) ? 'good' : 'stale';
+  }
+
+  function renderBackupStatus() {
+    const status = backupStatus();
+    const labels = {
+      good: '(양호O) 개인키 기기에 백업 완료',
+      stale: '(주의!) 기기에 백업된 개인키 업데이트 필요',
+      missing: '(경고!) 개인키 기기에 백업 안됨'
+    };
+    document.querySelectorAll('[data-device-backup]').forEach(button => {
+      button.classList.remove('backup-good', 'backup-stale', 'backup-missing');
+      button.classList.add('backup-' + status);
+      button.textContent = labels[status];
+    });
+  }
+
+  function handleBackupStatus() {
+    if (!vaultPassword) return openDeviceBackup();
+    if (backupStatus() === 'good') {
+      $('backupFileName').textContent = backupRecord.fileName;
+      $('backupLocationDialog').showModal();
+    } else if (backupStatus() === 'stale') $('updateBackupOpen').click();
+    else openDeviceBackup();
+  }
+  $('backupLocationClose').onclick = () => $('backupLocationDialog').close();
+  $('backupLocationVerify').onclick = () => openRestoreBackup(true);
 
   function downloadBackup(text, count) {
     const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
@@ -1629,7 +1691,7 @@
     updateBackupPlan = null;
     $('updateBackupSummary').textContent = '';
     $('updateBackupAccept').classList.add('hidden');
-    $('updateBackupReview').textContent = '추가할 지갑 확인';
+    $('updateBackupReview').textContent = '업데이트할 지갑 확인';
     $('updateBackupReview').classList.add('primary');
     $('updateBackupReview').classList.remove('secondary');
   }
@@ -1643,7 +1705,7 @@
     $('updateBackupError').textContent = '';
     $('updateBackupHelp').textContent = typeof window.showOpenFilePicker === 'function'
       ? '기존 파일을 선택하고 비밀번호를 입력하세요. 내용을 확인하고 동의한 뒤 같은 파일에 저장합니다.'
-      : '이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 기존 지갑과 새 지갑을 합친 새 통합 백업을 저장합니다.';
+      : '이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 현재 지갑 목록을 담은 새 백업을 저장합니다.';
     $('updateBackupDialog').showModal();
   };
   $('updateBackupChoose').onclick = async () => {
@@ -1694,27 +1756,29 @@
     const currentWallet = activeWallet();
     const password = $('updateBackupPassword').value;
     backupBusy = true;
-    setLoading($('updateBackupReview'), true, '추가할 지갑 확인');
+    setLoading($('updateBackupReview'), true, '업데이트할 지갑 확인');
     try {
       const file = selection.handle ? await selection.handle.getFile() : selection.file;
       if (file.size > WalletBackup.maxFileSize) throw new Error('FILE_TOO_LARGE');
       const original = await file.text();
-      const old = await WalletBackup.decrypt(original, password);
-      const merged = WalletBackup.merge(old.wallets, snapshot);
+      await WalletBackup.decrypt(original, password);
+      const merged = snapshot;
       const updated = await WalletBackup.encrypt(merged, password);
       if (wallets !== snapshot || !vaultPassword || !$('updateBackupDialog').open || selection !== updateBackupSelection) return;
       const writable = Boolean(selection.handle && typeof selection.handle.createWritable === 'function');
       updateBackupPlan = { selection, snapshot, currentWallet, original, updated, count: merged.length, writable };
-      $('updateBackupSummary').textContent = `기존 지갑 ${old.wallets.length}개에 새 지갑 ${merged.length - old.wallets.length}개를 추가합니다. 총 ${merged.length}개 지갑을 저장할까요?`;
+      $('updateBackupSummary').textContent = `현재 지갑 ${merged.length}개의 이름과 개인키로 파일을 교체합니다.
+${merged.map(wallet => wallet.name).join("\n")}
+앱에 없는 지갑은 백업에서도 제외됩니다. 저장할까요?`;
       $('updateBackupAccept').textContent = writable ? '동의하고 같은 파일에 저장' : '동의하고 새 통합 파일 저장';
-      if (!writable) $('updateBackupHelp').textContent = '이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 기존 지갑과 새 지갑을 합친 새 통합 백업을 저장합니다.';
+      if (!writable) $('updateBackupHelp').textContent = '이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 현재 지갑 목록을 담은 새 백업을 저장합니다.';
       $('updateBackupAccept').classList.remove('hidden');
       $('updateBackupForm').reset();
     } catch {
       $('updateBackupError').textContent = '파일 또는 비밀번호를 확인해 주세요. 기존 파일은 변경하지 않았습니다.';
     } finally {
       backupBusy = false;
-      setLoading($('updateBackupReview'), false, updateBackupPlan ? '추가할 지갑 다시 확인' : '추가할 지갑 확인');
+      setLoading($('updateBackupReview'), false, updateBackupPlan ? '업데이트할 지갑 다시 확인' : '업데이트할 지갑 확인');
       $('updateBackupReview').classList.toggle('primary', !updateBackupPlan);
       $('updateBackupReview').classList.toggle('secondary', Boolean(updateBackupPlan));
     }
@@ -1733,9 +1797,11 @@
         await WalletBackup.writeVerified(plan.selection.handle, plan.original, plan.updated, active);
         if (!active()) return;
         const previousVault = walletVault;
+        const previousRecord = backupRecord;
+        backupRecord = makeBackupRecord(plan.snapshot, plan.selection.handle.name);
         wallets = wallets.map(wallet => ({ ...wallet, backupVerified: true }));
         try { await persistWallets(); }
-        catch (error) { wallets = plan.snapshot; walletVault = previousVault; throw error; }
+        catch (error) { wallets = plan.snapshot; walletVault = previousVault; backupRecord = previousRecord; throw error; }
         $('updateBackupDialog').close();
         $('deviceBackupDialog').close();
         showWallet();
@@ -1743,6 +1809,8 @@
       } else {
         downloadBackup(plan.updated, plan.count);
         $('updateBackupDialog').close();
+        openDeviceBackup();
+        openRestoreBackup(true);
         $('deviceBackupError').textContent = '새 통합 파일 저장을 요청했습니다. 기존 파일은 그대로입니다. 저장한 새 파일을 다시 열어 확인해 주세요.';
       }
     } catch (error) {
@@ -1793,7 +1861,7 @@
     $('restoreBackupDialog').showModal();
   }
 
-  document.querySelectorAll('[data-device-backup]').forEach((button) => { button.onclick = openDeviceBackup; });
+  document.querySelectorAll('[data-device-backup]').forEach((button) => { button.onclick = handleBackupStatus; });
   document.querySelectorAll('[data-restore-backup]').forEach((button) => { button.onclick = () => openRestoreBackup(); });
   $('deviceBackupVerify').onclick = () => openRestoreBackup(true);
   $('walletManagerDialog').addEventListener('close', () => {
@@ -1824,18 +1892,19 @@
       return;
     }
     backupBusy = true;
-    setLoading($('deviceBackupSave'), true, '개인키 기기에 백업하기');
+    setLoading($('deviceBackupSave'), true, '새 백업 파일 저장 후 확인');
     try {
       const text = await WalletBackup.encrypt(wallets, password);
       if (activeWallet() !== wallet || !vaultPassword) return;
       downloadBackup(text, wallets.length);
+      openRestoreBackup(true);
       $('deviceBackupForm').reset();
       $('deviceBackupError').textContent = '파일 저장을 요청했습니다. 다운로드 또는 내 파일에서 저장 위치를 확인한 뒤, 아래 버튼으로 해당 파일을 다시 열어 주세요.';
     } catch {
       $('deviceBackupError').textContent = '백업 파일을 만들지 못했습니다. 비밀번호는 10자 이상이어야 합니다. 다시 시도해 주세요.';
     } finally {
       backupBusy = false;
-      setLoading($('deviceBackupSave'), false, '개인키 기기에 백업하기');
+      setLoading($('deviceBackupSave'), false, '새 백업 파일 저장 후 확인');
     }
   };
 
@@ -1858,18 +1927,24 @@
     setLoading($('restoreBackupSubmit'), true, '백업된 개인키 불러오기');
     const previousWallets = wallets;
     const previousId = activeWalletId;
+    const previousRecord = backupRecord;
     const previousVault = walletVault;
     try {
       const data = await WalletBackup.decrypt(await file.text(), $('restoreBackupPassword').value);
       if (vaultPassword !== sessionPassword || !$('restoreBackupDialog').open) return;
       const restored = data.wallets.map(wallet => makeWallet(wallet.privateKey, wallet.name, true));
+      if (targetId && !restored.some(wallet => wallet.id === targetId)) throw new Error('선택한 지갑의 백업 파일이 아닙니다.');
       // Only wallets actually present in the verified file become usable.
-      wallets = mergeVerifiedWallets(wallets, restored, targetId);
+      wallets = targetId
+        ? wallets.map(wallet => ({ ...wallet, backupVerified: restored.some(saved => saved.id === wallet.id) || wallet.backupVerified }))
+        : mergeVerifiedWallets(wallets, restored, targetId);
+      backupRecord = makeBackupRecord(data.wallets, file.name);
       activeWalletId = targetId || restored[0].id;
       vaultPassword = sessionPassword || newPassword;
       try { await persistWallets(); }
       catch (error) {
         wallets = previousWallets;
+        backupRecord = previousRecord;
         activeWalletId = previousId;
         vaultPassword = sessionPassword;
         walletVault = previousVault;
@@ -1888,6 +1963,7 @@
 
   async function start() {
     applyConfig();
+    renderBackupStatus();
     await initializeVault();
     if (localStorage.getItem(LEGACY_KEY) && !walletVault) {
       localStorage.removeItem(LEGACY_KEY);
@@ -1897,5 +1973,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=70', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=71', { updateViaCache: 'none' }).catch(() => {});
 })();

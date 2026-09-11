@@ -1,6 +1,26 @@
 /* UI-only localization. Wallet data, keys and input values are never translated. */
 globalThis.WalletI18n = (() => {
   const pairs = `
+새 백업 파일이 필요하면 백업용 비밀번호를 입력하고 ‘새 백업 파일 저장 후 확인’을 누르세요. ‘개인키 기기에 백업하기’를 누르면 저장한 파일을 선택하여 확인할 수 있습니다. 현재 등록된 모든 지갑의 이름과 개인키를 백업해 주세요.|To create a backup, enter a backup password and select “Save and verify a new backup file”. Select “Back up private key to device” to choose and verify a saved file. Back up every current wallet name and private key.
+
+이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 현재 지갑 목록을 담은 새 백업을 저장합니다.|This browser cannot overwrite existing files. Select a file to save a new backup of your current wallets.
+
+토큰 CID|Token CID
+개인키 복사|Copy private key
+신뢰하는 HTTPS RPC만 사용하세요. 변경한 RPC는 자동 저장됩니다.|Use only trusted HTTPS RPC endpoints. RPC changes are saved automatically.
+기존 파일을 현재 지갑 목록으로 업데이트합니다. 지원하는 브라우저에서는 같은 파일에 저장하며, 미지원 환경에서는 새 파일을 저장합니다.|Update the file with your current wallets. Supported browsers save to the same file; other browsers save a new file.
+기존 백업 비밀번호를 그대로 사용합니다. 파일의 목록을 현재 지갑의 이름과 개인키로 교체하므로 앱에서 삭제한 지갑은 백업에서도 제외됩니다.|The backup password stays the same. The file is replaced with current wallet names and keys, excluding wallets removed from the app.
+업데이트할 지갑 확인|Review wallets to update
+업데이트할 지갑 다시 확인|Review wallets again
+새 백업 파일 저장 후 확인|Save and verify a new backup file
+기기에 저장한 백업|Backup saved on device
+파일명|File name
+저장 위치: 파일 저장 시 선택한 폴더 또는 기기의 다운로드 폴더를 확인해 주세요. 브라우저에서는 전체 폴더 경로를 제공하지 않습니다.|Location: Check the folder chosen when saving or your device's Downloads folder. Browsers do not provide the full folder path.
+마지막으로 확인한 파일 내용과 현재 지갑 목록이 일치합니다. 파일을 이동하거나 삭제했다면 다시 확인해 주세요.|The last verified file matches your current wallets. Verify again if you moved or deleted the file.
+(양호O) 개인키 기기에 백업 완료|(Good O) Private keys backed up on device
+(주의!) 기기에 백업된 개인키 업데이트 필요|(Caution!) Update the private key backup on device
+(경고!) 개인키 기기에 백업 안됨|(Warning!) Private keys not backed up on device
+
 본문으로 건너뛰기|Skip to content
 기존 백업 업데이트|Update existing backup
 기존 백업 파일 선택|Choose existing backup file
@@ -250,7 +270,7 @@ SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니�
 백업 파일에서 지갑을 복원했습니다.|Wallet restored from backup.
 비밀번호가 잘못되었거나 파일이 손상되었거나 저장 공간이 부족합니다. 기존 지갑은 유지됩니다.|Incorrect password, damaged file, or insufficient storage. Your existing wallets are preserved.
 보안을 위해 기존 평문 키를 제거했습니다. 백업 키를 다시 가져와 주세요.|The old unencrypted key was removed for security. Import your backup key again.
-`.trim().split('\n').map(line => line.split('|'));
+`.trim().split('\n').filter(line => line.includes('|')).map(line => line.split('|'));
   const dictionary = new Map(pairs);
   const koreanLabels = new Map([
     ['OPEN SOURCE · SELF CUSTODY', '오픈소스 · 개인키 직접 관리'], ['WELCOME BACK', '다시 오신 것을 환영합니다'],
@@ -263,6 +283,7 @@ SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니�
     ['CHECKING TRANSACTION', '거래 확인 중'], ['TRANSFER COMPLETE', '전송 완료'], ['TRANSFER FAILED', '전송 실패']
   ]);
   const templates = [
+    ['현재 지갑 {0}개의 이름과 개인키로 파일을 교체합니다.\n{1}\n앱에 없는 지갑은 백업에서도 제외됩니다. 저장할까요?', 'Replace the file with names and private keys for {0} current wallets.\n{1}\nWallets absent from the app will be removed from the backup. Save?'],
     ['기존 지갑 {0}개에 새 지갑 {1}개를 추가합니다. 총 {2}개 지갑을 저장할까요?', 'Add {1} new wallets to {0} existing wallets. Save {2} wallets in total?'],
     ['백업 파일의 지갑 {0}개를 확인했습니다. 모두 사용할 수 있습니다.', 'Verified {0} wallets in the backup. They are all ready to use.'],
     ['소수점은 최대 {0}자리까지 입력할 수 있습니다.', 'Use no more than {0} decimal places.'],
@@ -333,7 +354,8 @@ SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니�
     document.documentElement.lang = language;
     render();
     const button = document.getElementById('languageToggle');
-    button.textContent = language === 'ko' ? 'ENG' : 'KOR';
+    button.textContent = language === 'ko' ? 'ENG' : '한국어';
+    button.classList.toggle('korean-label', language === 'en');
     button.setAttribute('aria-label', language === 'ko' ? '언어: 한국어. 영어로 전환' : 'Language: English. Switch to Korean');
     document.getElementById('dangerConfirmPhrase').placeholder = language === 'ko' ? '삭제' : 'DELETE';
   }

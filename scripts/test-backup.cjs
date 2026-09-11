@@ -7,6 +7,12 @@ require('../pwa/backup.js');
   const wallet = { privateKey: 'ab'.repeat(32), name: '테스트 지갑' };
   const password = 'backup-password-123';
   const wallet2 = { privateKey: 'cd'.repeat(32), name: '두 번째 지갑' };
+  assert(WalletBackup.matches([wallet, wallet2], [wallet2, wallet]), 'Order does not affect backup status');
+  assert(!WalletBackup.matches([wallet], [wallet, wallet2]), 'Removed wallet requires update');
+  assert(!WalletBackup.matches([wallet, wallet2], [wallet]), 'Added wallet requires update');
+  assert(!WalletBackup.matches([{ ...wallet, name: 'Renamed' }], [wallet]), 'Renamed wallet requires update');
+  assert(!WalletBackup.matches([{ ...wallet, privateKey: wallet2.privateKey }], [wallet]), 'Changed key requires update');
+  assert(!WalletBackup.matches([wallet], null), 'No verified backup is not good');
   const encrypted = await WalletBackup.encrypt([wallet, wallet2], password);
   assert(!encrypted.includes(wallet.privateKey));
   assert(!encrypted.includes(password));
@@ -95,6 +101,16 @@ require('../pwa/backup.js');
   assert.equal(context.gated, 1, 'Verified/restored wallets can open');
   vm.runInContext(`wallets = JSON.parse(JSON.stringify(wallets)).map(w => makeWallet(w.privateKey, w.name, w.backupVerified)); showWallet();`, context);
   assert.equal(context.gated, 1, 'Verification survives reload');
+  context.WalletBackup = WalletBackup;
+  vm.runInContext(['makeBackupRecord', 'backupStatus'].map(extract).join('\n'), context);
+  context.backupRecord = null;
+  assert.equal(context.backupStatus(), 'missing');
+  context.backupRecord = context.makeBackupRecord(context.wallets, 'test.json');
+  assert.equal(context.backupStatus(), 'good');
+  context.wallets[0].name = 'Renamed';
+  assert.equal(context.backupStatus(), 'stale', 'Record must not share mutable wallet objects');
+  context.backupRecord = JSON.parse(JSON.stringify(context.backupRecord));
+  assert.equal(context.backupStatus(), 'stale', 'Backup record survives persistence');
   const old = { id: 'a', name: 'Keep my name', backupVerified: false };
   const pending = { id: 'b', backupVerified: false };
   const verified = context.mergeVerifiedWallets([old, pending], [{ id: 'a', name: 'Old name' }], 'a');
@@ -107,5 +123,44 @@ require('../pwa/backup.js');
   const all = context.mergeVerifiedWallets([old], [{ id: 'a' }, { id: 'b' }], 'b');
   assert.equal(all.length, 2);
   assert(all.every(wallet => wallet.backupVerified));
+
+  // Run the real restore handler: verification must not resurrect deleted wallets,
+  // overwrite current names, or report stale files as up to date.
+  const elements = new Map();
+  const element = id => {
+    if (!elements.has(id)) elements.set(id, { value: '', textContent: '', open: true, reset() {}, close() { this.open = false; } });
+    return elements.get(id);
+  };
+  const current = { ...wallet, id: wallet.privateKey, name: 'Current name', backupVerified: false };
+  const restoreContext = vm.createContext({
+    WalletBackup, wallets: [current], activeWalletId: current.id,
+    backupRecord: null, backupVerificationId: current.id, backupBusy: false,
+    vaultPassword: 'session-password', walletVault: 'old-vault',
+    $: element, setLoading() {}, showWallet() {}, toast() {},
+    persistWallets: async () => {},
+    document: { querySelectorAll: () => [] },
+    makeWallet: (key, name, backupVerified) => ({ id: key, privateKey: key, name, backupVerified })
+  });
+  vm.runInContext(['makeBackupRecord', 'backupStatus', 'mergeVerifiedWallets'].map(extract).join('\n'), restoreContext);
+  const restoreStart = source.indexOf("  $('restoreBackupForm').onsubmit = async");
+  const restoreEnd = source.indexOf('\n  async function start()', restoreStart);
+  vm.runInContext(source.slice(restoreStart, restoreEnd), restoreContext);
+  element('restoreBackupPassword').value = password;
+  element('restoreBackupFile').files = [{ size: encrypted.length, name: 'saved.json', text: async () => encrypted }];
+  await element('restoreBackupForm').onsubmit({ preventDefault() {} });
+  assert.equal(restoreContext.wallets.length, 1, 'Verification does not import file-only wallets');
+  assert.equal(restoreContext.wallets[0].name, 'Current name');
+  assert(restoreContext.wallets[0].backupVerified);
+  assert.equal(restoreContext.backupStatus(), 'stale');
+  const exact = await WalletBackup.encrypt(restoreContext.wallets, password);
+  element('restoreBackupFile').files = [{ size: exact.length, name: 'latest.json', text: async () => exact }];
+  await element('restoreBackupForm').onsubmit({ preventDefault() {} });
+  assert.equal(restoreContext.backupStatus(), 'good');
+  assert.equal(restoreContext.backupRecord.fileName, 'latest.json');
+  const previousRecord = restoreContext.backupRecord;
+  restoreContext.persistWallets = async () => { throw new Error('DISK_FULL'); };
+  element('restoreBackupFile').files = [{ size: encrypted.length, name: 'old.json', text: async () => encrypted }];
+  await element('restoreBackupForm').onsubmit({ preventDefault() {} });
+  assert.equal(restoreContext.backupRecord, previousRecord, 'Persistence failure rolls back the backup record');
   console.log('✓ Backup round-trip, wrong password, tampering, malformed input, random encryption and wallet migration/gating passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

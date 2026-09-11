@@ -75,3 +75,15 @@ html[lang="en"] .active-card-actions button { min-height: 48px; }
   .topbar { height: auto; min-height: 82px; flex-wrap: wrap; gap: 10px; padding-block: 14px; }
   .header-actions { margin-left: auto; }
 }
+
+.language-toggle.korean-label { font-size: 10px; }
+#cid { box-sizing: border-box; width: 100%; resize: none; overflow-wrap: anywhere; word-break: break-all; font: 12px/1.6 monospace; padding: 12px; border: 1px solid #d9dce5; border-radius: 12px; background: #f1f2f6; color: var(--ink); }
+.button.backup-good { background: #e0f3e8; color: #17613b; border: 1px solid #96ccad; }
+.button.backup-stale { background: #fff2c9; color: #735200; border: 1px solid #e3c35f; }
+.button.backup-missing { background: #fce5e5; color: #a12626; border: 1px solid #e2a0a0; }
+[data-device-backup] { white-space: normal; line-height: 1.5; font-size: 12px; padding: 12px 10px; }
+.private-key-entry { text-align: left; padding: 14px 0; border-bottom: 1px solid #d9dce5; }
+.private-key-address { display: block; overflow-wrap: anywhere; font-size: 11px; margin-top: 8px; }
+.private-key-entry .private-key-box { margin: 10px 0 0; }
+#backupFileName { overflow-wrap: anywhere; }
+#updateBackupSummary { white-space: pre-line; }

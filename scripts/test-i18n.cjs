@@ -3,6 +3,8 @@ const fs = require('node:fs');
 require('../pwa/i18n.js');
 const i18n = WalletI18n;
 i18n.setLanguage('en');
+assert.equal(i18n.translate(''), '', 'Whitespace must not become undefined');
+assert.equal(i18n.translate('(양호O) 개인키 기기에 백업 완료'), '(Good O) Private keys backed up on device');
 assert.equal(i18n.translate('백업된 개인키 불러오기'), 'Import private key backup');
 assert.equal(i18n.translate('소수점은 최대 18자리까지 입력할 수 있습니다.'), 'Use no more than 18 decimal places.');
 assert.equal(i18n.translate('PSL_HODler 지갑을 삭제할까요?'), 'Delete wallet PSL_HODler?');
