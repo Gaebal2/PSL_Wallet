@@ -309,7 +309,7 @@ SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니�
     document.documentElement.lang = language;
     render();
     const button = document.getElementById('languageToggle');
-    button.textContent = language === 'ko' ? 'KOR' : 'ENG';
+    button.textContent = language === 'ko' ? 'ENG' : 'KOR';
     button.setAttribute('aria-label', language === 'ko' ? '언어: 한국어. 영어로 전환' : 'Language: English. Switch to Korean');
     document.getElementById('dangerConfirmPhrase').placeholder = language === 'ko' ? '삭제' : 'DELETE';
   }
