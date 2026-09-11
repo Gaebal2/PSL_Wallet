@@ -1675,11 +1675,26 @@
     if (backupStatus() === 'good') {
       $('backupFileName').textContent = backupRecord.fileName;
       $('backupLocationDialog').showModal();
-    } else if (backupStatus() === 'stale') openBackupUpdate();
+    } else if (backupStatus() === 'stale') $('backupResolveDialog').showModal();
     else openDeviceBackup();
   }
+  $('backupResolveUpdate').onclick = () => {
+    if (backupBusy || !vaultPassword) return;
+    $('backupResolveDialog').close();
+    openBackupUpdate();
+  };
+  $('backupResolveCreate').onclick = () => {
+    if (backupBusy || !vaultPassword) return;
+    $('backupResolveDialog').close();
+    openDeviceBackup();
+  };
   $('backupLocationClose').onclick = () => $('backupLocationDialog').close();
   $('backupLocationVerify').onclick = () => openRestoreBackup(true);
+  $('backupLocationCreate').onclick = () => {
+    if (backupBusy || !vaultPassword) return;
+    $('backupLocationDialog').close();
+    openDeviceBackup();
+  };
 
   function backupFileName(now = new Date()) {
     const pad = value => String(value).padStart(2, '0');
@@ -2000,5 +2015,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=75', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=76', { updateViaCache: 'none' }).catch(() => {});
 })();

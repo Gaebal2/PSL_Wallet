@@ -22,6 +22,12 @@ globalThis.WalletI18n = (() => {
 파일명|File name
 저장 위치: 파일 저장 시 선택한 폴더 또는 기기의 다운로드 폴더를 확인해 주세요. 브라우저에서는 전체 폴더 경로를 제공하지 않습니다.|Location: Check the folder chosen when saving or your device's Downloads folder. Browsers do not provide the full folder path.
 마지막으로 확인한 파일 내용과 현재 지갑 목록이 일치합니다. 파일을 이동하거나 삭제했다면 다시 확인해 주세요.|The last verified file matches your current wallets. Verify again if you moved or deleted the file.
+백업 방법 선택|Choose a backup method
+현재 지갑 목록을 백업할 방법을 선택해 주세요.|Choose how to back up your current wallet list.
+기존 백업파일 업데이트|Update existing backup file
+기존 백업파일과 비밀번호로 내용을 확인한 뒤 현재 지갑 목록으로 업데이트합니다.|Review the existing backup with its password, then update it with your current wallet list.
+새로운 백업파일 생성|Create new backup file
+새 백업용 비밀번호를 설정하고 현재 지갑 목록을 별도 파일로 저장합니다.|Set a new backup password and save your current wallet list in a separate file.
 양호|Good
 주의|Caution
 경고|Warning

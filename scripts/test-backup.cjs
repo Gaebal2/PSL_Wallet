@@ -205,6 +205,31 @@ require('../pwa/backup.js');
   assert(choices[0].disabled, 'The active wallet remains disabled');
   updateContext.wallets = [existing, newlyAdded];
   const updateStart = source.indexOf('  function syncBackupUpdateControls()');
+  const routingContext = vm.createContext({
+    $: ui, vaultPassword: 'session-password', backupBusy: false,
+    backupRecord: { fileName: 'saved.json' }, status: 'stale',
+    backupStatus: () => routingContext.status,
+    openBackupUpdate() { routingContext.updated = true; },
+    openDeviceBackup() { routingContext.created = true; },
+    openRestoreBackup() {}
+  });
+  const routingStart = source.indexOf('  function handleBackupStatus()');
+  const routingEnd = source.indexOf('  function backupFileName(', routingStart);
+  vm.runInContext(source.slice(routingStart, routingEnd), routingContext);
+  routingContext.handleBackupStatus();
+  assert(ui('backupResolveDialog').open, 'Stale backups first show the method chooser');
+  assert(!routingContext.updated && !routingContext.created);
+  ui('backupResolveUpdate').onclick();
+  assert(routingContext.updated && !ui('backupResolveDialog').open);
+  routingContext.handleBackupStatus();
+  ui('backupResolveCreate').onclick();
+  assert(routingContext.created && !ui('backupResolveDialog').open);
+  routingContext.status = 'good';
+  routingContext.handleBackupStatus();
+  assert(ui('backupLocationDialog').open, 'Good backups still show saved-file details');
+  routingContext.created = false;
+  ui('backupLocationCreate').onclick();
+  assert(routingContext.created && !ui('backupLocationDialog').open, 'Good backups can start the same new-file backup flow');
   const updateEnd = source.indexOf('  function mergeVerifiedWallets(', updateStart);
   vm.runInContext(source.slice(updateStart, updateEnd), updateContext);
   updateContext.openBackupUpdate();
