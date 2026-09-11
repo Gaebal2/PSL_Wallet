@@ -1629,6 +1629,9 @@
     updateBackupPlan = null;
     $('updateBackupSummary').textContent = '';
     $('updateBackupAccept').classList.add('hidden');
+    $('updateBackupReview').textContent = '추가할 지갑 확인';
+    $('updateBackupReview').classList.add('primary');
+    $('updateBackupReview').classList.remove('secondary');
   }
 
   $('updateBackupOpen').onclick = () => {
@@ -1711,7 +1714,9 @@
       $('updateBackupError').textContent = '파일 또는 비밀번호를 확인해 주세요. 기존 파일은 변경하지 않았습니다.';
     } finally {
       backupBusy = false;
-      setLoading($('updateBackupReview'), false, '추가할 지갑 확인');
+      setLoading($('updateBackupReview'), false, updateBackupPlan ? '추가할 지갑 다시 확인' : '추가할 지갑 확인');
+      $('updateBackupReview').classList.toggle('primary', !updateBackupPlan);
+      $('updateBackupReview').classList.toggle('secondary', Boolean(updateBackupPlan));
     }
   };
   $('updateBackupAccept').onclick = async () => {
@@ -1892,5 +1897,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=68', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=70', { updateViaCache: 'none' }).catch(() => {});
 })();

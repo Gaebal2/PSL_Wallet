@@ -6,6 +6,7 @@ globalThis.WalletI18n = (() => {
 기존 백업 파일 선택|Choose existing backup file
 기존 파일을 선택하면 그 안의 지갑을 보존하고 새 지갑을 추가할 수 있습니다. 지원하는 브라우저에서는 동의 후 같은 파일에 저장하며, 미지원 환경에서는 새 통합 파일을 저장합니다.|Choose an existing backup to preserve its wallets and add new ones. Supported browsers can update the same file with your consent. Other browsers save a new combined file.
 추가할 지갑 확인|Review wallets to add
+추가할 지갑 다시 확인|Review wallets again
 기존 백업 비밀번호를 그대로 사용합니다. 기존 파일에만 있는 지갑도 보존하며 같은 개인키는 중복 추가하지 않습니다.|Your existing backup password stays the same. Wallets found only in the file are preserved, and duplicate private keys are not added twice.
 동의하고 업데이트|Agree and update
 기존 파일을 선택하고 비밀번호를 입력하세요. 내용을 확인하고 동의한 뒤 같은 파일에 저장합니다.|Choose your existing file and enter its password. Review the contents and agree before saving to the same file.
