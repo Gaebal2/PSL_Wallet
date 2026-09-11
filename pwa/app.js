@@ -1369,7 +1369,6 @@
   $('uninstallGuideClose').onclick = closeUninstallGuide;
   $('uninstallGuideDialog').oncancel = (event) => { event.preventDefault(); closeUninstallGuide(); };
   $('uninstallGuideBackup').onclick = async () => {
-    $('uninstallGuideDialog').close();
     if (!privateKey) return toast('먼저 지갑 잠금을 해제해 주세요.');
     if (!await confirmPrivateKeyBackup()) return;
     showPrivateKeyBackup(privateKey);
@@ -1480,13 +1479,13 @@
     activeWalletId = '';
     walletBalances.clear();
     $('settingsDialog').close();
+    $('uninstallGuideDialog').close();
     showOnly('onboarding');
     toast('이 기기에서 지갑을 삭제했습니다.');
   }
 
   $('logoutBtn').onclick = deleteWallet;
   $('uninstallGuideDelete').onclick = async () => {
-    $('uninstallGuideDialog').close();
     await deleteWallet();
   };
   $('createAdditionalWalletBtn').onclick = async () => {
@@ -1680,19 +1679,16 @@
   }
   $('backupResolveUpdate').onclick = () => {
     if (backupBusy || !vaultPassword) return;
-    $('backupResolveDialog').close();
     openBackupUpdate();
   };
   $('backupResolveCreate').onclick = () => {
     if (backupBusy || !vaultPassword) return;
-    $('backupResolveDialog').close();
     openDeviceBackup();
   };
   $('backupLocationClose').onclick = () => $('backupLocationDialog').close();
   $('backupLocationVerify').onclick = () => openRestoreBackup(true);
   $('backupLocationCreate').onclick = () => {
     if (backupBusy || !vaultPassword) return;
-    $('backupLocationDialog').close();
     openDeviceBackup();
   };
 
@@ -1855,6 +1851,7 @@
         catch (error) { wallets = plan.snapshot; walletVault = previousVault; backupRecord = previousRecord; throw error; }
         $('updateBackupDialog').close();
         $('deviceBackupDialog').close();
+        $('backupResolveDialog').close();
         showWallet();
         toast('기존 백업 파일을 업데이트하고 저장 내용을 확인했습니다. 지갑을 사용할 수 있습니다.');
       } else {
@@ -1888,7 +1885,7 @@
   function openDeviceBackup() {
     const wallet = activeWallet();
     if (!wallet || !vaultPassword) return toast('먼저 지갑 잠금을 해제해 주세요.');
-    document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
+    // Keep the previous dialog underneath so cancel returns to the entry screen.
     $('deviceBackupForm').reset();
     $('deviceBackupError').textContent = '';
     $('deviceBackupWallet').textContent = 'PSL Wallet 사용자들에게…';
@@ -2015,5 +2012,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=76', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=77', { updateViaCache: 'none' }).catch(() => {});
 })();
