@@ -9,7 +9,7 @@
   function disableInputSuggestions(root = document) {
     root.querySelectorAll('form').forEach((form) => form.setAttribute('autocomplete', 'off'));
     root.querySelectorAll('input:not([type="checkbox"]), textarea').forEach((input) => {
-      input.setAttribute('autocomplete', 'off');
+      input.setAttribute('autocomplete', input.dataset.passwordAutocomplete || 'off');
       input.setAttribute('autocorrect', 'off');
       input.setAttribute('autocapitalize', 'off');
       input.setAttribute('spellcheck', 'false');
@@ -402,7 +402,7 @@
       const onCancel = (event) => { event.preventDefault(); finish(false); };
       $('dangerConfirmCancel').onclick = () => finish(false);
       $('dangerConfirmAccept').onclick = () => {
-        if (requirePhrase && phraseInput.value.trim() !== '삭제') {
+        if (requirePhrase && phraseInput.value.trim() !== (WalletI18n.language === 'en' ? 'DELETE' : '삭제')) {
           $('dangerConfirmError').textContent = '“삭제”를 정확히 입력해 주세요.';
           phraseInput.focus();
           return;
@@ -1007,7 +1007,8 @@
         } catch { amount.textContent = `${sent ? '-' : '+'}${transaction.amount || '0'} ${symbol}`; }
         const time = document.createElement('small');
         const timestamp = Number(transaction.timestamp || 0);
-        time.textContent = timestamp ? new Intl.DateTimeFormat('ko-KR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(timestamp / 1000)) : '';
+        time.dataset.timestamp = timestamp ? String(timestamp / 1000) : '';
+        time.textContent = timestamp ? new Intl.DateTimeFormat(WalletI18n.language === 'en' ? 'en-US' : 'ko-KR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(timestamp / 1000)) : '';
         const feeText = document.createElement('small');
         feeText.className = 'history-fee';
         feeText.textContent = '수수료 계산 중…';
@@ -1258,6 +1259,7 @@
       button.classList.toggle('is-visible', reveal);
       const fieldName = input.id === 'importKey' || input.id === 'additionalWalletKey' ? '개인키' : '비밀번호';
       button.setAttribute('aria-label', `${fieldName} ${reveal ? '숨기기' : '표시'}`);
+      button.setAttribute('aria-pressed', String(reveal));
       input.focus({ preventScroll: true });
     });
   });
@@ -1612,7 +1614,7 @@
     document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
     $('deviceBackupForm').reset();
     $('deviceBackupError').textContent = '';
-    $('deviceBackupWallet').textContent = `${wallet.name} · ${shortenAddress(wallet.id)}`;
+    $('deviceBackupWallet').textContent = 'PSL Wallet 사용자들에게…';
     $('deviceBackupExit').textContent = wallet.backupVerified ? '닫기' : '지갑 잠그기';
     $('deviceBackupDialog').showModal();
   }
@@ -1750,5 +1752,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=60', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=63', { updateViaCache: 'none' }).catch(() => {});
 })();

@@ -11,7 +11,7 @@ for (const file of required) {
   if (!fs.existsSync(path.join(pwa, file))) failures.push(`Missing ${file}`);
 }
 
-for (const file of ['app.js', 'backup.js', 'sw.js', 'server.js']) {
+for (const file of ['app.js', 'backup.js', 'i18n.js', 'sw.js', 'server.js']) {
   try { new vm.Script(fs.readFileSync(path.join(pwa, file), 'utf8'), { filename: file }); }
   catch (error) { failures.push(error.message); }
 }
@@ -65,7 +65,7 @@ if (!appSource.includes('removeWallet') || !appSource.includes('syncDialogScroll
 if (!appSource.includes('formatDisplayUnits') || !appSource.includes('submitTransaction') || !html.includes('id="transferSuccessDialog"')) failures.push('Exact grouped amounts or resilient transfer completion UI is missing');
 if (!appSource.includes('Promise.any(requests)') || !appSource.includes('result.data ?? {}') || !appSource.includes("'받는 주소' : '보낸 주소'")) failures.push('Resilient empty history handling or counterparty labels are missing');
 if (!html.includes('id="transferReviewDialog"') || !appSource.includes('confirmTransfer') || !appSource.includes('formatAmountInput') || !appSource.includes("selectedAsset === 'SL' ? amount : formatUnits(amount, decimals)") || !appSource.includes('parseTokenUnits(balanceResult.data.balance, token.decimal)')) failures.push('Custom transfer review, grouped input, or PSL contract units are missing');
-if (!html.includes('app.js?v=60') || !appSource.includes("sw.js?v=60") || !swSource.includes("cache: 'reload'")) failures.push('Versioned app assets or forced service-worker refresh are missing');
+if (!html.includes('app.js?v=63') || !appSource.includes("sw.js?v=63") || !swSource.includes("cache: 'reload'")) failures.push('Versioned app assets or forced service-worker refresh are missing');
 if (!html.includes('id="appAlertDialog"') || !appSource.includes('isInvalidPslTransferAmount') || !appSource.includes('최소 송금 가능 금액은 1 PSL')) failures.push('Whole-unit PSL transfer warning is missing');
 if (!html.includes('id="transferReviewFee"') || !appSource.includes('estimatedFee') || !appSource.includes('history-fee') || !appSource.includes("'psl-token-icon.svg' : 'sl-token-icon.png'")) failures.push('Transfer fee preview or token-aware history is missing');
 if (!html.includes('id="dangerConfirmDialog"') || !appSource.includes('confirmDanger') || appSource.includes('if (!confirm(`${wallet.name}')) failures.push('Custom wallet deletion confirmation is missing');
