@@ -1607,6 +1607,159 @@
 
   let backupVerificationId = null;
   let backupBusy = false;
+  let updateBackupSelection = null;
+  let updateBackupPlan = null;
+
+  function downloadBackup(text, count) {
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    const now = new Date();
+    const pad = value => String(value).padStart(2, '0');
+    const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    const name = (count > 1 ? '다수지갑' : activeWallet()?.name || 'Wallet').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_');
+    link.download = `PSL Wallet [${name}] ${timestamp}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  function resetBackupUpdateReview() {
+    updateBackupPlan = null;
+    $('updateBackupSummary').textContent = '';
+    $('updateBackupAccept').classList.add('hidden');
+  }
+
+  $('updateBackupOpen').onclick = () => {
+    if (backupBusy || !vaultPassword) return;
+    updateBackupSelection = null;
+    resetBackupUpdateReview();
+    $('updateBackupForm').reset();
+    $('updateBackupName').textContent = '';
+    $('updateBackupError').textContent = '';
+    $('updateBackupHelp').textContent = typeof window.showOpenFilePicker === 'function'
+      ? '기존 파일을 선택하고 비밀번호를 입력하세요. 내용을 확인하고 동의한 뒤 같은 파일에 저장합니다.'
+      : '이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 기존 지갑과 새 지갑을 합친 새 통합 백업을 저장합니다.';
+    $('updateBackupDialog').showModal();
+  };
+  $('updateBackupChoose').onclick = async () => {
+    if (backupBusy) return;
+    resetBackupUpdateReview();
+    updateBackupSelection = null;
+    $('updateBackupName').textContent = '';
+    $('updateBackupError').textContent = '';
+    $('updateBackupForm').reset();
+    if (typeof window.showOpenFilePicker !== 'function') {
+      $('updateBackupFile').value = '';
+      $('updateBackupFile').click();
+      return;
+    }
+    try {
+      const [handle] = await window.showOpenFilePicker({ multiple: false, types: [{ description: 'PSL Wallet backup', accept: { 'application/json': ['.json'] } }] });
+      if (!vaultPassword || !$('updateBackupDialog').open) return;
+      updateBackupSelection = { handle };
+      $('updateBackupName').textContent = handle.name;
+    } catch (error) {
+      if (error.name !== 'AbortError') $('updateBackupError').textContent = '파일 선택 권한을 확인해 주세요. 파일을 변경하지 않았습니다.';
+    }
+  };
+  $('updateBackupFile').onchange = () => {
+    resetBackupUpdateReview();
+    const file = $('updateBackupFile').files[0];
+    if (!file || !vaultPassword || !$('updateBackupDialog').open) return;
+    updateBackupSelection = { file };
+    $('updateBackupName').textContent = file.name;
+  };
+  $('updateBackupPassword').oninput = resetBackupUpdateReview;
+  $('updateBackupCancel').onclick = () => { if (!backupBusy) $('updateBackupDialog').close(); };
+  $('updateBackupDialog').oncancel = event => { if (backupBusy) event.preventDefault(); };
+  $('updateBackupDialog').addEventListener('close', () => {
+    updateBackupSelection = null;
+    resetBackupUpdateReview();
+    $('updateBackupForm').reset();
+    $('updateBackupFile').value = '';
+  });
+  $('updateBackupForm').onsubmit = async event => {
+    event.preventDefault();
+    if (backupBusy || !vaultPassword) return;
+    const selection = updateBackupSelection;
+    if (!selection) { $('updateBackupError').textContent = '기존 백업 파일을 먼저 선택해 주세요.'; return; }
+    resetBackupUpdateReview();
+    $('updateBackupError').textContent = '';
+    const snapshot = wallets;
+    const currentWallet = activeWallet();
+    const password = $('updateBackupPassword').value;
+    backupBusy = true;
+    setLoading($('updateBackupReview'), true, '추가할 지갑 확인');
+    try {
+      const file = selection.handle ? await selection.handle.getFile() : selection.file;
+      if (file.size > WalletBackup.maxFileSize) throw new Error('FILE_TOO_LARGE');
+      const original = await file.text();
+      const old = await WalletBackup.decrypt(original, password);
+      const merged = WalletBackup.merge(old.wallets, snapshot);
+      const updated = await WalletBackup.encrypt(merged, password);
+      if (wallets !== snapshot || !vaultPassword || !$('updateBackupDialog').open || selection !== updateBackupSelection) return;
+      const writable = Boolean(selection.handle && typeof selection.handle.createWritable === 'function');
+      updateBackupPlan = { selection, snapshot, currentWallet, original, updated, count: merged.length, writable };
+      $('updateBackupSummary').textContent = `기존 지갑 ${old.wallets.length}개에 새 지갑 ${merged.length - old.wallets.length}개를 추가합니다. 총 ${merged.length}개 지갑을 저장할까요?`;
+      $('updateBackupAccept').textContent = writable ? '동의하고 같은 파일에 저장' : '동의하고 새 통합 파일 저장';
+      if (!writable) $('updateBackupHelp').textContent = '이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 기존 지갑과 새 지갑을 합친 새 통합 백업을 저장합니다.';
+      $('updateBackupAccept').classList.remove('hidden');
+      $('updateBackupForm').reset();
+    } catch {
+      $('updateBackupError').textContent = '파일 또는 비밀번호를 확인해 주세요. 기존 파일은 변경하지 않았습니다.';
+    } finally {
+      backupBusy = false;
+      setLoading($('updateBackupReview'), false, '추가할 지갑 확인');
+    }
+  };
+  $('updateBackupAccept').onclick = async () => {
+    const plan = updateBackupPlan;
+    if (backupBusy || !plan) return;
+    const active = () => Boolean(vaultPassword && wallets === plan.snapshot && activeWallet() === plan.currentWallet && $('updateBackupDialog').open && updateBackupPlan === plan);
+    if (!active()) { resetBackupUpdateReview(); return; }
+    backupBusy = true;
+    $('updateBackupAccept').disabled = true;
+    $('updateBackupError').textContent = '';
+    try {
+      if (plan.writable) {
+        // Permission is requested from this explicit confirmation click, before other awaits.
+        await WalletBackup.writeVerified(plan.selection.handle, plan.original, plan.updated, active);
+        if (!active()) return;
+        const previousVault = walletVault;
+        wallets = wallets.map(wallet => ({ ...wallet, backupVerified: true }));
+        try { await persistWallets(); }
+        catch (error) { wallets = plan.snapshot; walletVault = previousVault; throw error; }
+        $('updateBackupDialog').close();
+        $('deviceBackupDialog').close();
+        showWallet();
+        toast('기존 백업 파일을 업데이트하고 저장 내용을 확인했습니다. 지갑을 사용할 수 있습니다.');
+      } else {
+        downloadBackup(plan.updated, plan.count);
+        $('updateBackupDialog').close();
+        $('deviceBackupError').textContent = '새 통합 파일 저장을 요청했습니다. 기존 파일은 그대로입니다. 저장한 새 파일을 다시 열어 확인해 주세요.';
+      }
+    } catch (error) {
+      resetBackupUpdateReview();
+      $('updateBackupError').textContent = error.message === 'FILE_CHANGED'
+        ? '선택한 파일이 다른 곳에서 변경되었습니다. 다시 선택하고 확인해 주세요.'
+        : '저장 또는 저장 내용 확인을 완료하지 못했습니다. 지갑 잠금은 유지됩니다. 파일을 다시 선택하여 확인해 주세요.';
+    } finally {
+      backupBusy = false;
+      $('updateBackupAccept').disabled = false;
+    }
+  };
+
+  function mergeVerifiedWallets(current, restored, targetId) {
+    if (targetId && !restored.some(wallet => wallet.id === targetId)) throw new Error('선택한 지갑의 백업 파일이 아닙니다.');
+    const merged = new Map(current.map(wallet => [wallet.id, wallet]));
+    for (const wallet of restored) {
+      const existing = merged.get(wallet.id);
+      merged.set(wallet.id, { ...(existing || wallet), backupVerified: true });
+    }
+    return [...merged.values()];
+  }
 
   function openDeviceBackup() {
     const wallet = activeWallet();
@@ -1641,11 +1794,6 @@
   $('walletManagerDialog').addEventListener('close', () => {
     if (activeWallet() && !activeWallet().backupVerified && !document.querySelector('dialog[open]')) openDeviceBackup();
   });
-  $('deviceBackupOther').onclick = () => {
-    if (backupBusy) return;
-    $('deviceBackupDialog').close();
-    $('walletManagerDialog').showModal();
-  };
   $('deviceBackupExit').onclick = () => {
     if (backupBusy) return;
     if (activeWallet()?.backupVerified) $('deviceBackupDialog').close();
@@ -1673,16 +1821,9 @@
     backupBusy = true;
     setLoading($('deviceBackupSave'), true, '개인키 기기에 백업하기');
     try {
-      const text = await WalletBackup.encrypt(wallet, password);
+      const text = await WalletBackup.encrypt(wallets, password);
       if (activeWallet() !== wallet || !vaultPassword) return;
-      const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `PSL-wallet-${wallet.id.slice(0, 8)}-${Date.now()}.json`;
-      document.body.append(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      downloadBackup(text, wallets.length);
       $('deviceBackupForm').reset();
       $('deviceBackupError').textContent = '파일 저장을 요청했습니다. 다운로드 또는 내 파일에서 저장 위치를 확인한 뒤, 아래 버튼으로 해당 파일을 다시 열어 주세요.';
     } catch {
@@ -1697,8 +1838,8 @@
     event.preventDefault();
     if (backupBusy) return;
     const file = $('restoreBackupFile').files[0];
-    if (!file || file.size > 16384) {
-      $('restoreBackupError').textContent = '16KB 이하의 지갑 백업 파일을 선택해 주세요.';
+    if (!file || file.size > WalletBackup.maxFileSize) {
+      $('restoreBackupError').textContent = '1MB 이하의 지갑 백업 파일을 선택해 주세요.';
       return;
     }
     const sessionPassword = vaultPassword;
@@ -1716,11 +1857,10 @@
     try {
       const data = await WalletBackup.decrypt(await file.text(), $('restoreBackupPassword').value);
       if (vaultPassword !== sessionPassword || !$('restoreBackupDialog').open) return;
-      const restored = makeWallet(data.privateKey, data.name, true);
-      if (targetId && restored.id !== targetId) throw new Error('선택한 지갑의 백업 파일이 아닙니다.');
-      const existing = wallets.find((wallet) => wallet.id === restored.id);
-      wallets = existing ? wallets.map((wallet) => wallet.id === restored.id ? { ...wallet, backupVerified: true } : wallet) : [...wallets, restored];
-      activeWalletId = restored.id;
+      const restored = data.wallets.map(wallet => makeWallet(wallet.privateKey, wallet.name, true));
+      // Only wallets actually present in the verified file become usable.
+      wallets = mergeVerifiedWallets(wallets, restored, targetId);
+      activeWalletId = targetId || restored[0].id;
       vaultPassword = sessionPassword || newPassword;
       try { await persistWallets(); }
       catch (error) {
@@ -1732,7 +1872,7 @@
       }
       document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
       showWallet();
-      toast(targetId ? '백업 확인을 완료했습니다. 지갑을 사용할 수 있습니다.' : existing ? '이미 등록된 지갑의 백업을 확인했습니다.' : '백업 파일에서 지갑을 복원했습니다.');
+      toast(`백업 파일의 지갑 ${restored.length}개를 확인했습니다. 모두 사용할 수 있습니다.`);
     } catch (error) {
       $('restoreBackupError').textContent = error.message === '선택한 지갑의 백업 파일이 아닙니다.' ? error.message : '비밀번호가 잘못되었거나 파일이 손상되었거나 저장 공간이 부족합니다. 기존 지갑은 유지됩니다.';
     } finally {
@@ -1752,5 +1892,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=63', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=68', { updateViaCache: 'none' }).catch(() => {});
 })();

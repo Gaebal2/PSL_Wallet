@@ -2,6 +2,27 @@
 globalThis.WalletI18n = (() => {
   const pairs = `
 본문으로 건너뛰기|Skip to content
+기존 백업 업데이트|Update existing backup
+기존 백업 파일 선택|Choose existing backup file
+기존 파일을 선택하면 그 안의 지갑을 보존하고 새 지갑을 추가할 수 있습니다. 지원하는 브라우저에서는 동의 후 같은 파일에 저장하며, 미지원 환경에서는 새 통합 파일을 저장합니다.|Choose an existing backup to preserve its wallets and add new ones. Supported browsers can update the same file with your consent. Other browsers save a new combined file.
+추가할 지갑 확인|Review wallets to add
+기존 백업 비밀번호를 그대로 사용합니다. 기존 파일에만 있는 지갑도 보존하며 같은 개인키는 중복 추가하지 않습니다.|Your existing backup password stays the same. Wallets found only in the file are preserved, and duplicate private keys are not added twice.
+동의하고 업데이트|Agree and update
+기존 파일을 선택하고 비밀번호를 입력하세요. 내용을 확인하고 동의한 뒤 같은 파일에 저장합니다.|Choose your existing file and enter its password. Review the contents and agree before saving to the same file.
+이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 기존 지갑과 새 지갑을 합친 새 통합 백업을 저장합니다.|This browser cannot overwrite existing files. Choose a file to save a new combined backup containing both existing and new wallets.
+파일 선택 권한을 확인해 주세요. 파일을 변경하지 않았습니다.|Check file access permissions. The file has not been changed.
+기존 백업 파일을 먼저 선택해 주세요.|Choose an existing backup file first.
+동의하고 같은 파일에 저장|Agree and save to the same file
+동의하고 새 통합 파일 저장|Agree and save a new combined file
+파일 또는 비밀번호를 확인해 주세요. 기존 파일은 변경하지 않았습니다.|Check the file and password. The existing file has not been changed.
+기존 백업 파일을 업데이트하고 저장 내용을 확인했습니다. 지갑을 사용할 수 있습니다.|The existing backup was updated and verified. You can now use your wallets.
+새 통합 파일 저장을 요청했습니다. 기존 파일은 그대로입니다. 저장한 새 파일을 다시 열어 확인해 주세요.|A new combined backup download was requested. The original file is unchanged. Reopen the saved new file to verify it.
+선택한 파일이 다른 곳에서 변경되었습니다. 다시 선택하고 확인해 주세요.|The selected file was changed elsewhere. Select it again and review it.
+저장 또는 저장 내용 확인을 완료하지 못했습니다. 지갑 잠금은 유지됩니다. 파일을 다시 선택하여 확인해 주세요.|Saving or verification could not be completed. Unverified wallets remain locked. Select the file again to check it.
+‘개인키 기기에 백업하기’를 누르면 현재 등록된 모든 지갑의 개인키와 이름을 하나의 암호화 파일로 저장합니다. 지갑을 추가한 뒤 다시 백업하면 이전 지갑과 새 지갑이 함께 포함됩니다. 기존 파일이 자동으로 갱신되지는 않으므로 최신 파일을 별도로 저장하고 확인해 주세요.|Select “Back up private key to device” to save all registered wallets and their names in one encrypted file. Back up again after adding a wallet to include both existing and new wallets. Older files are not updated automatically. Save and verify the latest file.
+다른 브라우저나 새 기기에서 최신 파일을 준비하고 ‘백업된 개인키 불러오기’를 누르면 파일에 포함된 모든 지갑을 복원합니다. 백업 당시 비밀번호가 반드시 필요하며, 잊으면 이 파일로 복원할 수 없습니다. 지갑 잠금 비밀번호를 변경해도 파일의 비밀번호는 바뀌지 않습니다.|To restore every wallet in the file, transfer the latest backup to your browser or new device and select “Import private key backup”. You need the original backup password; without it, you cannot restore the file. Changing your wallet password does not change the file password.
+저장한 파일을 다시 선택하고 비밀번호를 입력해야 백업 확인이 완료됩니다. 파일에 포함된 지갑만 사용이 허용되며, 백업하지 않은 지갑은 계속 잠겨 있습니다. 이 파일은 브라우저의 사이트 데이터를 삭제해도 남습니다.|Select the saved file and enter its password to verify your backup. Only wallets included in that file become available; wallets without a verified backup stay locked. The file remains when browser site data is cleared.
+1MB 이하의 지갑 백업 파일을 선택해 주세요.|Choose a wallet backup file no larger than 1 MB.
 PSL 토큰 잔액|PSL token balance
 SL 메인넷 잔액|SL mainnet balance
 ↓ 아래로 당겼다 놓으면 모든 지갑의 잔액이 새로고침됩니다.|↓ Pull down and release to refresh all wallet balances.
@@ -241,6 +262,8 @@ SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니�
     ['CHECKING TRANSACTION', '거래 확인 중'], ['TRANSFER COMPLETE', '전송 완료'], ['TRANSFER FAILED', '전송 실패']
   ]);
   const templates = [
+    ['기존 지갑 {0}개에 새 지갑 {1}개를 추가합니다. 총 {2}개 지갑을 저장할까요?', 'Add {1} new wallets to {0} existing wallets. Save {2} wallets in total?'],
+    ['백업 파일의 지갑 {0}개를 확인했습니다. 모두 사용할 수 있습니다.', 'Verified {0} wallets in the backup. They are all ready to use.'],
     ['소수점은 최대 {0}자리까지 입력할 수 있습니다.', 'Use no more than {0} decimal places.'],
     ['PSL 컨트랙트를 확인할 수 없습니다: {0}', 'Cannot verify the PSL contract: {0}'],
     ['PSL 잔액을 확인할 수 없습니다: {0}', 'Cannot check the PSL balance: {0}'],

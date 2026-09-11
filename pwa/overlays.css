@@ -43,6 +43,8 @@ dialog > form > .button + .button {
   margin-top: 14px;
 }
 
+#updateBackupOpen, #updateBackupReview, #updateBackupAccept { margin-top: 14px; }
+
 .language-toggle,
 .language-toggle:hover,
 .language-toggle:active {

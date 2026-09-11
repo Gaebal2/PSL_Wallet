@@ -1,6 +1,10 @@
-/* Portable, encrypted single-wallet backups. No browser storage or network access. */
+/* Portable encrypted wallet bundles; legacy single-wallet files remain readable. */
 globalThis.WalletBackup = (() => {
-  const encode = (bytes) => btoa(String.fromCharCode(...bytes));
+  const encode = (bytes) => {
+    let binary = '';
+    for (let offset = 0; offset < bytes.length; offset += 8192) binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
+    return btoa(binary);
+  };
   const decode = (text) => Uint8Array.from(atob(text), (c) => c.charCodeAt(0));
   async function key(password, salt) {
     const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
@@ -11,23 +15,61 @@ globalThis.WalletBackup = (() => {
       || typeof wallet.name !== 'string' || wallet.name.length > 24) throw new Error('잘못된 백업 파일입니다.');
     return { privateKey: wallet.privateKey.toLowerCase(), name: wallet.name };
   }
+  function validateBundle(wallets) {
+    if (!Array.isArray(wallets) || !wallets.length || wallets.length > 1000) throw new Error('잘못된 백업 파일입니다.');
+    const unique = new Map();
+    for (const item of wallets) {
+      const wallet = validate(item);
+      if (!unique.has(wallet.privateKey)) unique.set(wallet.privateKey, wallet);
+    }
+    return [...unique.values()];
+  }
   return {
-    async encrypt(wallet, password) {
+    maxFileSize: 1048576,
+    merge(existing, current) {
+      // File-only wallets are preserved; existing names win for duplicate keys.
+      const merged = new Map();
+      for (const wallet of [...validateBundle(existing), ...validateBundle(current)]) {
+        if (!merged.has(wallet.privateKey)) merged.set(wallet.privateKey, wallet);
+      }
+      return validateBundle([...merged.values()]);
+    },
+    async writeVerified(handle, original, updated, isActive = () => true) {
+      if (await handle.requestPermission({ mode: 'readwrite' }) !== 'granted') throw new Error('WRITE_DENIED');
+      if (!isActive()) throw new Error('SESSION_ENDED');
+      if (await (await handle.getFile()).text() !== original) throw new Error('FILE_CHANGED');
+      if (!isActive()) throw new Error('SESSION_ENDED');
+      const stream = await handle.createWritable();
+      try {
+        if (!isActive()) throw new Error('SESSION_ENDED');
+        await stream.write(updated);
+        if (!isActive()) throw new Error('SESSION_ENDED');
+        await stream.close();
+      } catch (error) {
+        try { await stream.abort(); } catch {}
+        throw error;
+      }
+      if (await (await handle.getFile()).text() !== updated) throw new Error('VERIFY_FAILED');
+    },
+    async encrypt(wallets, password) {
       if (password.length < 10) throw new Error('백업 비밀번호는 10자 이상 입력해 주세요.');
       const salt = crypto.getRandomValues(new Uint8Array(16));
       const iv = crypto.getRandomValues(new Uint8Array(12));
-      const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await key(password, salt), new TextEncoder().encode(JSON.stringify(validate(wallet))));
-      return JSON.stringify({ format: 'psl-wallet-backup', version: 1, kdf: 'PBKDF2-SHA256', iterations: 310000, cipher: 'AES-256-GCM', salt: encode(salt), iv: encode(iv), ciphertext: encode(new Uint8Array(ciphertext)) });
+      const payload = { wallets: validateBundle(wallets) };
+      const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await key(password, salt), new TextEncoder().encode(JSON.stringify(payload)));
+      // Public names are for human inspection only. Restore trusts the encrypted payload.
+      return JSON.stringify({ walletNames: payload.wallets.map(wallet => wallet.name), format: 'psl-wallet-backup', version: 2, kdf: 'PBKDF2-SHA256', iterations: 310000, cipher: 'AES-256-GCM', salt: encode(salt), iv: encode(iv), ciphertext: encode(new Uint8Array(ciphertext)) }, null, 2);
     },
     async decrypt(text, password) {
-      if (typeof text !== 'string' || text.length > 16384) throw new Error('백업 파일이 너무 큽니다.');
+      if (typeof text !== 'string' || text.length > 1048576) throw new Error('백업 파일이 너무 큽니다.');
       const data = JSON.parse(text);
-      if (data?.format !== 'psl-wallet-backup' || data.version !== 1 || data.kdf !== 'PBKDF2-SHA256' || data.iterations !== 310000 || data.cipher !== 'AES-256-GCM'
+      if (data?.format !== 'psl-wallet-backup' || ![1, 2].includes(data.version) || data.kdf !== 'PBKDF2-SHA256' || data.iterations !== 310000 || data.cipher !== 'AES-256-GCM'
         || !['salt', 'iv', 'ciphertext'].every((field) => typeof data[field] === 'string')) throw new Error('지원하지 않는 백업 파일입니다.');
       const salt = decode(data.salt), iv = decode(data.iv), ciphertext = decode(data.ciphertext);
       if (salt.length !== 16 || iv.length !== 12 || ciphertext.length < 17) throw new Error('손상된 백업 파일입니다.');
       const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, await key(password, salt), ciphertext);
-      return validate(JSON.parse(new TextDecoder().decode(plaintext)));
+      const payload = JSON.parse(new TextDecoder().decode(plaintext));
+      return { wallets: validateBundle(data.version === 1 ? [payload] : payload?.wallets) };
     }
   };
 })();
