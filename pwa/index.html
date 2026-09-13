@@ -33,7 +33,7 @@
   <link rel="stylesheet" href="wallets.css?v=59">
   <link rel="stylesheet" href="install.css?v=55">
   <link rel="stylesheet" href="history.css?v=55">
-  <link rel="stylesheet" href="overlays.css?v=78">
+  <link rel="stylesheet" href="overlays.css?v=80">
   <title>Wallet</title>
 </head>
 <body>
@@ -79,7 +79,7 @@
         <p class="lead">보호 비밀번호는 이 기기 안에서만 확인됩니다.</p>
         <form id="unlockForm" class="auth-form compact">
           <label for="unlockPassword">비밀번호</label>
-          <div class="password-field"><input id="unlockPassword" type="password" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" autofocus required><button class="password-toggle" type="button" data-password-toggle="unlockPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+          <div class="password-field"><input id="unlockPassword" type="password" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus required name="unlockPassword" autocomplete="section-vault current-password" data-password-autocomplete="section-vault current-password"><button class="password-toggle" type="button" data-password-toggle="unlockPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <p id="unlockError" class="error" role="alert"></p>
           <button id="unlockBtn" class="button primary" type="submit">잠금 해제</button>
         </form>
@@ -90,7 +90,7 @@
         <section class="balance-card" aria-labelledby="portfolioLabel">
           <div class="card-top">
             <div class="active-wallet-identity"><p id="portfolioLabel" class="eyebrow light active-wallet-heading">ACTIVE WALLET <span id="networkBadge" class="network-badge">MAINNET</span></p><div class="active-wallet-name-row"><strong id="activeWalletName" class="active-wallet-name">지갑 1</strong><span class="active-wallet-address-row"><code id="accountAddress"></code><button id="copyAccount" type="button">복사</button></span></div></div>
-            <button id="editWalletsBtn" class="wallet-edit-button" type="button">지갑 편집</button>
+            <button id="editWalletsBtn" class="wallet-edit-button backup-missing" type="button"><span id="editWalletsStatusIcon" class="backup-status-icon" role="img" aria-label="경고">!</span><span>지갑 편집</span></button>
           </div>
           <div class="active-assets">
             <div class="active-primary-balance"><small>PSL 토큰 잔액</small><div><img class="hero-balance-icon psl-balance-icon" src="images/psl-token-icon.svg" alt=""><strong id="pslHeroBalance">—</strong><span id="pslHeroSymbol" class="hero-balance-symbol">PSL</span></div></div>
@@ -134,12 +134,12 @@
 
   <dialog id="createDialog" aria-labelledby="createTitle">
     <div class="sheet-head"><div><p class="eyebrow">CREATE WALLET</p><h2 id="createTitle">지갑 보호 비밀번호</h2></div><button class="close" data-close type="button" aria-label="닫기">×</button></div>
-        <form id="createForm" class="auth-form" autocomplete="off">
+        <form id="createForm" class="auth-form" autocomplete="on">
           <p class="helper">12자 이상을 권장합니다. 비밀번호는 복구할 수 없습니다.</p>
           <label for="createPassword">비밀번호</label>
-          <div class="password-field"><input id="createPassword" type="password" minlength="10" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" required><button class="password-toggle" type="button" data-password-toggle="createPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+          <div class="password-field"><input id="createPassword" type="password" minlength="10" autocorrect="off" autocapitalize="off" spellcheck="false" required name="createPassword" autocomplete="section-vault new-password" data-password-autocomplete="section-vault new-password"><button class="password-toggle" type="button" data-password-toggle="createPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <label for="createPasswordConfirm">비밀번호 확인</label>
-          <div class="password-field"><input id="createPasswordConfirm" type="password" minlength="10" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" required><button class="password-toggle" type="button" data-password-toggle="createPasswordConfirm" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+          <div class="password-field"><input id="createPasswordConfirm" type="password" minlength="10" autocorrect="off" autocapitalize="off" spellcheck="false" required name="createPasswordConfirm" autocomplete="section-vault new-password" data-password-autocomplete="section-vault new-password"><button class="password-toggle" type="button" data-password-toggle="createPasswordConfirm" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <label class="check"><input id="createAck" type="checkbox" required> 비밀번호와 개인키를 잃으면 자산을 복구할 수 없음을 이해했습니다.</label>
           <button class="button primary" type="submit">안전하게 생성</button>
           <button class="button secondary" data-close type="button">취소</button>
@@ -154,7 +154,7 @@
           <label for="importKey">개인키 (64자리)</label>
           <div class="password-field"><input id="importKey" type="password" maxlength="64" autocomplete="off" spellcheck="false" required><button class="password-toggle" type="button" data-password-toggle="importKey" aria-label="개인키 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <label for="importPassword">새 보호 비밀번호</label>
-          <div class="password-field"><input id="importPassword" type="password" minlength="10" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" required><button class="password-toggle" type="button" data-password-toggle="importPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+          <div class="password-field"><input id="importPassword" type="password" minlength="10" autocorrect="off" autocapitalize="off" spellcheck="false" required name="importPassword" autocomplete="section-vault new-password" data-password-autocomplete="section-vault new-password"><button class="password-toggle" type="button" data-password-toggle="importPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <button class="button primary" type="submit">암호화하여 가져오기</button>
           <button id="importCancel" class="button secondary" type="button">취소</button>
         </form>
@@ -271,6 +271,7 @@
     <p class="eyebrow">NOTICE</p>
     <h2 id="appAlertTitle">확인해 주세요</h2>
     <p id="appAlertMessage" class="helper center"></p>
+    <dl id="appAlertDetails" class="app-alert-details hidden"></dl>
     <button id="appAlertClose" class="button primary" type="button">확인</button>
   </dialog>
 
@@ -331,8 +332,8 @@
     <p class="helper"><strong>개인키를 별도로 보관하는 것이 중요합니다. 기기 분실이나 고장에 대비해 백업 파일의 사본을 다른 안전한 장소에도 보관하세요.</strong></p>
     <p class="helper">다른 브라우저나 새 기기에서 최신 파일을 준비하고 ‘백업된 개인키 불러오기’를 누르면 파일에 포함된 모든 지갑을 복원합니다. 백업 당시 비밀번호가 반드시 필요하며, 잊으면 이 파일로 복원할 수 없습니다. 지갑 잠금 비밀번호를 변경해도 파일의 비밀번호는 바뀌지 않습니다.</p>
     <form id="deviceBackupForm">
-      <label for="deviceBackupPassword">백업용 비밀번호 (10자 이상, 12자 이상 권장)</label><div class="password-field"><input id="deviceBackupPassword" type="password" minlength="10" name="deviceBackupPassword" autocomplete="section-backup new-password" data-password-autocomplete="section-backup new-password" required><button class="password-toggle" type="button" data-password-toggle="deviceBackupPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
-      <label for="deviceBackupConfirm">백업용 비밀번호 확인</label><div class="password-field"><input id="deviceBackupConfirm" type="password" minlength="10" name="deviceBackupConfirm" autocomplete="section-backup new-password" data-password-autocomplete="section-backup new-password" required><button class="password-toggle" type="button" data-password-toggle="deviceBackupConfirm" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+      <label for="deviceBackupPassword">백업용 비밀번호 (10자 이상, 12자 이상 권장)</label><div class="password-field"><input id="deviceBackupPassword" type="password" minlength="10" required name="deviceBackupPassword" autocomplete="section-backup new-password" data-password-autocomplete="section-backup new-password"><button class="password-toggle" type="button" data-password-toggle="deviceBackupPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+      <label for="deviceBackupConfirm">백업용 비밀번호 확인</label><div class="password-field"><input id="deviceBackupConfirm" type="password" minlength="10" required name="deviceBackupConfirm" autocomplete="section-backup new-password" data-password-autocomplete="section-backup new-password"><button class="password-toggle" type="button" data-password-toggle="deviceBackupConfirm" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
       <button id="deviceBackupSave" class="button primary" type="submit">새 백업 파일 저장 후 확인</button>
     </form>
     <p id="deviceBackupError" class="error" role="alert"></p>
@@ -351,10 +352,10 @@
     <h2 id="restoreBackupTitle">백업된 개인키 불러오기</h2>
     <form id="restoreBackupForm">
       <label for="restoreBackupFile">암호화된 백업 파일</label><input id="restoreBackupFile" type="file" accept=".json,application/json" required>
-      <label for="restoreBackupPassword">백업 당시 비밀번호</label><div class="password-field"><input id="restoreBackupPassword" type="password" required><button class="password-toggle" type="button" data-password-toggle="restoreBackupPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+      <label for="restoreBackupPassword">백업 당시 비밀번호</label><div class="password-field"><input id="restoreBackupPassword" type="password" required name="restoreBackupPassword" autocomplete="section-backup current-password" data-password-autocomplete="section-backup current-password"><button class="password-toggle" type="button" data-password-toggle="restoreBackupPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
       <div id="restoreVaultFields">
-        <label for="restoreVaultPassword">새 지갑 잠금 비밀번호 (10자 이상)</label><div class="password-field"><input id="restoreVaultPassword" type="password" minlength="10"><button class="password-toggle" type="button" data-password-toggle="restoreVaultPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
-        <label for="restoreVaultConfirm">새 지갑 잠금 비밀번호 확인</label><div class="password-field"><input id="restoreVaultConfirm" type="password" minlength="10"><button class="password-toggle" type="button" data-password-toggle="restoreVaultConfirm" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+        <label for="restoreVaultPassword">새 지갑 잠금 비밀번호 (10자 이상)</label><div class="password-field"><input id="restoreVaultPassword" type="password" minlength="10" name="restoreVaultPassword" autocomplete="section-vault new-password" data-password-autocomplete="section-vault new-password"><button class="password-toggle" type="button" data-password-toggle="restoreVaultPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+        <label for="restoreVaultConfirm">새 지갑 잠금 비밀번호 확인</label><div class="password-field"><input id="restoreVaultConfirm" type="password" minlength="10" name="restoreVaultConfirm" autocomplete="section-vault new-password" data-password-autocomplete="section-vault new-password"><button class="password-toggle" type="button" data-password-toggle="restoreVaultConfirm" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
       </div>
       <p id="restoreBackupError" class="error" role="alert"></p>
       <button id="restoreBackupSubmit" class="button primary" type="submit">백업된 개인키 불러오기</button>
@@ -370,7 +371,7 @@
     <p id="updateBackupName" class="helper" translate="no"></p>
     <form id="updateBackupForm">
       <label for="updateBackupPassword">백업 당시 비밀번호</label>
-      <div class="password-field"><input id="updateBackupPassword" type="password" required><button class="password-toggle" type="button" data-password-toggle="updateBackupPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
+      <div class="password-field"><input id="updateBackupPassword" type="password" required name="updateBackupPassword" autocomplete="section-backup current-password" data-password-autocomplete="section-backup current-password"><button class="password-toggle" type="button" data-password-toggle="updateBackupPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
       <button id="updateBackupReview" class="button primary" type="submit" disabled>업데이트할 지갑 확인</button>
     </form>
     </div>
@@ -390,7 +391,7 @@
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
   <script src="backup.js?v=78"></script>
-  <script src="i18n.js?v=78"></script>
-  <script src="app.js?v=78"></script>
+  <script src="i18n.js?v=80"></script>
+  <script src="app.js?v=80"></script>
 </body>
 </html>

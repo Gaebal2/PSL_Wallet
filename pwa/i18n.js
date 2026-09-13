@@ -1,6 +1,10 @@
 /* UI-only localization. Wallet data, keys and input values are never translated. */
 globalThis.WalletI18n = (() => {
   const pairs = `
+저장 위치|Save location
+저장된 지갑 이름|Wallet names in the backup
+마지막으로 확인한 백업 파일의 정보입니다. 파일 이동·삭제 여부는 자동으로 확인할 수 없습니다.|These are the details of the last verified backup file. Moving or deleting the file cannot be detected automatically.
+브라우저에서 전체 폴더 경로를 제공하지 않습니다. 파일 저장 시 선택한 폴더 또는 다운로드 폴더를 확인해 주세요.|The browser does not provide the full folder path. Check the folder selected when saving the file or your Downloads folder.
 기기에 개인키 백업 후 사용가능|Available after backing up private keys on device
 기존 백업의 지갑명|Wallet names in the existing backup
 업데이트할 지갑명|Wallet names after update

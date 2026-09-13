@@ -7,13 +7,14 @@
   const $ = (id) => document.getElementById(id);
 
   function disableInputSuggestions(root = document) {
-    root.querySelectorAll('form').forEach((form) => form.setAttribute('autocomplete', 'off'));
+    root.querySelectorAll('form').forEach((form) => form.setAttribute('autocomplete', form.querySelector('[data-password-autocomplete]') ? 'on' : 'off'));
     root.querySelectorAll('input:not([type="checkbox"]), textarea').forEach((input) => {
       input.setAttribute('autocomplete', input.dataset.passwordAutocomplete || 'off');
       input.setAttribute('autocorrect', 'off');
       input.setAttribute('autocapitalize', 'off');
       input.setAttribute('spellcheck', 'false');
-      input.setAttribute('aria-autocomplete', 'none');
+      if (input.dataset.passwordAutocomplete) input.removeAttribute('aria-autocomplete');
+      else input.setAttribute('aria-autocomplete', 'none');
     });
   }
 
@@ -362,10 +363,24 @@
     });
   }
 
-  function showAlert(message, title = '확인해 주세요') {
+  function showAlert(message, title = '확인해 주세요', details = []) {
     const dialog = $('appAlertDialog');
     $('appAlertTitle').textContent = title;
     $('appAlertMessage').textContent = message;
+    const detailList = $('appAlertDetails');
+    detailList.replaceChildren();
+    detailList.classList.toggle('hidden', !details.length);
+    details.forEach(({ label, values, literal = false }) => {
+      const term = document.createElement('dt');
+      term.textContent = label;
+      detailList.append(term);
+      values.forEach(value => {
+        const description = document.createElement('dd');
+        if (literal) description.setAttribute('translate', 'no');
+        description.textContent = value;
+        detailList.append(description);
+      });
+    });
     dialog.showModal();
     return new Promise((resolve) => {
       const finish = () => {
@@ -1658,6 +1673,11 @@
       stale: ['주의', '기기에 백업된 개인키 업데이트 필요', '!'],
       missing: ['경고', '개인키 기기에 백업 안됨', '!']
     };
+    const editButton = $('editWalletsBtn');
+    editButton.classList.remove('backup-good', 'backup-stale', 'backup-missing');
+    editButton.classList.add('backup-' + status);
+    $('editWalletsStatusIcon').textContent = labels[status][2];
+    $('editWalletsStatusIcon').setAttribute('aria-label', labels[status][0]);
     document.querySelectorAll('[data-device-backup]').forEach(button => {
       const card = button.closest('.backup-status-card');
       card.classList.remove('backup-good', 'backup-stale', 'backup-missing');
@@ -1686,7 +1706,14 @@
     openDeviceBackup();
   };
   $('backupLocationClose').onclick = () => $('backupLocationDialog').close();
-  $('backupLocationVerify').onclick = () => openRestoreBackup(true);
+  $('backupLocationVerify').onclick = () => {
+    if (!vaultPassword || !backupRecord) return;
+    showAlert('마지막으로 확인한 백업 파일의 정보입니다. 파일 이동·삭제 여부는 자동으로 확인할 수 없습니다.', '기기에 저장한 백업', [
+      { label: '저장 위치', values: ['브라우저에서 전체 폴더 경로를 제공하지 않습니다. 파일 저장 시 선택한 폴더 또는 다운로드 폴더를 확인해 주세요.'] },
+      { label: '파일명', values: [backupRecord.fileName], literal: true },
+      { label: '저장된 지갑 이름', values: backupRecord.wallets.map(wallet => wallet.name), literal: true }
+    ]);
+  };
   $('backupLocationCreate').onclick = () => {
     if (backupBusy || !vaultPassword) return;
     openDeviceBackup();
@@ -2012,5 +2039,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=78', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=80', { updateViaCache: 'none' }).catch(() => {});
 })();

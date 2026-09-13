@@ -78,9 +78,12 @@ html[lang="en"] .active-card-actions button { min-height: 48px; }
 
 .language-toggle.korean-label { font-size: 10px; }
 #cid { box-sizing: border-box; width: 100%; resize: none; overflow-wrap: anywhere; word-break: break-all; font: 12px/1.6 monospace; padding: 12px; border: 1px solid #d9dce5; border-radius: 12px; background: #f1f2f6; color: var(--ink); }
-.backup-status-card { --status-tint: #fff0f0; --status-color: #a12626; --status-border: #efc4c4; margin: 16px 0 12px; }
-.backup-status-card.backup-good { --status-tint: #edf8f1; --status-color: #17613b; --status-border: #b7ddc6; }
-.backup-status-card.backup-stale { --status-tint: #fff8e1; --status-color: #735200; --status-border: #ebd48d; }
+.backup-status-card, .wallet-edit-button { --status-tint: #fff0f0; --status-color: #a12626; --status-border: #efc4c4; }
+.backup-status-card { margin: 16px 0 12px; }
+.backup-status-card.backup-good, .wallet-edit-button.backup-good { --status-tint: #edf8f1; --status-color: #17613b; --status-border: #b7ddc6; }
+.backup-status-card.backup-stale, .wallet-edit-button.backup-stale { --status-tint: #fff8e1; --status-color: #735200; --status-border: #ebd48d; }
+.wallet-edit-button { display: inline-flex; align-items: center; gap: 6px; background: var(--status-tint); color: var(--status-color); border-color: var(--status-border); white-space: nowrap; }
+.wallet-edit-button .backup-status-icon { flex: 0 0 18px; width: 18px; height: 18px; font-size: 12px; }
 .backup-status-message { display: flex; align-items: center; gap: 12px; padding: 17px 16px; border: 1px solid var(--status-border); border-radius: 16px; background: var(--status-tint); color: var(--status-color); text-align: left; }
 .backup-status-icon { display: grid; place-items: center; flex: 0 0 34px; height: 34px; border-radius: 50%; background: var(--status-color); color: #fff; font-size: 20px; font-weight: 850; }
 .backup-status-title { display: block; font-size: 14px; font-weight: 850; }
@@ -92,12 +95,14 @@ html[lang="en"] .active-card-actions button { min-height: 48px; }
 .private-key-address { display: block; overflow-wrap: anywhere; font-size: 11px; margin-top: 8px; }
 .private-key-entry .private-key-box { margin: 10px 0 0; }
 #backupFileName { overflow-wrap: anywhere; }
+.app-alert-details { text-align: left; font-size: 13px; line-height: 1.6; }
+.app-alert-details dt { margin-top: 14px; font-weight: 800; }
+.app-alert-details dd { margin: 4px 0 0; overflow-wrap: anywhere; color: var(--muted); }
 #updateBackupSummary { white-space: pre-line; }
 
 /* Share the primary button palette across all purple action buttons. */
 .button.primary,
 .wallet-choose-button:not(:disabled),
-.active-card-actions button,
 .wallet-address button,
 .psl-send-action,
 .psl-receive-action {
@@ -107,6 +112,8 @@ html[lang="en"] .active-card-actions button { min-height: 48px; }
 }
 .psl-send-action,
 .psl-receive-action { color: #fff !important; }
+.active-card-actions button { background: linear-gradient(135deg, #493b7c, #322855); color: #f4f0ff; border-color: #7865aa66; }
+.active-card-actions button:hover { background: linear-gradient(135deg, #55458e, #3d3066); }
 #updateBackupReview:disabled { background: #e6e8ed; color: #7b8190; box-shadow: none; cursor: not-allowed; }
 #updateBackupSummary { white-space: normal; }
 #updateBackupSummary p, #updateBackupSummary li { overflow-wrap: anywhere; }
