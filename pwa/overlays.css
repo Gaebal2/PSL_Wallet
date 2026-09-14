@@ -1,3 +1,34 @@
+.safe-scroll-dialog {
+  /* Keep the entire popup inside Safari's visible area, including safe insets. */
+  --popup-height: 100vh;
+  --popup-top: calc(16px + env(safe-area-inset-top, 0px));
+  --popup-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  position: fixed;
+  inset: var(--popup-top) calc(14px + env(safe-area-inset-right, 0px)) var(--popup-bottom) calc(14px + env(safe-area-inset-left, 0px));
+  width: auto;
+  max-width: 480px;
+  max-height: calc(var(--popup-height) - var(--popup-top) - var(--popup-bottom));
+  margin: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  scroll-padding-block: 24px;
+}
+
+@supports (height: 100svh) {
+  .safe-scroll-dialog { --popup-height: 100svh; }
+}
+
+@supports (height: 100dvh) {
+  .safe-scroll-dialog { --popup-height: 100dvh; }
+}
+
+.safe-scroll-dialog::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.safe-scroll-dialog .sheet-head { gap: 12px; }
+.safe-scroll-dialog .close { flex: none; }
+
 .toast[popover] {
   inset: auto auto max(24px, env(safe-area-inset-bottom)) 50%;
   margin: 0;
