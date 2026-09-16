@@ -2,26 +2,18 @@
 globalThis.WalletI18n = (() => {
   const pairs = `
 개인키가 저장된 지갑 리스트|Wallets with saved private keys
-파일 수정 권한을 확인하지 못했습니다. 다시 저장을 눌러 권한을 허용해 주세요.|Could not confirm write permission. Try saving again and grant permission.
-권한 승인 후 기존 파일을 읽지 못했습니다. 파일을 다시 선택해 주세요.|Could not read the existing file after permission approval. Select the file again.
-파일을 수정할 수 있도록 열지 못했습니다. 파일 권한과 저장 위치를 확인해 주세요.|Could not open the file for writing. Check its permissions and location.
-파일 내용을 기록하지 못했습니다. 저장 공간과 파일 접근 상태를 확인해 주세요.|Could not write the file. Check available storage and file access.
-파일 저장을 마무리하지 못했습니다. 저장된 파일을 다시 확인해 주세요.|Could not finish saving. Check the saved file again.
-저장 후 파일 내용을 확인하지 못했습니다. 파일은 변경되었을 수 있으므로 다시 선택하여 확인해 주세요.|Could not verify the saved contents. The file may have changed; select it again to check.
 1단계|Step 1
 2단계|Step 2
 3단계|Step 3
 개인키 저장하기|Save private keys
 저장된 개인키 확인하기|Verify saved private keys
 저장한 개인키 불러오기|Import saved private keys
-기존파일 업데이트|Update existing file
 새로운 파일에 저장|Save to a new file
 < 이전|< Previous
 다음 >|Next >
 다음|Next
 사용하기|Use wallet
 개인키를 이 디바이스에 백업해 놓는 것이 사용자의 코인(토큰)보호를 보장하지 않습니다.|Backing up private keys on this device does not guarantee protection of your coins (tokens).
-저장한 파일을 다음 단계에서 선택하여 확인해 주세요.|Select the saved file in the next step to verify it.
 새 백업 파일 저장|Save new backup file
 파일 저장 창 완료|File save dialog completed
 백업 파일 저장 완료|Backup file save completed
@@ -39,20 +31,16 @@ globalThis.WalletI18n = (() => {
 마지막으로 확인한 백업 파일의 정보입니다. 파일 이동·삭제 여부는 자동으로 확인할 수 없습니다.|These are the details of the last verified backup file. Moving or deleting the file cannot be detected automatically.
 브라우저에서 전체 폴더 경로를 제공하지 않습니다. 파일 저장 시 선택한 폴더 또는 다운로드 폴더를 확인해 주세요.|The browser does not provide the full folder path. Check the folder selected when saving the file or your Downloads folder.
 기기에 개인키 백업 후 사용가능|Available after backing up private keys on device
-기존 백업의 지갑명|Wallet names in the existing backup
-업데이트할 지갑명|Wallet names after update
 백업용 비밀번호를 입력하고 ‘새 백업 파일 저장 후 확인’을 누르세요. 저장 후 파일을 다시 선택하여 확인하면 백업한 지갑을 사용할 수 있습니다.|Enter a backup password and select “Save and verify a new backup file”. Reopen the saved file to verify it and enable the backed-up wallets.
 
 새 백업 파일이 필요하면 백업용 비밀번호를 입력하고 ‘새 백업 파일 저장 후 확인’을 누르세요. ‘개인키 기기에 백업하기’를 누르면 저장한 파일을 선택하여 확인할 수 있습니다. 현재 등록된 모든 지갑의 이름과 개인키를 백업해 주세요.|To create a backup, enter a backup password and select “Save and verify a new backup file”. Select “Back up private key to device” to choose and verify a saved file. Back up every current wallet name and private key.
 
-이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 현재 지갑 목록을 담은 새 백업을 저장합니다.|This browser cannot overwrite existing files. Select a file to save a new backup of your current wallets.
 
 토큰 CID|Token CID
 개인키 복사|Copy private key
 신뢰하는 HTTPS RPC만 사용하세요. 변경한 RPC는 자동 저장됩니다.|Use only trusted HTTPS RPC endpoints. RPC changes are saved automatically.
 기존 파일을 현재 지갑 목록으로 업데이트합니다. 지원하는 브라우저에서는 같은 파일에 저장하며, 미지원 환경에서는 새 파일을 저장합니다.|Update the file with your current wallets. Supported browsers save to the same file; other browsers save a new file.
 기존 백업 비밀번호를 그대로 사용합니다. 파일의 목록을 현재 지갑의 이름과 개인키로 교체하므로 앱에서 삭제한 지갑은 백업에서도 제외됩니다.|The backup password stays the same. The file is replaced with current wallet names and keys, excluding wallets removed from the app.
-업데이트할 지갑 확인|Review wallets to update
 업데이트할 지갑 다시 확인|Review wallets again
 새 백업 파일 저장 후 확인|Save and verify a new backup file
 기기에 저장한 백업|Backup saved on device
@@ -60,11 +48,8 @@ globalThis.WalletI18n = (() => {
 저장 위치: 파일 저장 시 선택한 폴더 또는 기기의 다운로드 폴더를 확인해 주세요. 브라우저에서는 전체 폴더 경로를 제공하지 않습니다.|Location: Check the folder chosen when saving or your device's Downloads folder. Browsers do not provide the full folder path.
 마지막으로 확인한 파일 내용과 현재 지갑 목록이 일치합니다. 파일을 이동하거나 삭제했다면 다시 확인해 주세요.|The last verified file matches your current wallets. Verify again if you moved or deleted the file.
 백업 방법 선택|Choose a backup method
-현재 지갑 목록을 백업할 방법을 선택해 주세요.|Choose how to back up your current wallet list.
 기존 백업파일 업데이트|Update existing backup file
-기존 백업파일과 비밀번호로 내용을 확인한 뒤 현재 지갑 목록으로 업데이트합니다.|Review the existing backup with its password, then update it with your current wallet list.
 새로운 백업파일 생성|Create new backup file
-새 백업용 비밀번호를 설정하고 현재 지갑 목록을 별도 파일로 저장합니다.|Set a new backup password and save your current wallet list in a separate file.
 양호|Good
 주의|Caution
 경고|Warning
@@ -78,24 +63,13 @@ globalThis.WalletI18n = (() => {
 (경고!) 개인키 기기에 백업 안됨|(Warning!) Private keys not backed up on device
 
 본문으로 건너뛰기|Skip to content
-기존 백업 업데이트|Update existing backup
-기존 백업 파일 선택|Choose existing backup file
 기존 파일을 선택하면 그 안의 지갑을 보존하고 새 지갑을 추가할 수 있습니다. 지원하는 브라우저에서는 동의 후 같은 파일에 저장하며, 미지원 환경에서는 새 통합 파일을 저장합니다.|Choose an existing backup to preserve its wallets and add new ones. Supported browsers can update the same file with your consent. Other browsers save a new combined file.
 추가할 지갑 확인|Review wallets to add
 추가할 지갑 다시 확인|Review wallets again
 기존 백업 비밀번호를 그대로 사용합니다. 기존 파일에만 있는 지갑도 보존하며 같은 개인키는 중복 추가하지 않습니다.|Your existing backup password stays the same. Wallets found only in the file are preserved, and duplicate private keys are not added twice.
-동의하고 업데이트|Agree and update
-기존 파일을 선택하고 비밀번호를 입력하세요. 내용을 확인하고 동의한 뒤 같은 파일에 저장합니다.|Choose your existing file and enter its password. Review the contents and agree before saving to the same file.
 이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 기존 지갑과 새 지갑을 합친 새 통합 백업을 저장합니다.|This browser cannot overwrite existing files. Choose a file to save a new combined backup containing both existing and new wallets.
-파일 선택 권한을 확인해 주세요. 파일을 변경하지 않았습니다.|Check file access permissions. The file has not been changed.
-기존 백업 파일을 먼저 선택해 주세요.|Choose an existing backup file first.
-동의하고 같은 파일에 저장|Agree and save to the same file
-동의하고 새 통합 파일 저장|Agree and save a new combined file
-파일 또는 비밀번호를 확인해 주세요. 기존 파일은 변경하지 않았습니다.|Check the file and password. The existing file has not been changed.
 기존 백업 파일을 업데이트하고 저장 내용을 확인했습니다. 지갑을 사용할 수 있습니다.|The existing backup was updated and verified. You can now use your wallets.
 새 통합 파일 저장을 요청했습니다. 기존 파일은 그대로입니다. 저장한 새 파일을 다시 열어 확인해 주세요.|A new combined backup download was requested. The original file is unchanged. Reopen the saved new file to verify it.
-선택한 파일이 다른 곳에서 변경되었습니다. 다시 선택하고 확인해 주세요.|The selected file was changed elsewhere. Select it again and review it.
-저장 또는 저장 내용 확인을 완료하지 못했습니다. 지갑 잠금은 유지됩니다. 파일을 다시 선택하여 확인해 주세요.|Saving or verification could not be completed. Unverified wallets remain locked. Select the file again to check it.
 ‘개인키 기기에 백업하기’를 누르면 현재 등록된 모든 지갑의 개인키와 이름을 하나의 암호화 파일로 저장합니다. 지갑을 추가한 뒤 다시 백업하면 이전 지갑과 새 지갑이 함께 포함됩니다. 기존 파일이 자동으로 갱신되지는 않으므로 최신 파일을 별도로 저장하고 확인해 주세요.|Select “Back up private key to device” to save all registered wallets and their names in one encrypted file. Back up again after adding a wallet to include both existing and new wallets. Older files are not updated automatically. Save and verify the latest file.
 다른 브라우저나 새 기기에서 최신 파일을 준비하고 ‘백업된 개인키 불러오기’를 누르면 파일에 포함된 모든 지갑을 복원합니다. 백업 당시 비밀번호가 반드시 필요하며, 잊으면 이 파일로 복원할 수 없습니다. 지갑 잠금 비밀번호를 변경해도 파일의 비밀번호는 바뀌지 않습니다.|To restore every wallet in the file, transfer the latest backup to your browser or new device and select “Import private key backup”. You need the original backup password; without it, you cannot restore the file. Changing your wallet password does not change the file password.
 저장한 파일을 다시 선택하고 비밀번호를 입력해야 백업 확인이 완료됩니다. 파일에 포함된 지갑만 사용이 허용되며, 백업하지 않은 지갑은 계속 잠겨 있습니다. 이 파일은 브라우저의 사이트 데이터를 삭제해도 남습니다.|Select the saved file and enter its password to verify your backup. Only wallets included in that file become available; wallets without a verified backup stay locked. The file remains when browser site data is cleared.

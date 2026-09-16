@@ -41,81 +41,6 @@ require('../pwa/backup.js');
   const legacyBytes = Buffer.concat([cipher.update(JSON.stringify(wallet)), cipher.final(), cipher.getAuthTag()]);
   const legacy = JSON.stringify({ format: 'psl-wallet-backup', version: 1, kdf: 'PBKDF2-SHA256', iterations: 310000, cipher: 'AES-256-GCM', salt: salt.toString('base64'), iv: iv.toString('base64'), ciphertext: legacyBytes.toString('base64') });
   assert.deepEqual(await WalletBackup.decrypt(legacy, password), { wallets: [wallet] });
-  const fileOnly = { privateKey: 'ef'.repeat(32), name: '파일에만 있는 지갑' };
-  const combined = WalletBackup.merge([wallet, fileOnly], [{ ...wallet, name: '새 이름' }, wallet2]);
-  assert.deepEqual(combined, [wallet, fileOnly, wallet2], 'Preserve file-only wallets and names; deduplicate private keys');
-  const combinedText = await WalletBackup.encrypt(combined, password);
-  function fileHandle(options = {}) {
-    let stored = encrypted, staged, creates = 0, aborts = 0;
-    return {
-      requestPermission: async () => options.denied ? 'denied' : 'granted',
-      getFile: async () => ({ text: async () => options.changed && !creates ? 'changed elsewhere' : options.corrupt && creates ? 'bad readback' : stored }),
-      createWritable: async () => {
-        creates++;
-        return {
-          write: async text => { staged = text; if (options.failWrite) throw new Error('DISK_FULL'); },
-          close: async () => { stored = staged; },
-          abort: async () => { staged = undefined; aborts++; },
-        };
-      },
-      get stored() { return stored; }, get creates() { return creates; }, get aborts() { return aborts; },
-    };
-  }
-  const handle = fileHandle();
-  await WalletBackup.writeVerified(handle, encrypted, combinedText);
-  assert.deepEqual((await WalletBackup.decrypt(handle.stored, password)).wallets, combined);
-  const denied = fileHandle({ denied: true });
-  await assert.rejects(WalletBackup.writeVerified(denied, encrypted, combinedText), /WRITE_DENIED/);
-  assert.equal(denied.creates, 0);
-  const changed = fileHandle({ changed: true });
-  await assert.rejects(WalletBackup.writeVerified(changed, encrypted, combinedText), /FILE_CHANGED/);
-  assert.equal(changed.creates, 0);
-  const failed = fileHandle({ failWrite: true });
-  await assert.rejects(WalletBackup.writeVerified(failed, encrypted, combinedText), /DISK_FULL/);
-  assert.equal(failed.stored, encrypted);
-  assert.equal(failed.aborts, 1);
-  const corrupted = fileHandle({ corrupt: true });
-  await assert.rejects(WalletBackup.writeVerified(corrupted, encrypted, combinedText), /VERIFY_FAILED/);
-  const locked = fileHandle();
-  await assert.rejects(WalletBackup.writeVerified(locked, encrypted, combinedText, () => false), /SESSION_ENDED/);
-  assert.equal(locked.creates, 0);
-
-  // Transient reads after permission approval and after commit recover without rewriting.
-  for (const failingRead of [1, 2]) {
-    const transient = fileHandle();
-    const getFile = transient.getFile;
-    let reads = 0;
-    transient.getFile = async () => {
-      reads++;
-      if (reads === failingRead) throw Object.assign(new Error('temporarily unreadable'), { name: 'NotReadableError' });
-      return getFile();
-    };
-    await WalletBackup.writeVerified(transient, encrypted, combinedText);
-    assert.equal(transient.creates, 1, 'Read retry must not repeat writing');
-    assert.equal(transient.stored, combinedText);
-    assert.equal(reads, 3);
-  }
-  const unreadable = fileHandle();
-  let readAttempts = 0;
-  unreadable.getFile = async () => {
-    readAttempts++;
-    throw Object.assign(new Error('unreadable'), { name: 'NotReadableError' });
-  };
-  await assert.rejects(WalletBackup.writeVerified(unreadable, encrypted, combinedText), error => error.backupStage === 'read-original' && error.name === 'NotReadableError');
-  assert.equal(readAttempts, 3, 'Read retries are bounded');
-  assert.equal(unreadable.creates, 0);
-  const writerDenied = fileHandle();
-  writerDenied.createWritable = async () => { throw Object.assign(new Error('denied'), { name: 'NotAllowedError' }); };
-  await assert.rejects(WalletBackup.writeVerified(writerDenied, encrypted, combinedText), error => error.backupStage === 'open-writer' && error.name === 'NotAllowedError');
-  const lockedDuringRetry = fileHandle();
-  let stillActive = true;
-  lockedDuringRetry.getFile = async () => {
-    stillActive = false;
-    throw Object.assign(new Error('unreadable'), { name: 'NotReadableError' });
-  };
-  await assert.rejects(WalletBackup.writeVerified(lockedDuringRetry, encrypted, combinedText, () => stillActive), /SESSION_ENDED/);
-  assert.equal(lockedDuringRetry.creates, 0, 'Session expiry cancels retries before writing');
-
   // Execute the actual app's wallet construction and gating functions with UI/RPC stubs.
   const source = fs.readFileSync(require.resolve('../pwa/app.js'), 'utf8');
   function extract(name) {
@@ -223,7 +148,7 @@ require('../pwa/backup.js');
   assert.equal(restoreContext.wallets[0].backupVerified, true);
   assert.equal(restoreContext.backupStatus(), 'good');
 
-  // Exercise the two-step update UI and the real verified-write handler.
+  // Exercise wallet gating, shared backup routing, and new-file saving.
   function uiElement() {
     const classes = new Set();
     return {
@@ -245,7 +170,7 @@ require('../pwa/backup.js');
   const created = [];
   const updateContext = vm.createContext({
     WalletBackup, wallets: [existing, newlyAdded], activeWalletId: existing.id,
-    backupRecord: null, backupBusy: false, updateBackupSelection: null, updateBackupPlan: null,
+    backupRecord: null, backupBusy: false,
     vaultPassword: 'session-password', walletVault: 'old-vault', window: {},
     $: ui, setLoading(button, loading) { button.disabled = loading; },
     showAlert: async () => {}, openRestoreBackup() { updateContext.advanced = true; },
@@ -265,12 +190,10 @@ require('../pwa/backup.js');
   assert.equal(choices[0].textContent, '선택', 'A single wallet shows Select even before backup');
   assert(choices[0].disabled, 'The active wallet remains disabled');
   updateContext.wallets = [existing, newlyAdded];
-  const updateStart = source.indexOf('  function syncBackupUpdateControls()');
   const routingContext = vm.createContext({
     $: ui, vaultPassword: 'session-password', backupBusy: false,
     backupRecord: { fileName: 'saved.json' }, status: 'stale',
     backupStatus: () => routingContext.status,
-    openBackupUpdate() { routingContext.updated = true; },
     openDeviceBackup() { routingContext.created = true; },
     openRestoreBackup() {}
   });
@@ -278,13 +201,11 @@ require('../pwa/backup.js');
   const routingEnd = source.indexOf('  function backupFileName(', routingStart);
   vm.runInContext(source.slice(routingStart, routingEnd), routingContext);
   routingContext.handleBackupStatus();
-  assert(ui('backupResolveDialog').open, 'Stale backups first show the method chooser');
-  assert(!routingContext.updated && !routingContext.created);
-  ui('backupResolveUpdate').onclick();
-  assert(routingContext.updated && ui('backupResolveDialog').open, 'Update keeps the method chooser underneath');
+  assert(routingContext.created, 'Stale backups directly open new-file saving');
+  routingContext.created = false;
+  routingContext.status = 'missing';
   routingContext.handleBackupStatus();
-  ui('backupResolveCreate').onclick();
-  assert(routingContext.created && ui('backupResolveDialog').open, 'New backup keeps the method chooser underneath');
+  assert(routingContext.created, 'Missing backups use the same new-file flow');
   routingContext.status = 'good';
   routingContext.handleBackupStatus();
   assert(ui('backupLocationDialog').open, 'Good backups still show saved-file details');
@@ -373,7 +294,6 @@ require('../pwa/backup.js');
   await saveContext.prepareDeviceBackup();
   assert(!saveContext.preparedBackup, 'Password edits invalidate the previous prepared file');
   saveContext.backupWizardStep = 3;
-  saveContext.backupWizardOrigin = 'create';
   saveContext.renderBackupWizard = () => {};
   saveContext.openDeviceBackup = () => { saveContext.returnedToSave = true; };
   ui('restoreBackupPassword').value = password;
@@ -383,45 +303,9 @@ require('../pwa/backup.js');
   assert(!ui('restoreBackupInputs').classList.contains('hidden'));
   ui('restoreBackupPrevious').onclick();
   assert(saveContext.returnedToSave, 'Previous returns from verification to saving');
-  saveContext.backupWizardOrigin = 'update';
-  saveContext.openBackupUpdate = () => { saveContext.returnedToUpdate = true; };
-  ui('restoreBackupPrevious').onclick();
-  assert(saveContext.returnedToUpdate, 'Update flow returns to its original saving step');
   saveContext.backupBusy = true;
   saveContext.backupWizardStep = 3;
   ui('restoreBackupPrevious').onclick();
   assert.equal(saveContext.backupWizardStep, 3, 'Navigation is blocked while processing');
-  const updateEnd = source.indexOf('  function mergeVerifiedWallets(', updateStart);
-  vm.runInContext(source.slice(updateStart, updateEnd), updateContext);
-  updateContext.openBackupUpdate();
-  assert.equal(ui('updateBackupChoose').disabled, false);
-  assert.equal(ui('updateBackupReview').disabled, true);
-  let fileText = await WalletBackup.encrypt([wallet], password);
-  const writableHandle = {
-    name: 'existing.json', requestPermission: async () => 'granted',
-    getFile: async () => ({ name: 'existing.json', size: fileText.length, text: async () => fileText }),
-    createWritable: async () => ({ write: async text => { fileText = text; }, close: async () => {}, abort: async () => {} })
-  };
-  updateContext.updateBackupSelection = { handle: writableHandle };
-  updateContext.syncBackupUpdateControls();
-  assert(ui('updateBackupReview').disabled, 'File alone cannot enable review');
-  ui('updateBackupPassword').value = password;
-  ui('updateBackupPassword').oninput();
-  assert.equal(ui('updateBackupReview').disabled, false);
-  await ui('updateBackupForm').onsubmit({ preventDefault() {} });
-  assert(ui('updateBackupInput').classList.contains('hidden'), 'Review hides file/password controls');
-  assert.equal(ui('updateBackupSummary').classList.contains('hidden'), false);
-  assert.equal(ui('updateBackupFileName').textContent, 'existing.json');
-  assert.deepEqual(ui('updateBackupOldWallets').children.map(item => item.textContent), [wallet.name]);
-  assert.deepEqual(ui('updateBackupNewWallets').children.map(item => item.textContent), [wallet.name, wallet2.name]);
-  await ui('updateBackupAccept').onclick();
-  assert(!updateContext.wallets[1].backupVerified, 'Saving an updated backup does not unlock pending wallets');
-  assert(updateContext.advanced, 'Confirmed update automatically opens verification');
-  assert(WalletBackup.matches(updateContext.wallets, (await WalletBackup.decrypt(fileText, password)).wallets));
-  created.length = 0;
-  updateContext.renderWalletList();
-  choices = created.filter(item => item.className === 'wallet-choose-button');
-  assert.equal(choices[1].disabled, true, 'Updated wallet stays locked until the final import');
-  assert.equal(choices[1].textContent, '기기에 개인키 백업 후 사용가능');
   console.log('✓ Backup round-trip, wrong password, tampering, malformed input, random encryption and wallet migration/gating passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

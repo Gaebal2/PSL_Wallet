@@ -31,60 +31,6 @@ globalThis.WalletBackup = (() => {
       const entries = new Map(saved.map(wallet => [wallet.privateKey.toLowerCase(), wallet.name]));
       return entries.size === current.length && current.every(wallet => entries.get(wallet.privateKey.toLowerCase()) === wallet.name);
     },
-    merge(existing, current) {
-      // File-only wallets are preserved; existing names win for duplicate keys.
-      const merged = new Map();
-      for (const wallet of [...validateBundle(existing), ...validateBundle(current)]) {
-        if (!merged.has(wallet.privateKey)) merged.set(wallet.privateKey, wallet);
-      }
-      return validateBundle([...merged.values()]);
-    },
-    async writeVerified(handle, original, updated, isActive = () => true) {
-      let stage = 'permission';
-      const checkActive = () => { if (!isActive()) throw new Error('SESSION_ENDED'); };
-      // Retry reads only: a transient read failure must never trigger another write.
-      const readFresh = async () => {
-        for (let attempt = 0; ; attempt++) {
-          checkActive();
-          try {
-            const file = await handle.getFile();
-            const text = await file.text();
-            checkActive();
-            return text;
-          } catch (error) {
-            if (error.name !== 'NotReadableError' || attempt >= 2) throw error;
-            await new Promise(resolve => setTimeout(resolve, 150 * (attempt + 1)));
-          }
-        }
-      };
-      try {
-        // Keep this request in the original button gesture, before any other await.
-        if (await handle.requestPermission({ mode: 'readwrite' }) !== 'granted') throw new Error('WRITE_DENIED');
-        checkActive();
-        stage = 'read-original';
-        if (await readFresh() !== original) throw new Error('FILE_CHANGED');
-        stage = 'open-writer';
-        const stream = await handle.createWritable();
-        try {
-          checkActive();
-          stage = 'write';
-          await stream.write(updated);
-          checkActive();
-          stage = 'commit';
-          await stream.close();
-        } catch (error) {
-          try { await stream.abort(); } catch {}
-          throw error;
-        }
-        stage = 'verify';
-        if (await readFresh() !== updated) throw new Error('VERIFY_FAILED');
-      } catch (cause) {
-        const error = new Error(cause.message, { cause });
-        error.name = cause.name;
-        error.backupStage = stage;
-        throw error;
-      }
-    },
     async encrypt(wallets, password) {
       if (password.length < 10) throw new Error('백업 비밀번호는 10자 이상 입력해 주세요.');
       const salt = crypto.getRandomValues(new Uint8Array(16));

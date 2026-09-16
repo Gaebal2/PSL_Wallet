@@ -71,7 +71,6 @@ dialog > form > .button + .button {
   margin-top: 14px;
 }
 
-#updateBackupOpen, #updateBackupReview, #updateBackupAccept { margin-top: 14px; }
 
 .language-toggle,
 .language-toggle:hover,
@@ -126,7 +125,6 @@ html[lang="en"] .active-card-actions button { min-height: 48px; }
 .app-alert-details { text-align: left; font-size: 13px; line-height: 1.6; }
 .app-alert-details dt { margin-top: 14px; font-weight: 800; }
 .app-alert-details dd { margin: 4px 0 0; overflow-wrap: anywhere; color: var(--muted); }
-#updateBackupSummary { white-space: pre-line; }
 
 /* Share the primary button palette across all purple action buttons. */
 .button.primary,
@@ -142,9 +140,6 @@ html[lang="en"] .active-card-actions button { min-height: 48px; }
 .psl-receive-action { color: #fff !important; }
 .active-card-actions button { background: linear-gradient(135deg, #493b7c, #322855); color: #f4f0ff; border-color: #7865aa66; }
 .active-card-actions button:hover { background: linear-gradient(135deg, #55458e, #3d3066); }
-#updateBackupReview:disabled { background: #e6e8ed; color: #7b8190; box-shadow: none; cursor: not-allowed; }
-#updateBackupSummary { white-space: normal; }
-#updateBackupSummary p, #updateBackupSummary li { overflow-wrap: anywhere; }
 .wallet-choose-button:disabled { white-space: normal; }
 
 #createDialog .auth-form,

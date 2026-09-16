@@ -33,7 +33,7 @@
   <link rel="stylesheet" href="wallets.css?v=59">
   <link rel="stylesheet" href="install.css?v=55">
   <link rel="stylesheet" href="history.css?v=55">
-  <link rel="stylesheet" href="overlays.css?v=89">
+  <link rel="stylesheet" href="overlays.css?v=92">
   <title>Wallet</title>
 </head>
 <body>
@@ -306,15 +306,6 @@
   </dialog>
 
 
-  <dialog id="backupResolveDialog" aria-labelledby="backupResolveTitle">
-    <div class="sheet-head"><h2 id="backupResolveTitle">개인키 백업</h2><button class="close" data-close type="button" aria-label="닫기">×</button></div>
-<ol class="backup-steps"><li aria-current="step"><span>1</span><strong>1단계</strong><small>개인키 저장하기</small></li><li><span>2</span><strong>2단계</strong><small>저장된 개인키 확인하기</small></li><li><span>3</span><strong>3단계</strong><small>저장한 개인키 불러오기</small></li></ol>
-    <p class="helper">현재 지갑 목록을 백업할 방법을 선택해 주세요.</p>
-    <button id="backupResolveUpdate" class="button secondary" type="button">기존파일 업데이트</button>
-    <p class="helper">기존 백업파일과 비밀번호로 내용을 확인한 뒤 현재 지갑 목록으로 업데이트합니다.</p>
-    <button id="backupResolveCreate" class="button secondary" type="button">새로운 파일에 저장</button>
-    <p class="helper">새 백업용 비밀번호를 설정하고 현재 지갑 목록을 별도 파일로 저장합니다.</p>
-  </dialog>
 
   <dialog id="deviceBackupDialog" class="safe-scroll-dialog" aria-labelledby="deviceBackupTitle">
     <div class="sheet-head"><h2 id="deviceBackupTitle" tabindex="-1" autofocus>개인키 백업</h2><button id="deviceBackupClose" class="close" type="button" aria-label="닫기">×</button></div>
@@ -357,38 +348,14 @@
       </div>
     </form>
   </dialog>
-  <dialog id="updateBackupDialog" aria-labelledby="updateBackupTitle">
-    <div class="sheet-head"><h2 id="updateBackupTitle">기존 백업 업데이트</h2><button id="updateBackupCancel" class="close" type="button" aria-label="닫기">×</button></div>
-<ol class="backup-steps"><li aria-current="step"><span>1</span><strong>1단계</strong><small>개인키 저장하기</small></li><li><span>2</span><strong>2단계</strong><small>저장된 개인키 확인하기</small></li><li><span>3</span><strong>3단계</strong><small>저장한 개인키 불러오기</small></li></ol>
-
-    <div id="updateBackupInput">
-    <p id="updateBackupHelp" class="helper"></p>
-    <button id="updateBackupChoose" class="button primary" type="button">기존 백업 파일 선택</button>
-    <input id="updateBackupFile" class="hidden" type="file" accept=".json,application/json" aria-label="기존 백업 파일 선택">
-    <p id="updateBackupName" class="helper" translate="no"></p>
-    <form id="updateBackupForm">
-      <label for="updateBackupPassword">백업 당시 비밀번호</label>
-      <div class="password-field"><input id="updateBackupPassword" type="password" required name="updateBackupPassword" autocomplete="section-backup current-password" data-password-autocomplete="section-backup current-password"><button class="password-toggle" type="button" data-password-toggle="updateBackupPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
-      <button id="updateBackupReview" class="button primary" type="submit" disabled>업데이트할 지갑 확인</button>
-    </form>
-    </div>
-    <div id="updateBackupSummary" class="hidden" role="status">
-      <h3>파일명</h3><p id="updateBackupFileName" translate="no"></p>
-      <h3>기존 백업의 지갑명</h3><ul id="updateBackupOldWallets" translate="no"></ul>
-      <h3>업데이트할 지갑명</h3><ul id="updateBackupNewWallets" translate="no"></ul>
-    </div>
-    <button id="updateBackupAccept" class="button primary hidden" type="button">동의하고 업데이트</button>
-    <p id="updateBackupError" class="error" role="alert"></p>
-    <p id="updateBackupErrorCode" class="helper" translate="no"></p>
-  </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite" popover="manual"></div>
   <script src="vendor/crypto-js.min.js"></script>
   <script src="vendor/nacl-fast.min.js"></script>
   <script src="vendor/axios.min.js"></script>
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
-  <script src="backup.js?v=91"></script>
-  <script src="i18n.js?v=91"></script>
-  <script src="app.js?v=91"></script>
+  <script src="backup.js?v=92"></script>
+  <script src="i18n.js?v=92"></script>
+  <script src="app.js?v=92"></script>
 </body>
 </html>
