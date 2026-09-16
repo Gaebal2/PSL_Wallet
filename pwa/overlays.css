@@ -169,3 +169,11 @@ html[lang="en"] .active-card-actions button { min-height: 48px; }
 }
 #settingsDialog #cid { font-size: 14px; min-height: 90px; }
 #deviceBackupVerify { margin-top: 10px; }
+
+.backup-steps { display: flex; list-style: none; padding: 0; margin: 8px 0 24px; }
+.backup-steps li { position: relative; flex: 1; text-align: center; min-width: 0; }
+.backup-steps li:not(:last-child)::after { content: ""; position: absolute; top: 17px; left: calc(50% + 18px); width: calc(100% - 36px); height: 2px; background: #ccd5df; }
+.backup-steps span { display: grid; place-items: center; width: 36px; height: 36px; margin: 0 auto 8px; border-radius: 50%; background: #e8edf3; color: #526174; font-weight: 700; }
+.backup-steps [aria-current="step"] span { background: #1766dc; color: white; }
+.backup-steps strong, .backup-steps small { display: block; padding: 0 4px; }
+.backup-steps small { margin-top: 4px; font-size: 11px; line-height: 1.5; word-break: keep-all; }

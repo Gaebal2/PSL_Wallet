@@ -33,7 +33,7 @@
   <link rel="stylesheet" href="wallets.css?v=59">
   <link rel="stylesheet" href="install.css?v=55">
   <link rel="stylesheet" href="history.css?v=55">
-  <link rel="stylesheet" href="overlays.css?v=84">
+  <link rel="stylesheet" href="overlays.css?v=86">
   <title>Wallet</title>
 </head>
 <body>
@@ -168,13 +168,6 @@
       <p class="helper">신뢰하는 HTTPS RPC만 사용하세요. 변경한 RPC는 자동 저장됩니다.</p>
       <div class="settings-divider"></div>
       <button id="uninstallGuideBtn" class="button secondary" type="button">앱 제거 · 저장소 안내</button>
-      <div class="backup-status-card backup-missing">
-      <div class="backup-status-message" role="status"><span class="backup-status-icon" aria-hidden="true">!</span><div><strong class="backup-status-title">경고</strong><p class="backup-status-description">개인키 기기에 백업 안됨</p></div></div>
-      <button class="button backup-status-action" type="button" data-device-backup>해결하기</button>
-    </div>
-<button class="button secondary" type="button" data-restore-backup>백업된 개인키 불러오기</button>
-<button id="exportBtn" class="button secondary" type="button">개인키 보기</button>
-      <button id="logoutBtn" class="button danger delete-wallet-button" type="button">이 기기에서 모든 지갑 삭제</button>
     </form>
   </dialog>
 
@@ -212,6 +205,7 @@
       <button class="button backup-status-action" type="button" data-device-backup>해결하기</button>
     </div>
 <button class="button secondary" type="button" data-restore-backup>백업된 개인키 불러오기</button>
+<button id="exportBtn" class="button secondary" type="button">개인키 보기</button>
 <div id="walletList" class="wallet-list"></div>
     <button id="openAddWalletBtn" class="button secondary add-wallet-button" type="button">+ 개인키로 지갑 추가</button>
     <button id="createAdditionalWalletBtn" class="button secondary add-wallet-button" type="button">+ 새 지갑 생성</button>
@@ -315,30 +309,28 @@
 
 
   <dialog id="backupResolveDialog" aria-labelledby="backupResolveTitle">
-    <div class="sheet-head"><h2 id="backupResolveTitle">백업 방법 선택</h2><button class="close" data-close type="button" aria-label="닫기">×</button></div>
+<ol class="backup-steps"><li aria-current="step"><span>1</span><strong>1단계</strong><small>개인키 저장하기</small></li><li><span>2</span><strong>2단계</strong><small>저장된 개인키 확인하기</small></li><li><span>3</span><strong>3단계</strong><small>저장한 개인키 불러오기</small></li></ol>
+    <div class="sheet-head"><h2 id="backupResolveTitle">개인키 백업</h2><button class="close" data-close type="button" aria-label="닫기">×</button></div>
     <p class="helper">현재 지갑 목록을 백업할 방법을 선택해 주세요.</p>
-    <button id="backupResolveUpdate" class="button secondary" type="button">기존 백업파일 업데이트</button>
+    <button id="backupResolveUpdate" class="button secondary" type="button">기존파일 업데이트</button>
     <p class="helper">기존 백업파일과 비밀번호로 내용을 확인한 뒤 현재 지갑 목록으로 업데이트합니다.</p>
-    <button id="backupResolveCreate" class="button secondary" type="button">새로운 백업파일 생성</button>
+    <button id="backupResolveCreate" class="button secondary" type="button">새로운 파일에 저장</button>
     <p class="helper">새 백업용 비밀번호를 설정하고 현재 지갑 목록을 별도 파일로 저장합니다.</p>
     <button class="button primary" data-close type="button">취소</button>
   </dialog>
 
   <dialog id="deviceBackupDialog" class="safe-scroll-dialog" aria-labelledby="deviceBackupTitle">
-    <div class="sheet-head"><h2 id="deviceBackupTitle" tabindex="-1" autofocus>개인키를 별도로 백업해 주세요</h2><button id="deviceBackupClose" class="close" type="button" aria-label="닫기">×</button></div>
-    <p id="deviceBackupWallet" class="helper">PSL Wallet 사용자들에게…</p>
-    <p class="helper">현재 지갑의 개인키는 암호화되어 이 브라우저 또는 PWA의 저장소에 보관됩니다. 방문 기록만 지우는 경우에는 보통 유지되지만, 쿠키 및 사이트 데이터 등 지갑이 저장된 데이터를 삭제하면 개인키도 삭제될 수 있습니다.</p>
-    <p class="helper">백업용 비밀번호를 입력하고 ‘새 백업 파일 저장’을 누르세요. 저장 후 파일을 다시 선택하여 확인하면 백업한 지갑을 사용할 수 있습니다.</p>
-    <p class="helper"><strong>개인키를 별도로 보관하는 것이 중요합니다. 기기 분실이나 고장에 대비해 백업 파일의 사본을 다른 안전한 장소에도 보관하세요.</strong></p>
-    <p class="helper">다른 브라우저나 새 기기에서 최신 파일을 준비하고 ‘백업된 개인키 불러오기’를 누르면 파일에 포함된 모든 지갑을 복원합니다. 백업 당시 비밀번호가 반드시 필요하며, 잊으면 이 파일로 복원할 수 없습니다. 지갑 잠금 비밀번호를 변경해도 파일의 비밀번호는 바뀌지 않습니다.</p>
+<ol class="backup-steps"><li aria-current="step"><span>1</span><strong>1단계</strong><small>개인키 저장하기</small></li><li><span>2</span><strong>2단계</strong><small>저장된 개인키 확인하기</small></li><li><span>3</span><strong>3단계</strong><small>저장한 개인키 불러오기</small></li></ol>
+    <div class="sheet-head"><h2 id="deviceBackupTitle" tabindex="-1" autofocus>개인키 백업</h2><button id="deviceBackupClose" class="close" type="button" aria-label="닫기">×</button></div>
+    <p id="deviceBackupWallet" class="helper">개인키를 이 디바이스에 백업해 놓는 것이 사용자의 코인(토큰)보호를 보장하지 않습니다.</p>
     <form id="deviceBackupForm">
       <label for="deviceBackupPassword">백업용 비밀번호 (10자 이상, 12자 이상 권장)</label><div class="password-field"><input id="deviceBackupPassword" type="password" minlength="10" required name="deviceBackupPassword" autocomplete="section-backup new-password" data-password-autocomplete="section-backup new-password"><button class="password-toggle" type="button" data-password-toggle="deviceBackupPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
       <label for="deviceBackupConfirm">백업용 비밀번호 확인</label><div class="password-field"><input id="deviceBackupConfirm" type="password" minlength="10" required name="deviceBackupConfirm" autocomplete="section-backup new-password" data-password-autocomplete="section-backup new-password"><button class="password-toggle" type="button" data-password-toggle="deviceBackupConfirm" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
       <button id="deviceBackupSave" class="button primary" type="submit" disabled>새 백업 파일 저장</button>
     </form>
-    <button id="deviceBackupVerify" class="button secondary" type="button" disabled>저장한 백업 파일 확인하기</button>
     <p id="deviceBackupError" class="error" role="alert"></p>
     <button id="deviceBackupExit" class="button secondary" type="button">취소</button>
+    <button id="deviceBackupVerify" class="button primary" type="button" disabled>다음</button>
   </dialog>
   <dialog id="backupLocationDialog" aria-labelledby="backupLocationTitle">
     <h2 id="backupLocationTitle">기기에 저장한 백업</h2>
@@ -346,24 +338,29 @@
     <p class="helper">저장 위치: 파일 저장 시 선택한 폴더 또는 기기의 다운로드 폴더를 확인해 주세요. 브라우저에서는 전체 폴더 경로를 제공하지 않습니다.</p>
     <p class="helper">마지막으로 확인한 파일 내용과 현재 지갑 목록이 일치합니다. 파일을 이동하거나 삭제했다면 다시 확인해 주세요.</p>
     <button id="backupLocationVerify" class="button secondary" type="button">저장한 백업 파일 확인하기</button>
-    <button id="backupLocationCreate" class="button secondary" type="button">새로운 백업파일 생성</button>
+    <button id="backupLocationCreate" class="button secondary" type="button">새로운 파일에 저장</button>
     <button id="backupLocationClose" class="button primary" type="button">닫기</button>
   </dialog>
   <dialog id="restoreBackupDialog" class="safe-scroll-dialog" aria-labelledby="restoreBackupTitle">
+    <div id="restoreBackupSteps" class="hidden"><ol class="backup-steps"><li><span>1</span><strong>1단계</strong><small>개인키 저장하기</small></li><li aria-current="step"><span>2</span><strong>2단계</strong><small>저장된 개인키 확인하기</small></li><li><span>3</span><strong>3단계</strong><small>저장한 개인키 불러오기</small></li></ol></div>
     <h2 id="restoreBackupTitle">백업된 개인키 불러오기</h2>
     <form id="restoreBackupForm">
+<div id="restoreBackupInputs">
       <label for="restoreBackupFile">암호화된 백업 파일</label><input id="restoreBackupFile" type="file" accept=".json,application/json" required>
       <label for="restoreBackupPassword">백업 당시 비밀번호</label><div class="password-field"><input id="restoreBackupPassword" type="password" required name="restoreBackupPassword" autocomplete="section-backup current-password" data-password-autocomplete="section-backup current-password"><button class="password-toggle" type="button" data-password-toggle="restoreBackupPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
       <div id="restoreVaultFields">
         <label for="restoreVaultPassword">새 지갑 잠금 비밀번호 (10자 이상)</label><div class="password-field"><input id="restoreVaultPassword" type="password" minlength="10" name="restoreVaultPassword" autocomplete="section-vault new-password" data-password-autocomplete="section-vault new-password"><button class="password-toggle" type="button" data-password-toggle="restoreVaultPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
         <label for="restoreVaultConfirm">새 지갑 잠금 비밀번호 확인</label><div class="password-field"><input id="restoreVaultConfirm" type="password" minlength="10" name="restoreVaultConfirm" autocomplete="section-vault new-password" data-password-autocomplete="section-vault new-password"><button class="password-toggle" type="button" data-password-toggle="restoreVaultConfirm" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
       </div>
+</div>
+<div id="restoreBackupSummary" class="helper hidden" translate="no"></div>
       <p id="restoreBackupError" class="error" role="alert"></p>
-      <button id="restoreBackupSubmit" class="button primary" type="submit">백업된 개인키 불러오기</button>
       <button id="restoreBackupCancel" class="button secondary" type="button">취소</button>
+      <button id="restoreBackupSubmit" class="button primary" type="submit">백업된 개인키 불러오기</button>
     </form>
   </dialog>
   <dialog id="updateBackupDialog" aria-labelledby="updateBackupTitle">
+<ol class="backup-steps"><li aria-current="step"><span>1</span><strong>1단계</strong><small>개인키 저장하기</small></li><li><span>2</span><strong>2단계</strong><small>저장된 개인키 확인하기</small></li><li><span>3</span><strong>3단계</strong><small>저장한 개인키 불러오기</small></li></ol>
     <h2 id="updateBackupTitle">기존 백업 업데이트</h2>
     <div id="updateBackupInput">
     <p id="updateBackupHelp" class="helper"></p>
@@ -384,6 +381,7 @@
     <button id="updateBackupAccept" class="button primary hidden" type="button">동의하고 업데이트</button>
     <p id="updateBackupError" class="error" role="alert"></p>
     <button id="updateBackupCancel" class="button secondary" type="button">취소</button>
+    <button id="updateBackupNext" class="button primary" type="button" disabled>다음</button>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite" popover="manual"></div>
   <script src="vendor/crypto-js.min.js"></script>
@@ -392,7 +390,7 @@
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
   <script src="backup.js?v=78"></script>
-  <script src="i18n.js?v=85"></script>
-  <script src="app.js?v=84"></script>
+  <script src="i18n.js?v=86"></script>
+  <script src="app.js?v=86"></script>
 </body>
 </html>

@@ -1,6 +1,18 @@
 /* UI-only localization. Wallet data, keys and input values are never translated. */
 globalThis.WalletI18n = (() => {
   const pairs = `
+1단계|Step 1
+2단계|Step 2
+3단계|Step 3
+개인키 저장하기|Save private keys
+저장된 개인키 확인하기|Verify saved private keys
+저장한 개인키 불러오기|Import saved private keys
+기존파일 업데이트|Update existing file
+새로운 파일에 저장|Save to a new file
+다음|Next
+사용하기|Use wallet
+개인키를 이 디바이스에 백업해 놓는 것이 사용자의 코인(토큰)보호를 보장하지 않습니다.|Backing up private keys on this device does not guarantee protection of your coins (tokens).
+저장한 파일을 다음 단계에서 선택하여 확인해 주세요.|Select the saved file in the next step to verify it.
 새 백업 파일 저장|Save new backup file
 파일 저장 창 완료|File save dialog completed
 백업 파일 저장 완료|Backup file save completed

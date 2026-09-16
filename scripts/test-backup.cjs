@@ -128,13 +128,13 @@ require('../pwa/backup.js');
   // overwrite current names, or report stale files as up to date.
   const elements = new Map();
   const element = id => {
-    if (!elements.has(id)) elements.set(id, { value: '', textContent: '', open: true, reset() {}, close() { this.open = false; } });
+    if (!elements.has(id)) elements.set(id, { value: '', textContent: '', open: true, classList: { add() {}, remove() {} }, reset() {}, close() { this.open = false; } });
     return elements.get(id);
   };
   const current = { ...wallet, id: wallet.privateKey, name: 'Current name', backupVerified: false };
   const restoreContext = vm.createContext({
     WalletBackup, wallets: [current], activeWalletId: current.id,
-    backupRecord: null, backupVerificationId: current.id, backupBusy: false,
+    backupRecord: null, backupVerificationId: current.id, backupBusy: false, backupWizardStep: 0, renderBackupWizard() {},
     vaultPassword: 'session-password', walletVault: 'old-vault',
     $: element, setLoading() {}, showWallet() {}, toast() {},
     persistWallets: async () => {},
@@ -162,6 +162,30 @@ require('../pwa/backup.js');
   element('restoreBackupFile').files = [{ size: encrypted.length, name: 'old.json', text: async () => encrypted }];
   await element('restoreBackupForm').onsubmit({ preventDefault() {} });
   assert.equal(restoreContext.backupRecord, previousRecord, 'Persistence failure rolls back the backup record');
+
+  // Wizard verification is read-only until the separate final Use action.
+  restoreContext.wallets = [{ ...current }];
+  restoreContext.backupRecord = null;
+  restoreContext.backupWizardStep = 2;
+  let persisted = 0;
+  restoreContext.persistWallets = async () => { persisted++; };
+  element('restoreBackupFile').files = [{ size: encrypted.length, name: 'stale.json', text: async () => encrypted }];
+  await element('restoreBackupForm').onsubmit({ preventDefault() {} });
+  assert.equal(restoreContext.backupWizardStep, 2, 'A stale backup cannot advance the wizard');
+  assert.equal(persisted, 0);
+  element('restoreBackupFile').files = [{ size: exact.length, name: 'latest.json', text: async () => exact }];
+  element('restoreBackupPassword').value = 'wrong-password';
+  await element('restoreBackupForm').onsubmit({ preventDefault() {} });
+  assert.equal(restoreContext.backupWizardStep, 2, 'Wrong password cannot advance');
+  element('restoreBackupPassword').value = password;
+  await element('restoreBackupForm').onsubmit({ preventDefault() {} });
+  assert.equal(restoreContext.backupWizardStep, 3);
+  assert.equal(persisted, 0, 'Next only verifies; it does not persist or unlock');
+  assert.equal(restoreContext.wallets[0].backupVerified, false);
+  await element('restoreBackupForm').onsubmit({ preventDefault() {} });
+  assert.equal(persisted, 1, 'Use commits the verified backup');
+  assert.equal(restoreContext.wallets[0].backupVerified, true);
+  assert.equal(restoreContext.backupStatus(), 'good');
 
   // Exercise the two-step update UI and the real verified-write handler.
   function uiElement() {
@@ -331,12 +355,13 @@ require('../pwa/backup.js');
   assert.deepEqual(ui('updateBackupOldWallets').children.map(item => item.textContent), [wallet.name]);
   assert.deepEqual(ui('updateBackupNewWallets').children.map(item => item.textContent), [wallet.name, wallet2.name]);
   await ui('updateBackupAccept').onclick();
-  assert(updateContext.wallets.every(item => item.backupVerified));
+  assert(!updateContext.wallets[1].backupVerified, 'Saving an updated backup does not unlock pending wallets');
+  assert.equal(ui('updateBackupNext').disabled, false, 'Successful update enables the next step');
   assert(WalletBackup.matches(updateContext.wallets, (await WalletBackup.decrypt(fileText, password)).wallets));
   created.length = 0;
   updateContext.renderWalletList();
   choices = created.filter(item => item.className === 'wallet-choose-button');
-  assert.equal(choices[1].disabled, false, 'Verified new wallet becomes selectable');
-  assert.equal(choices[1].textContent, '선택');
+  assert.equal(choices[1].disabled, true, 'Updated wallet stays locked until the final import');
+  assert.equal(choices[1].textContent, '기기에 개인키 백업 후 사용가능');
   console.log('✓ Backup round-trip, wrong password, tampering, malformed input, random encryption and wallet migration/gating passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

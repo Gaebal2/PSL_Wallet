@@ -1506,7 +1506,7 @@
     toast('이 기기에서 지갑을 삭제했습니다.');
   }
 
-  $('logoutBtn').onclick = deleteWallet;
+
   $('uninstallGuideDelete').onclick = async () => {
     await deleteWallet();
   };
@@ -1661,6 +1661,7 @@
   let backupRecord = null;
   let backupVerificationId = null;
   let backupBusy = false;
+  let backupWizardStep = 0;
   let updateBackupSelection = null;
   let updateBackupPlan = null;
 
@@ -1755,6 +1756,7 @@
   }
 
   function resetBackupUpdateReview() {
+    $('updateBackupNext').disabled = true;
     updateBackupPlan = null;
     $('updateBackupFileName').textContent = '';
     $('updateBackupOldWallets').replaceChildren();
@@ -1769,6 +1771,7 @@
   }
 
   function openBackupUpdate() {
+    $('updateBackupNext').disabled = true;
     if (backupBusy || !vaultPassword) return;
     updateBackupSelection = null;
     resetBackupUpdateReview();
@@ -1881,28 +1884,12 @@
         // Permission is requested from this explicit confirmation click, before other awaits.
         await WalletBackup.writeVerified(plan.selection.handle, plan.original, plan.updated, active);
         if (!active()) return;
-        const previousVault = walletVault;
-        const previousRecord = backupRecord;
-        backupRecord = makeBackupRecord(plan.snapshot, plan.selection.handle.name);
-        wallets = wallets.map(wallet => ({ ...wallet, backupVerified: true }));
-        try { await persistWallets(); }
-        catch (error) { wallets = plan.snapshot; walletVault = previousVault; backupRecord = previousRecord; throw error; }
-        $('updateBackupDialog').close();
-        $('deviceBackupDialog').close();
-        $('backupResolveDialog').close();
-        showWallet();
-        toast('기존 백업 파일을 업데이트하고 저장 내용을 확인했습니다. 지갑을 사용할 수 있습니다.');
       } else {
         downloadBackup(plan.updated);
-        $('updateBackupDialog').close();
-        openDeviceBackup();
-        $('deviceBackupError').textContent = '새 통합 파일 저장을 요청했습니다. 기존 파일은 그대로입니다. 저장한 새 파일을 다시 열어 확인해 주세요.';
-        await showAlert('다운로드를 요청했습니다. 브라우저에서 저장을 완료한 뒤 저장한 파일을 다시 선택하여 확인해 주세요.', '백업 파일 저장 요청');
-        if (vaultPassword && $('deviceBackupDialog').open) {
-          backupSaveComplete = true;
-          $('deviceBackupVerify').disabled = false;
-        }
       }
+      $('updateBackupNext').disabled = false;
+      $('updateBackupAccept').classList.add('hidden');
+      $('updateBackupError').textContent = '저장한 파일을 다음 단계에서 선택하여 확인해 주세요.';
     } catch (error) {
       resetBackupUpdateReview();
       $('updateBackupError').textContent = error.message === 'FILE_CHANGED'
@@ -1912,6 +1899,12 @@
       backupBusy = false;
       $('updateBackupAccept').disabled = false;
     }
+  };
+
+  $('updateBackupNext').onclick = () => {
+    if (backupBusy || $('updateBackupNext').disabled) return;
+    $('updateBackupDialog').close();
+    openRestoreBackup(true);
   };
 
   function mergeVerifiedWallets(current, restored, targetId) {
@@ -1966,9 +1959,17 @@
     // Keep the previous dialog underneath so cancel returns to the entry screen.
     resetDeviceBackup();
     $('deviceBackupError').textContent = '';
-    $('deviceBackupWallet').textContent = 'PSL Wallet 사용자들에게…';
+
     $('deviceBackupExit').textContent = '취소';
     $('deviceBackupDialog').showModal();
+  }
+
+  function renderBackupWizard() {
+    $('restoreBackupSteps').querySelectorAll('li').forEach((item, index) => {
+      if (index + 1 === backupWizardStep) item.setAttribute('aria-current', 'step');
+      else item.removeAttribute('aria-current');
+    });
+    $('restoreBackupSubmit').textContent = backupWizardStep === 2 ? '다음' : backupWizardStep === 3 ? '사용하기' : '백업된 개인키 불러오기';
   }
 
   function openRestoreBackup(verify = false) {
@@ -1977,10 +1978,15 @@
       $('unlockPassword').focus();
       return;
     }
+    backupWizardStep = verify ? 2 : 0;
     backupVerificationId = verify ? activeWalletId : null;
+    $('restoreBackupSteps').classList.toggle('hidden', !verify);
+    $('restoreBackupInputs').classList.remove('hidden');
+    $('restoreBackupSummary').classList.add('hidden');
+    renderBackupWizard();
     $('restoreBackupForm').reset();
     $('restoreBackupError').textContent = '';
-    $('restoreBackupTitle').textContent = verify ? '저장한 백업 파일 확인하기' : '백업된 개인키 불러오기';
+    $('restoreBackupTitle').textContent = verify ? '저장된 개인키 확인하기' : '백업된 개인키 불러오기';
     $('restoreVaultFields').classList.toggle('hidden', Boolean(vaultPassword));
     $('restoreVaultPassword').required = !vaultPassword;
     $('restoreVaultConfirm').required = !vaultPassword;
@@ -2087,6 +2093,16 @@
       if (vaultPassword !== sessionPassword || !$('restoreBackupDialog').open) return;
       const restored = data.wallets.map(wallet => makeWallet(wallet.privateKey, wallet.name, true));
       if (targetId && !restored.some(wallet => wallet.id === targetId)) throw new Error('선택한 지갑의 백업 파일이 아닙니다.');
+      if (backupWizardStep && !WalletBackup.matches(wallets, data.wallets)) throw new Error('BACKUP_MISMATCH');
+      if (backupWizardStep === 2) {
+        backupWizardStep = 3;
+        $('restoreBackupTitle').textContent = '저장한 개인키 불러오기';
+        $('restoreBackupInputs').classList.add('hidden');
+        $('restoreBackupSummary').textContent = data.wallets.map(wallet => wallet.name).join(' · ');
+        $('restoreBackupSummary').classList.remove('hidden');
+        $('restoreBackupError').textContent = '';
+        return;
+      }
       // Only wallets actually present in the verified file become usable.
       wallets = targetId
         ? wallets.map(wallet => ({ ...wallet, backupVerified: restored.some(saved => saved.id === wallet.id) || wallet.backupVerified }))
@@ -2111,6 +2127,7 @@
     } finally {
       backupBusy = false;
       setLoading($('restoreBackupSubmit'), false, '백업된 개인키 불러오기');
+      renderBackupWizard();
     }
   };
 
@@ -2142,7 +2159,7 @@
       hadController = true;
       applyUpdate();
     });
-    navigator.serviceWorker.register('./sw.js?v=84', { updateViaCache: 'none' }).then(registration => {
+    navigator.serviceWorker.register('./sw.js?v=86', { updateViaCache: 'none' }).then(registration => {
       const checkUpdate = () => {
         if (document.hidden) return;
         registration.update().catch(() => {});
