@@ -2,6 +2,12 @@
 globalThis.WalletI18n = (() => {
   const pairs = `
 개인키가 저장된 지갑 리스트|Wallets with saved private keys
+파일 수정 권한을 확인하지 못했습니다. 다시 저장을 눌러 권한을 허용해 주세요.|Could not confirm write permission. Try saving again and grant permission.
+권한 승인 후 기존 파일을 읽지 못했습니다. 파일을 다시 선택해 주세요.|Could not read the existing file after permission approval. Select the file again.
+파일을 수정할 수 있도록 열지 못했습니다. 파일 권한과 저장 위치를 확인해 주세요.|Could not open the file for writing. Check its permissions and location.
+파일 내용을 기록하지 못했습니다. 저장 공간과 파일 접근 상태를 확인해 주세요.|Could not write the file. Check available storage and file access.
+파일 저장을 마무리하지 못했습니다. 저장된 파일을 다시 확인해 주세요.|Could not finish saving. Check the saved file again.
+저장 후 파일 내용을 확인하지 못했습니다. 파일은 변경되었을 수 있으므로 다시 선택하여 확인해 주세요.|Could not verify the saved contents. The file may have changed; select it again to check.
 1단계|Step 1
 2단계|Step 2
 3단계|Step 3

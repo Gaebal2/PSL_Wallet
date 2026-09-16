@@ -80,6 +80,42 @@ require('../pwa/backup.js');
   await assert.rejects(WalletBackup.writeVerified(locked, encrypted, combinedText, () => false), /SESSION_ENDED/);
   assert.equal(locked.creates, 0);
 
+  // Transient reads after permission approval and after commit recover without rewriting.
+  for (const failingRead of [1, 2]) {
+    const transient = fileHandle();
+    const getFile = transient.getFile;
+    let reads = 0;
+    transient.getFile = async () => {
+      reads++;
+      if (reads === failingRead) throw Object.assign(new Error('temporarily unreadable'), { name: 'NotReadableError' });
+      return getFile();
+    };
+    await WalletBackup.writeVerified(transient, encrypted, combinedText);
+    assert.equal(transient.creates, 1, 'Read retry must not repeat writing');
+    assert.equal(transient.stored, combinedText);
+    assert.equal(reads, 3);
+  }
+  const unreadable = fileHandle();
+  let readAttempts = 0;
+  unreadable.getFile = async () => {
+    readAttempts++;
+    throw Object.assign(new Error('unreadable'), { name: 'NotReadableError' });
+  };
+  await assert.rejects(WalletBackup.writeVerified(unreadable, encrypted, combinedText), error => error.backupStage === 'read-original' && error.name === 'NotReadableError');
+  assert.equal(readAttempts, 3, 'Read retries are bounded');
+  assert.equal(unreadable.creates, 0);
+  const writerDenied = fileHandle();
+  writerDenied.createWritable = async () => { throw Object.assign(new Error('denied'), { name: 'NotAllowedError' }); };
+  await assert.rejects(WalletBackup.writeVerified(writerDenied, encrypted, combinedText), error => error.backupStage === 'open-writer' && error.name === 'NotAllowedError');
+  const lockedDuringRetry = fileHandle();
+  let stillActive = true;
+  lockedDuringRetry.getFile = async () => {
+    stillActive = false;
+    throw Object.assign(new Error('unreadable'), { name: 'NotReadableError' });
+  };
+  await assert.rejects(WalletBackup.writeVerified(lockedDuringRetry, encrypted, combinedText, () => stillActive), /SESSION_ENDED/);
+  assert.equal(lockedDuringRetry.creates, 0, 'Session expiry cancels retries before writing');
+
   // Execute the actual app's wallet construction and gating functions with UI/RPC stubs.
   const source = fs.readFileSync(require.resolve('../pwa/app.js'), 'utf8');
   function extract(name) {

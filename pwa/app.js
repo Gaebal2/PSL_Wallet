@@ -1777,6 +1777,7 @@
     $('updateBackupForm').reset();
     $('updateBackupName').textContent = '';
     $('updateBackupError').textContent = '';
+    $('updateBackupErrorCode').textContent = '';
     $('updateBackupHelp').textContent = typeof window.showOpenFilePicker === 'function'
       ? '기존 파일을 선택하고 비밀번호를 입력하세요. 내용을 확인하고 동의한 뒤 같은 파일에 저장합니다.'
       : '이 브라우저는 기존 파일 덮어쓰기를 지원하지 않습니다. 파일을 선택하면 현재 지갑 목록을 담은 새 백업을 저장합니다.';
@@ -1789,6 +1790,7 @@
     updateBackupSelection = null;
     $('updateBackupName').textContent = '';
     $('updateBackupError').textContent = '';
+    $('updateBackupErrorCode').textContent = '';
     $('updateBackupForm').reset();
     syncBackupUpdateControls();
     if (typeof window.showOpenFilePicker !== 'function') {
@@ -1831,6 +1833,7 @@
     if (!selection) { $('updateBackupError').textContent = '기존 백업 파일을 먼저 선택해 주세요.'; return; }
     resetBackupUpdateReview();
     $('updateBackupError').textContent = '';
+    $('updateBackupErrorCode').textContent = '';
     const snapshot = wallets;
     const currentWallet = activeWallet();
     const password = $('updateBackupPassword').value;
@@ -1878,6 +1881,7 @@
     backupBusy = true;
     $('updateBackupAccept').disabled = true;
     $('updateBackupError').textContent = '';
+    $('updateBackupErrorCode').textContent = '';
     try {
       if (plan.writable) {
         // Permission is requested from this explicit confirmation click, before other awaits.
@@ -1892,9 +1896,20 @@
       openRestoreBackup(true);
     } catch (error) {
       resetBackupUpdateReview();
+      const messages = {
+        permission: '파일 수정 권한을 확인하지 못했습니다. 다시 저장을 눌러 권한을 허용해 주세요.',
+        'read-original': '권한 승인 후 기존 파일을 읽지 못했습니다. 파일을 다시 선택해 주세요.',
+        'open-writer': '파일을 수정할 수 있도록 열지 못했습니다. 파일 권한과 저장 위치를 확인해 주세요.',
+        write: '파일 내용을 기록하지 못했습니다. 저장 공간과 파일 접근 상태를 확인해 주세요.',
+        commit: '파일 저장을 마무리하지 못했습니다. 저장된 파일을 다시 확인해 주세요.',
+        verify: '저장 후 파일 내용을 확인하지 못했습니다. 파일은 변경되었을 수 있으므로 다시 선택하여 확인해 주세요.'
+      };
       $('updateBackupError').textContent = error.message === 'FILE_CHANGED'
         ? '선택한 파일이 다른 곳에서 변경되었습니다. 다시 선택하고 확인해 주세요.'
-        : '저장 또는 저장 내용 확인을 완료하지 못했습니다. 지갑 잠금은 유지됩니다. 파일을 다시 선택하여 확인해 주세요.';
+        : messages[error.backupStage] || '저장 또는 저장 내용 확인을 완료하지 못했습니다. 지갑 잠금은 유지됩니다. 파일을 다시 선택하여 확인해 주세요.';
+      // Show only a fixed stage and exception type, never file contents or keys.
+      const types = ['NotAllowedError', 'NotReadableError', 'NotFoundError', 'AbortError', 'SecurityError', 'InvalidStateError', 'QuotaExceededError'];
+      $('updateBackupErrorCode').textContent = (error.backupStage || 'next-step') + ' / ' + (types.includes(error.name) ? error.name : 'Error');
     } finally {
       backupBusy = false;
       $('updateBackupAccept').disabled = false;
@@ -2162,7 +2177,7 @@
       hadController = true;
       applyUpdate();
     });
-    navigator.serviceWorker.register('./sw.js?v=90', { updateViaCache: 'none' }).then(registration => {
+    navigator.serviceWorker.register('./sw.js?v=91', { updateViaCache: 'none' }).then(registration => {
       const checkUpdate = () => {
         if (document.hidden) return;
         registration.update().catch(() => {});
