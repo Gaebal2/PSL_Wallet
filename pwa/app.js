@@ -1963,7 +1963,7 @@
       if (index + 1 === backupWizardStep) item.setAttribute('aria-current', 'step');
       else item.removeAttribute('aria-current');
     });
-    $('restoreBackupSubmit').textContent = backupWizardStep === 2 ? '다음>' : backupWizardStep === 3 ? '사용하기' : '백업된 개인키 불러오기';
+    $('restoreBackupSubmit').textContent = backupWizardStep === 2 ? '다음 >' : backupWizardStep === 3 ? '사용하기' : '백업된 개인키 불러오기';
   }
 
   function openRestoreBackup(verify = false) {
@@ -2162,7 +2162,7 @@
       hadController = true;
       applyUpdate();
     });
-    navigator.serviceWorker.register('./sw.js?v=88', { updateViaCache: 'none' }).then(registration => {
+    navigator.serviceWorker.register('./sw.js?v=90', { updateViaCache: 'none' }).then(registration => {
       const checkUpdate = () => {
         if (document.hidden) return;
         registration.update().catch(() => {});

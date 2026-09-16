@@ -10,8 +10,8 @@ globalThis.WalletI18n = (() => {
 저장한 개인키 불러오기|Import saved private keys
 기존파일 업데이트|Update existing file
 새로운 파일에 저장|Save to a new file
-<이전|<Previous
-다음>|Next>
+< 이전|< Previous
+다음 >|Next >
 다음|Next
 사용하기|Use wallet
 개인키를 이 디바이스에 백업해 놓는 것이 사용자의 코인(토큰)보호를 보장하지 않습니다.|Backing up private keys on this device does not guarantee protection of your coins (tokens).

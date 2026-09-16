@@ -66,9 +66,6 @@ dialog > form > .button + .button {
   margin-top: 10px;
 }
 
-#walletManagerDialog > [data-restore-backup] {
-  margin-bottom: 10px;
-}
 
 #deviceBackupSave {
   margin-top: 14px;
