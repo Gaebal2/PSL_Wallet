@@ -33,7 +33,7 @@
   <link rel="stylesheet" href="wallets.css?v=59">
   <link rel="stylesheet" href="install.css?v=55">
   <link rel="stylesheet" href="history.css?v=55">
-  <link rel="stylesheet" href="overlays.css?v=87">
+  <link rel="stylesheet" href="overlays.css?v=88">
   <title>Wallet</title>
 </head>
 <body>
@@ -349,7 +349,7 @@
         <label for="restoreVaultConfirm">새 지갑 잠금 비밀번호 확인</label><div class="password-field"><input id="restoreVaultConfirm" type="password" minlength="10" name="restoreVaultConfirm" autocomplete="section-vault new-password" data-password-autocomplete="section-vault new-password"><button class="password-toggle" type="button" data-password-toggle="restoreVaultConfirm" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
       </div>
 </div>
-<div id="restoreBackupSummary" class="helper hidden" translate="no"></div>
+<div id="restoreBackupSummary" class="helper hidden"><h3>개인키가 저장된 지갑 리스트</h3><div id="restoreBackupWalletNames" translate="no"></div></div>
       <p id="restoreBackupError" class="error" role="alert"></p>
       <div class="backup-navigation">
       <button id="restoreBackupPrevious" class="button secondary hidden" type="button">&lt;이전</button>
@@ -387,7 +387,7 @@
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
   <script src="backup.js?v=78"></script>
-  <script src="i18n.js?v=87"></script>
-  <script src="app.js?v=87"></script>
+  <script src="i18n.js?v=88"></script>
+  <script src="app.js?v=88"></script>
 </body>
 </html>

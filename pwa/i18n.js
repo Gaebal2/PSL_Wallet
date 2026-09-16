@@ -1,6 +1,7 @@
 /* UI-only localization. Wallet data, keys and input values are never translated. */
 globalThis.WalletI18n = (() => {
   const pairs = `
+개인키가 저장된 지갑 리스트|Wallets with saved private keys
 1단계|Step 1
 2단계|Step 2
 3단계|Step 3

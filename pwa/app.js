@@ -2101,7 +2101,7 @@
         backupWizardStep = 3;
         $('restoreBackupTitle').textContent = '저장한 개인키 불러오기';
         $('restoreBackupInputs').classList.add('hidden');
-        $('restoreBackupSummary').textContent = data.wallets.map(wallet => wallet.name).join(' · ');
+        $('restoreBackupWalletNames').textContent = data.wallets.map(wallet => wallet.name).join('\n');
         $('restoreBackupSummary').classList.remove('hidden');
         $('restoreBackupError').textContent = '';
         return;
@@ -2162,7 +2162,7 @@
       hadController = true;
       applyUpdate();
     });
-    navigator.serviceWorker.register('./sw.js?v=87', { updateViaCache: 'none' }).then(registration => {
+    navigator.serviceWorker.register('./sw.js?v=88', { updateViaCache: 'none' }).then(registration => {
       const checkUpdate = () => {
         if (document.hidden) return;
         registration.update().catch(() => {});
