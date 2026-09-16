@@ -1,4 +1,4 @@
-const CACHE_NAME = 'psl-wallet-v83';
+const CACHE_NAME = 'psl-wallet-v84';
 const APP_SHELL = [
   './',
   './index.html',
@@ -7,9 +7,9 @@ const APP_SHELL = [
   './wallets.css?v=59',
   './install.css?v=55',
   './history.css?v=55',
-  './overlays.css?v=82',
-  './app.js?v=83',
-  './i18n.js?v=83',
+  './overlays.css?v=84',
+  './app.js?v=84',
+  './i18n.js?v=84',
   './backup.js?v=78',
   './manifest.webmanifest',
   './icons/icon-512.png',
@@ -34,14 +34,17 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(caches.keys()
-    .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+    .then((keys) => Promise.all(keys.filter((key) => key.startsWith('psl-wallet-') && key !== CACHE_NAME).map((key) => caches.delete(key))))
     .then(() => self.clients.claim()));
 });
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
   if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request).catch(() => caches.match('./index.html')));
+    event.respondWith(fetch(event.request, { cache: 'no-store' }).then(response => {
+      if (!response.ok) throw new Error('Navigation unavailable');
+      return response;
+    }).catch(() => caches.match('./index.html')));
     return;
   }
   event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {

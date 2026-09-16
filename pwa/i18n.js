@@ -1,6 +1,14 @@
 /* UI-only localization. Wallet data, keys and input values are never translated. */
 globalThis.WalletI18n = (() => {
   const pairs = `
+새 백업 파일 저장|Save new backup file
+파일 저장 창 완료|File save dialog completed
+백업 파일 저장 완료|Backup file save completed
+백업 파일 저장 요청|Backup file download requested
+백업 파일을 저장했습니다. 저장한 파일을 다시 선택하여 확인해 주세요.|The backup file was saved. Select the saved file again to verify it.
+파일 저장 창이 완료되었습니다. 선택한 위치의 백업 파일을 다시 열어 확인해 주세요.|The file save dialog has finished. Reopen the backup at your chosen location to verify it.
+다운로드를 요청했습니다. 브라우저에서 저장을 완료한 뒤 저장한 파일을 다시 선택하여 확인해 주세요.|The download was requested. Finish saving in your browser, then select the saved file to verify it.
+백업용 비밀번호를 입력하고 ‘새 백업 파일 저장’을 누르세요. 저장 후 파일을 다시 선택하여 확인하면 백업한 지갑을 사용할 수 있습니다.|Enter and confirm a backup password, then select Save new backup file. Reopen the saved file to verify it and enable the backed-up wallets.
 백업 파일 저장|Save backup file
 파일 저장 후 저장한 백업 파일 확인하기를 눌러 주세요.|After saving, select Verify saved backup file.
 파일을 저장하지 못했습니다. 다시 시도해 주세요.|Could not save the file. Please try again.
@@ -99,7 +107,7 @@ PSL Token Wallet 홈|PSL Token Wallet home
 비밀번호와 개인키를 잃으면 자산을 복구할 수 없음을 이해했습니다.|I understand that losing my password and private key means I cannot recover my assets.
 안전하게 생성|Create securely
 지갑 이름|Wallet name
-SASEUL에서 사용하던 지갑 이름|Your SASEUL wallet name
+지갑이름 입력|Type wallet name
 개인키 (64자리)|Private key (64 hex characters)
 새 보호 비밀번호|New wallet password
 암호화하여 가져오기|Encrypt and import

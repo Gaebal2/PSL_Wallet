@@ -33,7 +33,7 @@
   <link rel="stylesheet" href="wallets.css?v=59">
   <link rel="stylesheet" href="install.css?v=55">
   <link rel="stylesheet" href="history.css?v=55">
-  <link rel="stylesheet" href="overlays.css?v=82">
+  <link rel="stylesheet" href="overlays.css?v=84">
   <title>Wallet</title>
 </head>
 <body>
@@ -328,16 +328,15 @@
     <div class="sheet-head"><h2 id="deviceBackupTitle" tabindex="-1" autofocus>개인키를 별도로 백업해 주세요</h2><button id="deviceBackupClose" class="close" type="button" aria-label="닫기">×</button></div>
     <p id="deviceBackupWallet" class="helper">PSL Wallet 사용자들에게…</p>
     <p class="helper">현재 지갑의 개인키는 암호화되어 이 브라우저 또는 PWA의 저장소에 보관됩니다. 방문 기록만 지우는 경우에는 보통 유지되지만, 쿠키 및 사이트 데이터 등 지갑이 저장된 데이터를 삭제하면 개인키도 삭제될 수 있습니다.</p>
-    <p class="helper">백업용 비밀번호를 입력하고 ‘새 백업 파일 저장 후 확인’을 누르세요. 저장 후 파일을 다시 선택하여 확인하면 백업한 지갑을 사용할 수 있습니다.</p>
+    <p class="helper">백업용 비밀번호를 입력하고 ‘새 백업 파일 저장’을 누르세요. 저장 후 파일을 다시 선택하여 확인하면 백업한 지갑을 사용할 수 있습니다.</p>
     <p class="helper"><strong>개인키를 별도로 보관하는 것이 중요합니다. 기기 분실이나 고장에 대비해 백업 파일의 사본을 다른 안전한 장소에도 보관하세요.</strong></p>
     <p class="helper">다른 브라우저나 새 기기에서 최신 파일을 준비하고 ‘백업된 개인키 불러오기’를 누르면 파일에 포함된 모든 지갑을 복원합니다. 백업 당시 비밀번호가 반드시 필요하며, 잊으면 이 파일로 복원할 수 없습니다. 지갑 잠금 비밀번호를 변경해도 파일의 비밀번호는 바뀌지 않습니다.</p>
     <form id="deviceBackupForm">
       <label for="deviceBackupPassword">백업용 비밀번호 (10자 이상, 12자 이상 권장)</label><div class="password-field"><input id="deviceBackupPassword" type="password" minlength="10" required name="deviceBackupPassword" autocomplete="section-backup new-password" data-password-autocomplete="section-backup new-password"><button class="password-toggle" type="button" data-password-toggle="deviceBackupPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
       <label for="deviceBackupConfirm">백업용 비밀번호 확인</label><div class="password-field"><input id="deviceBackupConfirm" type="password" minlength="10" required name="deviceBackupConfirm" autocomplete="section-backup new-password" data-password-autocomplete="section-backup new-password"><button class="password-toggle" type="button" data-password-toggle="deviceBackupConfirm" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
-      <button id="deviceBackupSave" class="button primary" type="submit">새 백업 파일 저장 후 확인</button>
+      <button id="deviceBackupSave" class="button primary" type="submit" disabled>새 백업 파일 저장</button>
     </form>
-    <button id="deviceBackupDownload" class="button primary hidden" type="button">백업 파일 저장</button>
-    <button id="deviceBackupVerify" class="button secondary" type="button">저장한 백업 파일 확인하기</button>
+    <button id="deviceBackupVerify" class="button secondary" type="button" disabled>저장한 백업 파일 확인하기</button>
     <p id="deviceBackupError" class="error" role="alert"></p>
     <button id="deviceBackupExit" class="button secondary" type="button">취소</button>
   </dialog>
@@ -393,7 +392,7 @@
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
   <script src="backup.js?v=78"></script>
-  <script src="i18n.js?v=83"></script>
-  <script src="app.js?v=83"></script>
+  <script src="i18n.js?v=84"></script>
+  <script src="app.js?v=84"></script>
 </body>
 </html>

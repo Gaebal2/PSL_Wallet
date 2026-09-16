@@ -38,6 +38,7 @@
   const AUTO_LOCK_MS = 5 * 60 * 1000;
   const defaults = { endpoint: 'https://main.saseul.net', owner: '', space: 'MY TOKEN', cid: DEFAULT_PSL_CID };
   let config = readJson(CONFIG_KEY, defaults);
+  if (typeof config.endpoint !== 'string' || !config.endpoint.trim()) config.endpoint = defaults.endpoint;
   if (!config.cid) config.cid = DEFAULT_PSL_CID;
   let privateKey = '';
   let wallets = [];
@@ -385,12 +386,14 @@
     return new Promise((resolve) => {
       const finish = () => {
         dialog.removeEventListener('cancel', onCancel);
+        dialog.removeEventListener('close', finish);
         dialog.close();
         resolve();
       };
       const onCancel = (event) => { event.preventDefault(); finish(); };
       $('appAlertClose').onclick = finish;
       dialog.addEventListener('cancel', onCancel);
+      dialog.addEventListener('close', finish);
     });
   }
 
@@ -540,10 +543,10 @@
   }
 
   function applyConfig() {
-    SASEUL.Rpc.endpoints([config.endpoint]);
-    SASEUL.Rpc.timeout(12000);
     $('endpoint').value = config.endpoint;
     $('cid').value = config.cid;
+    SASEUL.Rpc.endpoints([config.endpoint]);
+    SASEUL.Rpc.timeout(12000);
   }
 
   function showOnly(id) {
@@ -1371,7 +1374,11 @@
     } finally { setLoading($('unlockBtn'), false, '잠금 해제'); }
   };
 
-  $('settingsBtn').onclick = () => $('settingsDialog').showModal();
+  $('settingsBtn').onclick = () => {
+    $('endpoint').value = config.endpoint;
+    $('cid').value = config.cid;
+    $('settingsDialog').showModal();
+  };
   $('settingsClose').onclick = () => $('settingsDialog').close();
   $('uninstallGuideBtn').onclick = () => {
     $('settingsDialog').close();
@@ -1890,6 +1897,11 @@
         $('updateBackupDialog').close();
         openDeviceBackup();
         $('deviceBackupError').textContent = '새 통합 파일 저장을 요청했습니다. 기존 파일은 그대로입니다. 저장한 새 파일을 다시 열어 확인해 주세요.';
+        await showAlert('다운로드를 요청했습니다. 브라우저에서 저장을 완료한 뒤 저장한 파일을 다시 선택하여 확인해 주세요.', '백업 파일 저장 요청');
+        if (vaultPassword && $('deviceBackupDialog').open) {
+          backupSaveComplete = true;
+          $('deviceBackupVerify').disabled = false;
+        }
       }
     } catch (error) {
       resetBackupUpdateReview();
@@ -1913,12 +1925,46 @@
   }
 
   let preparedBackup = null;
+  let backupPreparation = 0;
+  let backupSaveComplete = false;
+
+  function resetDeviceBackup() {
+    backupPreparation++;
+    preparedBackup = null;
+    backupSaveComplete = false;
+    $('deviceBackupForm').reset();
+    $('deviceBackupSave').disabled = true;
+    $('deviceBackupVerify').disabled = true;
+  }
+
+  async function prepareDeviceBackup() {
+    const revision = ++backupPreparation;
+    preparedBackup = null;
+    backupSaveComplete = false;
+    $('deviceBackupSave').disabled = true;
+    $('deviceBackupVerify').disabled = true;
+    $('deviceBackupError').textContent = '';
+    const password = $('deviceBackupPassword').value;
+    if (backupBusy || !vaultPassword || password.length < 10 || password !== $('deviceBackupConfirm').value) return;
+    const snapshot = wallets;
+    const session = vaultPassword;
+    try {
+      const text = await WalletBackup.encrypt(snapshot, password);
+      if (revision !== backupPreparation || snapshot !== wallets || session !== vaultPassword || !$('deviceBackupDialog').open) return;
+      preparedBackup = { text, snapshot, session, file: new File([text], backupFileName(), { type: 'application/json' }) };
+      $('deviceBackupSave').disabled = false;
+    } catch {
+      if (revision === backupPreparation) $('deviceBackupError').textContent = '백업 파일을 만들지 못했습니다. 비밀번호는 10자 이상이어야 합니다. 다시 시도해 주세요.';
+    }
+  }
+  $('deviceBackupPassword').oninput = prepareDeviceBackup;
+  $('deviceBackupConfirm').oninput = prepareDeviceBackup;
 
   function openDeviceBackup() {
     const wallet = activeWallet();
     if (!wallet || !vaultPassword) return toast('먼저 지갑 잠금을 해제해 주세요.');
     // Keep the previous dialog underneath so cancel returns to the entry screen.
-    $('deviceBackupForm').reset();
+    resetDeviceBackup();
     $('deviceBackupError').textContent = '';
     $('deviceBackupWallet').textContent = 'PSL Wallet 사용자들에게…';
     $('deviceBackupExit').textContent = '취소';
@@ -1945,69 +1991,73 @@
   document.querySelectorAll('[data-restore-backup]').forEach((button) => { button.onclick = () => openRestoreBackup(); });
   $('deviceBackupClose').onclick = () => $('deviceBackupExit').click();
   $('deviceBackupVerify').onclick = () => {
-    if (backupBusy) return;
+    if (backupBusy || !backupSaveComplete) return;
     $('deviceBackupDialog').close();
     openRestoreBackup(true);
-  };
-  $('deviceBackupDownload').onclick = async () => {
-    if (backupBusy || !preparedBackup || !vaultPassword) return;
-    const text = preparedBackup;
-    const file = new File([text], backupFileName(), { type: 'application/json' });
-    backupBusy = true;
-    try {
-      // Start sharing directly from a tap, without awaiting encryption first.
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file] });
-      } else {
-        downloadBackup(text);
-      }
-      $('deviceBackupError').textContent = '파일 저장 후 저장한 백업 파일 확인하기를 눌러 주세요.';
-    } catch (error) {
-      if (error.name !== 'AbortError') $('deviceBackupError').textContent = '파일을 저장하지 못했습니다. 다시 시도해 주세요.';
-    } finally {
-      backupBusy = false;
-    }
   };
   $('deviceBackupExit').onclick = () => {
     if (!backupBusy) $('deviceBackupDialog').close();
   };
   $('deviceBackupDialog').oncancel = event => { if (backupBusy) event.preventDefault(); };
   $('restoreBackupCancel').onclick = () => { if (!backupBusy) $('restoreBackupDialog').close(); };
-  $('restoreBackupDialog').oncancel = (event) => { if (backupBusy) event.preventDefault(); };
+  $('restoreBackupDialog').oncancel = event => { if (backupBusy) event.preventDefault(); };
   $('restoreBackupDialog').addEventListener('close', () => $('restoreBackupForm').reset());
-  $('deviceBackupDialog').addEventListener('close', () => {
-    $('deviceBackupForm').reset();
-    preparedBackup = null;
-    $('deviceBackupDownload').classList.add('hidden');
-    $('deviceBackupForm').classList.remove('hidden');
-  });
+  $('deviceBackupDialog').addEventListener('close', resetDeviceBackup);
 
-  $('deviceBackupForm').onsubmit = async (event) => {
+  $('deviceBackupForm').onsubmit = async event => {
     event.preventDefault();
-    if (backupBusy) return;
-    const wallet = activeWallet();
-    if (!wallet || !vaultPassword) return lockWallet(false);
-    const password = $('deviceBackupPassword').value;
-    if (password !== $('deviceBackupConfirm').value) {
-      $('deviceBackupError').textContent = '백업 비밀번호가 일치하지 않습니다.';
+    if (backupBusy || !preparedBackup || !vaultPassword) return;
+    const prepared = preparedBackup;
+    if (prepared.snapshot !== wallets || prepared.session !== vaultPassword) {
+      prepareDeviceBackup();
       return;
     }
+    const active = () => preparedBackup === prepared && prepared.snapshot === wallets && prepared.session === vaultPassword && $('deviceBackupDialog').open;
     backupBusy = true;
-    setLoading($('deviceBackupSave'), true, '새 백업 파일 저장 후 확인');
+    backupSaveComplete = false;
+    $('deviceBackupVerify').disabled = true;
+    $('deviceBackupPassword').disabled = true;
+    $('deviceBackupConfirm').disabled = true;
+    setLoading($('deviceBackupSave'), true, '새 백업 파일 저장');
     try {
-      const text = await WalletBackup.encrypt(wallets, password);
-      if (activeWallet() !== wallet || !vaultPassword) return;
-      preparedBackup = text;
-      $('deviceBackupForm').reset();
-      $('deviceBackupForm').classList.add('hidden');
-      $('deviceBackupDownload').classList.remove('hidden');
-      $('deviceBackupDownload').focus();
-      $('deviceBackupError').textContent = '백업 파일 저장을 눌러 파일을 저장한 뒤, 저장한 백업 파일 확인하기를 눌러 주세요.';
-    } catch {
-      $('deviceBackupError').textContent = '백업 파일을 만들지 못했습니다. 비밀번호는 10자 이상이어야 합니다. 다시 시도해 주세요.';
+      let message;
+      let title = '백업 파일 저장 완료';
+      // All permission prompts start in the submit gesture, before any await.
+      if (typeof window.showSaveFilePicker === 'function') {
+        const handle = await window.showSaveFilePicker({ suggestedName: prepared.file.name, types: [{ description: 'PSL Wallet backup', accept: { 'application/json': ['.json'] } }] });
+        if (!active()) return;
+        const writable = await handle.createWritable();
+        try {
+          await writable.write(prepared.text);
+          await writable.close();
+        } catch (error) {
+          await writable.abort().catch(() => {});
+          throw error;
+        }
+        message = '백업 파일을 저장했습니다. 저장한 파일을 다시 선택하여 확인해 주세요.';
+      } else if (typeof navigator.share === 'function' && navigator.canShare?.({ files: [prepared.file] })) {
+        await navigator.share({ files: [prepared.file] });
+        title = '파일 저장 창 완료';
+        message = '파일 저장 창이 완료되었습니다. 선택한 위치의 백업 파일을 다시 열어 확인해 주세요.';
+      } else {
+        downloadBackup(prepared.text);
+        title = '백업 파일 저장 요청';
+        message = '다운로드를 요청했습니다. 브라우저에서 저장을 완료한 뒤 저장한 파일을 다시 선택하여 확인해 주세요.';
+      }
+      if (!active()) return;
+      await showAlert(message, title);
+      if (!active()) return;
+      backupSaveComplete = true;
+      $('deviceBackupVerify').disabled = false;
+      $('deviceBackupError').textContent = '';
+    } catch (error) {
+      if (active() && error.name !== 'AbortError') $('deviceBackupError').textContent = '파일을 저장하지 못했습니다. 다시 시도해 주세요.';
     } finally {
       backupBusy = false;
-      setLoading($('deviceBackupSave'), false, '새 백업 파일 저장 후 확인');
+      $('deviceBackupPassword').disabled = false;
+      $('deviceBackupConfirm').disabled = false;
+      setLoading($('deviceBackupSave'), false, '새 백업 파일 저장');
+      $('deviceBackupSave').disabled = !preparedBackup;
     }
   };
 
@@ -2076,5 +2126,34 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=83', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    let pendingUpdate = false;
+    let reloading = false;
+    let hadController = Boolean(navigator.serviceWorker.controller);
+    const applyUpdate = () => {
+      if (!pendingUpdate || reloading || document.hidden || backupBusy || transferInFlight || document.querySelector('dialog[open]')) return;
+      // Do not discard passwords or an in-progress form while applying an update.
+      if ([...document.querySelectorAll('input')].some(input => input.value && input.offsetParent !== null)) return;
+      reloading = true;
+      location.reload();
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadController) pendingUpdate = true;
+      hadController = true;
+      applyUpdate();
+    });
+    navigator.serviceWorker.register('./sw.js?v=84', { updateViaCache: 'none' }).then(registration => {
+      const checkUpdate = () => {
+        if (document.hidden) return;
+        registration.update().catch(() => {});
+        applyUpdate();
+      };
+      document.addEventListener('visibilitychange', checkUpdate);
+      window.addEventListener('pageshow', checkUpdate);
+      window.addEventListener('online', checkUpdate);
+      setInterval(checkUpdate, 60000);
+      setInterval(applyUpdate, 1000);
+      checkUpdate();
+    }).catch(() => {});
+  }
 })();
