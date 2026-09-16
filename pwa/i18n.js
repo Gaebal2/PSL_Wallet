@@ -108,6 +108,7 @@ PSL Token Wallet 홈|PSL Token Wallet home
 안전하게 생성|Create securely
 지갑 이름|Wallet name
 지갑이름 입력|Type wallet name
+SASEUL에서 사용하던 지갑 이름|Your SASEUL wallet name
 개인키 (64자리)|Private key (64 hex characters)
 새 보호 비밀번호|New wallet password
 암호화하여 가져오기|Encrypt and import
