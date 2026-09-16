@@ -1320,7 +1320,6 @@
   };
 
   $('importClose').onclick = () => $('importDialog').close();
-  $('importCancel').onclick = () => $('importDialog').close();
   $('importDialog').addEventListener('close', () => $('importForm').reset());
 
   $('createDialog').addEventListener('close', () => $('createForm').reset());
@@ -1662,6 +1661,7 @@
   let backupVerificationId = null;
   let backupBusy = false;
   let backupWizardStep = 0;
+  let backupWizardOrigin = 'create';
   let updateBackupSelection = null;
   let updateBackupPlan = null;
 
@@ -1756,7 +1756,6 @@
   }
 
   function resetBackupUpdateReview() {
-    $('updateBackupNext').disabled = true;
     updateBackupPlan = null;
     $('updateBackupFileName').textContent = '';
     $('updateBackupOldWallets').replaceChildren();
@@ -1771,7 +1770,7 @@
   }
 
   function openBackupUpdate() {
-    $('updateBackupNext').disabled = true;
+    backupWizardOrigin = 'update';
     if (backupBusy || !vaultPassword) return;
     updateBackupSelection = null;
     resetBackupUpdateReview();
@@ -1887,9 +1886,10 @@
       } else {
         downloadBackup(plan.updated);
       }
-      $('updateBackupNext').disabled = false;
-      $('updateBackupAccept').classList.add('hidden');
-      $('updateBackupError').textContent = '저장한 파일을 다음 단계에서 선택하여 확인해 주세요.';
+      await showAlert('저장한 파일을 다음 단계에서 선택하여 확인해 주세요.', plan.writable ? '백업 파일 저장 완료' : '백업 파일 저장 요청');
+      if (!active()) return;
+      $('updateBackupDialog').close();
+      openRestoreBackup(true);
     } catch (error) {
       resetBackupUpdateReview();
       $('updateBackupError').textContent = error.message === 'FILE_CHANGED'
@@ -1901,11 +1901,6 @@
     }
   };
 
-  $('updateBackupNext').onclick = () => {
-    if (backupBusy || $('updateBackupNext').disabled) return;
-    $('updateBackupDialog').close();
-    openRestoreBackup(true);
-  };
 
   function mergeVerifiedWallets(current, restored, targetId) {
     if (targetId && !restored.some(wallet => wallet.id === targetId)) throw new Error('선택한 지갑의 백업 파일이 아닙니다.');
@@ -1927,7 +1922,6 @@
     backupSaveComplete = false;
     $('deviceBackupForm').reset();
     $('deviceBackupSave').disabled = true;
-    $('deviceBackupVerify').disabled = true;
   }
 
   async function prepareDeviceBackup() {
@@ -1935,7 +1929,6 @@
     preparedBackup = null;
     backupSaveComplete = false;
     $('deviceBackupSave').disabled = true;
-    $('deviceBackupVerify').disabled = true;
     $('deviceBackupError').textContent = '';
     const password = $('deviceBackupPassword').value;
     if (backupBusy || !vaultPassword || password.length < 10 || password !== $('deviceBackupConfirm').value) return;
@@ -1954,22 +1947,23 @@
   $('deviceBackupConfirm').oninput = prepareDeviceBackup;
 
   function openDeviceBackup() {
+    backupWizardOrigin = 'create';
     const wallet = activeWallet();
     if (!wallet || !vaultPassword) return toast('먼저 지갑 잠금을 해제해 주세요.');
     // Keep the previous dialog underneath so cancel returns to the entry screen.
     resetDeviceBackup();
     $('deviceBackupError').textContent = '';
 
-    $('deviceBackupExit').textContent = '취소';
     $('deviceBackupDialog').showModal();
   }
 
   function renderBackupWizard() {
+    $('restoreBackupPrevious').classList.toggle('hidden', !backupWizardStep);
     $('restoreBackupSteps').querySelectorAll('li').forEach((item, index) => {
       if (index + 1 === backupWizardStep) item.setAttribute('aria-current', 'step');
       else item.removeAttribute('aria-current');
     });
-    $('restoreBackupSubmit').textContent = backupWizardStep === 2 ? '다음' : backupWizardStep === 3 ? '사용하기' : '백업된 개인키 불러오기';
+    $('restoreBackupSubmit').textContent = backupWizardStep === 2 ? '다음>' : backupWizardStep === 3 ? '사용하기' : '백업된 개인키 불러오기';
   }
 
   function openRestoreBackup(verify = false) {
@@ -1995,17 +1989,26 @@
 
   document.querySelectorAll('[data-device-backup]').forEach((button) => { button.onclick = handleBackupStatus; });
   document.querySelectorAll('[data-restore-backup]').forEach((button) => { button.onclick = () => openRestoreBackup(); });
-  $('deviceBackupClose').onclick = () => $('deviceBackupExit').click();
-  $('deviceBackupVerify').onclick = () => {
-    if (backupBusy || !backupSaveComplete) return;
-    $('deviceBackupDialog').close();
-    openRestoreBackup(true);
-  };
-  $('deviceBackupExit').onclick = () => {
+  $('deviceBackupClose').onclick = () => {
     if (!backupBusy) $('deviceBackupDialog').close();
   };
+  $('restoreBackupPrevious').onclick = () => {
+    if (backupBusy || !backupWizardStep) return;
+    if (backupWizardStep === 3) {
+      backupWizardStep = 2;
+      $('restoreBackupTitle').textContent = '저장된 개인키 확인하기';
+      $('restoreBackupInputs').classList.remove('hidden');
+      $('restoreBackupSummary').classList.add('hidden');
+      $('restoreBackupError').textContent = '';
+      renderBackupWizard();
+    } else {
+      $('restoreBackupDialog').close();
+      if (backupWizardOrigin === 'update') openBackupUpdate();
+      else openDeviceBackup();
+    }
+  };
   $('deviceBackupDialog').oncancel = event => { if (backupBusy) event.preventDefault(); };
-  $('restoreBackupCancel').onclick = () => { if (!backupBusy) $('restoreBackupDialog').close(); };
+  $('restoreBackupClose').onclick = () => { if (!backupBusy) $('restoreBackupDialog').close(); };
   $('restoreBackupDialog').oncancel = event => { if (backupBusy) event.preventDefault(); };
   $('restoreBackupDialog').addEventListener('close', () => $('restoreBackupForm').reset());
   $('deviceBackupDialog').addEventListener('close', resetDeviceBackup);
@@ -2021,7 +2024,6 @@
     const active = () => preparedBackup === prepared && prepared.snapshot === wallets && prepared.session === vaultPassword && $('deviceBackupDialog').open;
     backupBusy = true;
     backupSaveComplete = false;
-    $('deviceBackupVerify').disabled = true;
     $('deviceBackupPassword').disabled = true;
     $('deviceBackupConfirm').disabled = true;
     setLoading($('deviceBackupSave'), true, '새 백업 파일 저장');
@@ -2054,8 +2056,9 @@
       await showAlert(message, title);
       if (!active()) return;
       backupSaveComplete = true;
-      $('deviceBackupVerify').disabled = false;
       $('deviceBackupError').textContent = '';
+      $('deviceBackupDialog').close();
+      openRestoreBackup(true);
     } catch (error) {
       if (active() && error.name !== 'AbortError') $('deviceBackupError').textContent = '파일을 저장하지 못했습니다. 다시 시도해 주세요.';
     } finally {
@@ -2159,7 +2162,7 @@
       hadController = true;
       applyUpdate();
     });
-    navigator.serviceWorker.register('./sw.js?v=86', { updateViaCache: 'none' }).then(registration => {
+    navigator.serviceWorker.register('./sw.js?v=87', { updateViaCache: 'none' }).then(registration => {
       const checkUpdate = () => {
         if (document.hidden) return;
         registration.update().catch(() => {});

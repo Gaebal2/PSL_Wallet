@@ -212,6 +212,7 @@ require('../pwa/backup.js');
     backupRecord: null, backupBusy: false, updateBackupSelection: null, updateBackupPlan: null,
     vaultPassword: 'session-password', walletVault: 'old-vault', window: {},
     $: ui, setLoading(button, loading) { button.disabled = loading; },
+    showAlert: async () => {}, openRestoreBackup() { updateContext.advanced = true; },
     activeWallet: () => existing, persistWallets: async () => {}, showWallet() {}, toast() {},
     renderBackupStatus() {}, balanceState: () => ({ loading: true }), shortenAddress: value => value,
     document: { createElement() { const item = uiElement(); created.push(item); return item; } }
@@ -258,12 +259,12 @@ require('../pwa/backup.js');
   routingContext.resetDeviceBackup = () => {};
   routingContext.document = { querySelectorAll: () => { throw new Error('Opening a backup must not close parent dialogs'); } };
   vm.runInContext(extract('openDeviceBackup'), routingContext);
-  const cancelStart = source.indexOf("  $('deviceBackupExit').onclick =");
+  const cancelStart = source.indexOf("  $('deviceBackupClose').onclick =");
   const cancelEnd = source.indexOf("  $('deviceBackupDialog').addEventListener('close'", cancelStart);
   vm.runInContext(source.slice(cancelStart, cancelEnd), routingContext);
   routingContext.openDeviceBackup();
   assert(ui('deviceBackupDialog').open);
-  ui('deviceBackupExit').onclick();
+  ui('deviceBackupClose').onclick();
   assert(!ui('deviceBackupDialog').open && ui('backupLocationDialog').open, 'Cancel new backup returns to saved-file details');
   const saveContext = vm.createContext({
     $: ui, backupBusy: false, preparedBackup: null, vaultPassword: 'session',
@@ -284,8 +285,7 @@ require('../pwa/backup.js');
   vm.runInContext(source.slice(saveStart, saveEnd), saveContext);
   ui('deviceBackupDialog').showModal();
   saveContext.resetDeviceBackup();
-  assert(ui('deviceBackupVerify').disabled && ui('deviceBackupSave').disabled);
-  ui('deviceBackupVerify').onclick();
+  assert(ui('deviceBackupSave').disabled);
   assert(!saveContext.verified, 'Verification cannot bypass the saving step');
   ui('deviceBackupPassword').value = password;
   ui('deviceBackupConfirm').value = 'mismatch';
@@ -293,25 +293,29 @@ require('../pwa/backup.js');
   assert(ui('deviceBackupSave').disabled, 'Mismatched passwords cannot save');
   ui('deviceBackupConfirm').value = password;
   await saveContext.prepareDeviceBackup();
-  assert(!ui('deviceBackupSave').disabled && ui('deviceBackupVerify').disabled);
+  assert(!ui('deviceBackupSave').disabled);
   let closeAlert;
   saveContext.showAlert = () => new Promise(resolve => { closeAlert = resolve; });
   const submitBackup = () => ui('deviceBackupForm').onsubmit({ preventDefault() {} });
   const sharing = submitBackup();
   assert(saveContext.shared, 'Native sharing starts synchronously from the save tap');
   await new Promise(resolve => setImmediate(resolve));
-  assert(ui('deviceBackupVerify').disabled, 'Verification waits for completion popup');
+  assert(!saveContext.verified, 'Verification waits for completion popup');
   closeAlert();
   await sharing;
-  assert(!ui('deviceBackupVerify').disabled && !saveContext.backupBusy && !saveContext.verified);
+  assert(!saveContext.backupBusy && saveContext.verified, 'Confirmation automatically opens step two');
+  ui('deviceBackupDialog').showModal();
+  saveContext.verified = false;
   saveContext.showAlert = async () => {};
   saveContext.navigator.share = async () => { throw Object.assign(new Error(), { name: 'AbortError' }); };
   await submitBackup();
   assert(!saveContext.backupBusy && saveContext.preparedBackup, 'Cancelled sharing allows a retry');
-  assert(ui('deviceBackupVerify').disabled, 'Cancelled saves never enable verification');
+  assert(!saveContext.verified, 'Cancelled saves never advance');
   saveContext.navigator.canShare = () => false;
   await submitBackup();
   assert(saveContext.downloaded, 'Unsupported sharing falls back to a download');
+  ui('deviceBackupDialog').showModal();
+  saveContext.verified = false;
   let written, closed = false;
   saveContext.window.showSaveFilePicker = async () => ({ createWritable: async () => ({
     write: async text => { written = text; }, close: async () => { closed = true; }, abort: async () => {}
@@ -319,18 +323,38 @@ require('../pwa/backup.js');
   await submitBackup();
   assert.equal(written, saveContext.preparedBackup.text);
   assert(closed && saveContext.backupSaveComplete, 'File handle is closed before completion');
+  ui('deviceBackupDialog').showModal();
+  saveContext.verified = false;
   saveContext.window.showSaveFilePicker = async () => { throw new Error('Denied'); };
   await submitBackup();
-  assert(ui('deviceBackupVerify').disabled && !saveContext.backupBusy, 'Failed saves allow retry without verification');
+  assert(!saveContext.verified && !saveContext.backupBusy, 'Failed saves allow retry without verification');
   delete saveContext.window.showSaveFilePicker;
   await submitBackup();
   ui('deviceBackupDialog').showModal();
-  ui('deviceBackupVerify').onclick();
-  assert(saveContext.verified, 'Verification opens from a separate user action');
+  assert(saveContext.verified, 'Verification opens automatically after confirmation');
   ui('deviceBackupDialog').showModal();
   ui('deviceBackupConfirm').value = 'changed-password';
   await saveContext.prepareDeviceBackup();
-  assert(!saveContext.preparedBackup && ui('deviceBackupVerify').disabled, 'Password edits invalidate the previous prepared file');
+  assert(!saveContext.preparedBackup, 'Password edits invalidate the previous prepared file');
+  saveContext.backupWizardStep = 3;
+  saveContext.backupWizardOrigin = 'create';
+  saveContext.renderBackupWizard = () => {};
+  saveContext.openDeviceBackup = () => { saveContext.returnedToSave = true; };
+  ui('restoreBackupPassword').value = password;
+  ui('restoreBackupPrevious').onclick();
+  assert.equal(saveContext.backupWizardStep, 2, 'Previous returns from step three to verification');
+  assert.equal(ui('restoreBackupPassword').value, password, 'Returning to verification preserves the password');
+  assert(!ui('restoreBackupInputs').classList.contains('hidden'));
+  ui('restoreBackupPrevious').onclick();
+  assert(saveContext.returnedToSave, 'Previous returns from verification to saving');
+  saveContext.backupWizardOrigin = 'update';
+  saveContext.openBackupUpdate = () => { saveContext.returnedToUpdate = true; };
+  ui('restoreBackupPrevious').onclick();
+  assert(saveContext.returnedToUpdate, 'Update flow returns to its original saving step');
+  saveContext.backupBusy = true;
+  saveContext.backupWizardStep = 3;
+  ui('restoreBackupPrevious').onclick();
+  assert.equal(saveContext.backupWizardStep, 3, 'Navigation is blocked while processing');
   const updateEnd = source.indexOf('  function mergeVerifiedWallets(', updateStart);
   vm.runInContext(source.slice(updateStart, updateEnd), updateContext);
   updateContext.openBackupUpdate();
@@ -356,7 +380,7 @@ require('../pwa/backup.js');
   assert.deepEqual(ui('updateBackupNewWallets').children.map(item => item.textContent), [wallet.name, wallet2.name]);
   await ui('updateBackupAccept').onclick();
   assert(!updateContext.wallets[1].backupVerified, 'Saving an updated backup does not unlock pending wallets');
-  assert.equal(ui('updateBackupNext').disabled, false, 'Successful update enables the next step');
+  assert(updateContext.advanced, 'Confirmed update automatically opens verification');
   assert(WalletBackup.matches(updateContext.wallets, (await WalletBackup.decrypt(fileText, password)).wallets));
   created.length = 0;
   updateContext.renderWalletList();

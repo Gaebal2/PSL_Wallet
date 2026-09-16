@@ -33,7 +33,7 @@
   <link rel="stylesheet" href="wallets.css?v=59">
   <link rel="stylesheet" href="install.css?v=55">
   <link rel="stylesheet" href="history.css?v=55">
-  <link rel="stylesheet" href="overlays.css?v=86">
+  <link rel="stylesheet" href="overlays.css?v=87">
   <title>Wallet</title>
 </head>
 <body>
@@ -142,7 +142,6 @@
           <div class="password-field"><input id="createPasswordConfirm" type="password" minlength="10" autocorrect="off" autocapitalize="off" spellcheck="false" required name="createPasswordConfirm" autocomplete="section-vault new-password" data-password-autocomplete="section-vault new-password"><button class="password-toggle" type="button" data-password-toggle="createPasswordConfirm" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <label class="check"><input id="createAck" type="checkbox" required> 비밀번호와 개인키를 잃으면 자산을 복구할 수 없음을 이해했습니다.</label>
           <button class="button primary" type="submit">안전하게 생성</button>
-          <button class="button secondary" data-close type="button">취소</button>
         </form>
   </dialog>
 
@@ -156,7 +155,6 @@
           <label for="importPassword">새 보호 비밀번호</label>
           <div class="password-field"><input id="importPassword" type="password" minlength="10" autocorrect="off" autocapitalize="off" spellcheck="false" required name="importPassword" autocomplete="section-vault new-password" data-password-autocomplete="section-vault new-password"><button class="password-toggle" type="button" data-password-toggle="importPassword" aria-label="비밀번호 표시"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
           <button class="button primary" type="submit">암호화하여 가져오기</button>
-          <button id="importCancel" class="button secondary" type="button">취소</button>
         </form>
   </dialog>
 
@@ -172,6 +170,7 @@
   </dialog>
 
   <dialog id="uninstallGuideDialog" class="transfer-review-dialog uninstall-guide-dialog" aria-labelledby="uninstallGuideTitle">
+    <div class="dialog-close-row"><button id="uninstallGuideClose" class="close" type="button" aria-label="닫기">×</button></div>
     <div class="uninstall-guide-mark" aria-hidden="true">i</div>
     <p class="eyebrow">APP REMOVAL &amp; STORAGE</p>
     <h2 id="uninstallGuideTitle">앱을 제거하기 전에 확인해 주세요</h2>
@@ -183,7 +182,6 @@
     <div class="uninstall-guide-actions">
       <button id="uninstallGuideBackup" class="button primary" type="button">개인키 보기</button>
       <button id="uninstallGuideDelete" class="button danger" type="button">지갑 데이터 삭제</button>
-      <button id="uninstallGuideClose" class="button secondary" type="button">닫기</button>
     </div>
   </dialog>
 
@@ -309,19 +307,18 @@
 
 
   <dialog id="backupResolveDialog" aria-labelledby="backupResolveTitle">
-<ol class="backup-steps"><li aria-current="step"><span>1</span><strong>1단계</strong><small>개인키 저장하기</small></li><li><span>2</span><strong>2단계</strong><small>저장된 개인키 확인하기</small></li><li><span>3</span><strong>3단계</strong><small>저장한 개인키 불러오기</small></li></ol>
     <div class="sheet-head"><h2 id="backupResolveTitle">개인키 백업</h2><button class="close" data-close type="button" aria-label="닫기">×</button></div>
+<ol class="backup-steps"><li aria-current="step"><span>1</span><strong>1단계</strong><small>개인키 저장하기</small></li><li><span>2</span><strong>2단계</strong><small>저장된 개인키 확인하기</small></li><li><span>3</span><strong>3단계</strong><small>저장한 개인키 불러오기</small></li></ol>
     <p class="helper">현재 지갑 목록을 백업할 방법을 선택해 주세요.</p>
     <button id="backupResolveUpdate" class="button secondary" type="button">기존파일 업데이트</button>
     <p class="helper">기존 백업파일과 비밀번호로 내용을 확인한 뒤 현재 지갑 목록으로 업데이트합니다.</p>
     <button id="backupResolveCreate" class="button secondary" type="button">새로운 파일에 저장</button>
     <p class="helper">새 백업용 비밀번호를 설정하고 현재 지갑 목록을 별도 파일로 저장합니다.</p>
-    <button class="button primary" data-close type="button">취소</button>
   </dialog>
 
   <dialog id="deviceBackupDialog" class="safe-scroll-dialog" aria-labelledby="deviceBackupTitle">
-<ol class="backup-steps"><li aria-current="step"><span>1</span><strong>1단계</strong><small>개인키 저장하기</small></li><li><span>2</span><strong>2단계</strong><small>저장된 개인키 확인하기</small></li><li><span>3</span><strong>3단계</strong><small>저장한 개인키 불러오기</small></li></ol>
     <div class="sheet-head"><h2 id="deviceBackupTitle" tabindex="-1" autofocus>개인키 백업</h2><button id="deviceBackupClose" class="close" type="button" aria-label="닫기">×</button></div>
+<ol class="backup-steps"><li aria-current="step"><span>1</span><strong>1단계</strong><small>개인키 저장하기</small></li><li><span>2</span><strong>2단계</strong><small>저장된 개인키 확인하기</small></li><li><span>3</span><strong>3단계</strong><small>저장한 개인키 불러오기</small></li></ol>
     <p id="deviceBackupWallet" class="helper">개인키를 이 디바이스에 백업해 놓는 것이 사용자의 코인(토큰)보호를 보장하지 않습니다.</p>
     <form id="deviceBackupForm">
       <label for="deviceBackupPassword">백업용 비밀번호 (10자 이상, 12자 이상 권장)</label><div class="password-field"><input id="deviceBackupPassword" type="password" minlength="10" required name="deviceBackupPassword" autocomplete="section-backup new-password" data-password-autocomplete="section-backup new-password"><button class="password-toggle" type="button" data-password-toggle="deviceBackupPassword" aria-label="비밀번호 표시" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12C4.5 8 8 6 12 6s7.5 2 9.5 6c-2 4-5.5 6-9.5 6s-7.5-2-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></button></div>
@@ -329,8 +326,6 @@
       <button id="deviceBackupSave" class="button primary" type="submit" disabled>새 백업 파일 저장</button>
     </form>
     <p id="deviceBackupError" class="error" role="alert"></p>
-    <button id="deviceBackupExit" class="button secondary" type="button">취소</button>
-    <button id="deviceBackupVerify" class="button primary" type="button" disabled>다음</button>
   </dialog>
   <dialog id="backupLocationDialog" aria-labelledby="backupLocationTitle">
     <h2 id="backupLocationTitle">기기에 저장한 백업</h2>
@@ -342,8 +337,9 @@
     <button id="backupLocationClose" class="button primary" type="button">닫기</button>
   </dialog>
   <dialog id="restoreBackupDialog" class="safe-scroll-dialog" aria-labelledby="restoreBackupTitle">
+    <div class="sheet-head"><h2 id="restoreBackupTitle">백업된 개인키 불러오기</h2><button id="restoreBackupClose" class="close" type="button" aria-label="닫기">×</button></div>
     <div id="restoreBackupSteps" class="hidden"><ol class="backup-steps"><li><span>1</span><strong>1단계</strong><small>개인키 저장하기</small></li><li aria-current="step"><span>2</span><strong>2단계</strong><small>저장된 개인키 확인하기</small></li><li><span>3</span><strong>3단계</strong><small>저장한 개인키 불러오기</small></li></ol></div>
-    <h2 id="restoreBackupTitle">백업된 개인키 불러오기</h2>
+
     <form id="restoreBackupForm">
 <div id="restoreBackupInputs">
       <label for="restoreBackupFile">암호화된 백업 파일</label><input id="restoreBackupFile" type="file" accept=".json,application/json" required>
@@ -355,13 +351,16 @@
 </div>
 <div id="restoreBackupSummary" class="helper hidden" translate="no"></div>
       <p id="restoreBackupError" class="error" role="alert"></p>
-      <button id="restoreBackupCancel" class="button secondary" type="button">취소</button>
+      <div class="backup-navigation">
+      <button id="restoreBackupPrevious" class="button secondary hidden" type="button">&lt;이전</button>
       <button id="restoreBackupSubmit" class="button primary" type="submit">백업된 개인키 불러오기</button>
+      </div>
     </form>
   </dialog>
   <dialog id="updateBackupDialog" aria-labelledby="updateBackupTitle">
+    <div class="sheet-head"><h2 id="updateBackupTitle">기존 백업 업데이트</h2><button id="updateBackupCancel" class="close" type="button" aria-label="닫기">×</button></div>
 <ol class="backup-steps"><li aria-current="step"><span>1</span><strong>1단계</strong><small>개인키 저장하기</small></li><li><span>2</span><strong>2단계</strong><small>저장된 개인키 확인하기</small></li><li><span>3</span><strong>3단계</strong><small>저장한 개인키 불러오기</small></li></ol>
-    <h2 id="updateBackupTitle">기존 백업 업데이트</h2>
+
     <div id="updateBackupInput">
     <p id="updateBackupHelp" class="helper"></p>
     <button id="updateBackupChoose" class="button primary" type="button">기존 백업 파일 선택</button>
@@ -380,8 +379,6 @@
     </div>
     <button id="updateBackupAccept" class="button primary hidden" type="button">동의하고 업데이트</button>
     <p id="updateBackupError" class="error" role="alert"></p>
-    <button id="updateBackupCancel" class="button secondary" type="button">취소</button>
-    <button id="updateBackupNext" class="button primary" type="button" disabled>다음</button>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite" popover="manual"></div>
   <script src="vendor/crypto-js.min.js"></script>
@@ -390,7 +387,7 @@
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
   <script src="backup.js?v=78"></script>
-  <script src="i18n.js?v=86"></script>
-  <script src="app.js?v=86"></script>
+  <script src="i18n.js?v=87"></script>
+  <script src="app.js?v=87"></script>
 </body>
 </html>

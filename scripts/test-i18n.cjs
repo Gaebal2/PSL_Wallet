@@ -13,7 +13,7 @@ assert.equal(i18n.translate('받는 주소: 알 수 없음'), 'Recipient: Unknow
 assert.equal(i18n.translate('PSL 잔액을 확인할 수 없습니다: 보유 수량이 부족합니다.'), 'Cannot check the PSL balance: Insufficient balance.');
 assert.equal(i18n.translate('내가 정한 이름'), '내가 정한 이름');
 const html = fs.readFileSync(require.resolve('../pwa/index.html'), 'utf8');
-const visibleText = [...html.matchAll(/>([^<>]+)</g)].map(match => match[1].trim());
+const visibleText = [...html.matchAll(/>([^<>]+)</g)].map(match => match[1].trim().replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&'));
 const attributes = [...html.matchAll(/(?:placeholder|aria-label|title|alt)="([^"]+)"/g)].map(match => match[1]);
 const exceptions = new Set(['지갑 1', '언어: 한국어. 영어로 전환']);
 const missing = [...new Set([...visibleText, ...attributes].filter(text => /[가-힣]/.test(text) && !exceptions.has(text) && i18n.translate(text) === text))];

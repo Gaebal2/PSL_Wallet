@@ -177,3 +177,9 @@ html[lang="en"] .active-card-actions button { min-height: 48px; }
 .backup-steps [aria-current="step"] span { background: #1766dc; color: white; }
 .backup-steps strong, .backup-steps small { display: block; padding: 0 4px; }
 .backup-steps small { margin-top: 4px; font-size: 11px; line-height: 1.5; word-break: keep-all; }
+
+.dialog-close-row { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+#uninstallGuideDialog .dialog-close-row .close { flex: none; }
+#walletManagerDialog > #exportBtn { margin-top: 6px; margin-bottom: 16px; }
+.backup-navigation { display: flex; gap: 10px; margin-top: 12px; }
+.backup-navigation > .button { flex: 1; min-width: 0; margin: 0; }
