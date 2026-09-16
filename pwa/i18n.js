@@ -1,6 +1,10 @@
 /* UI-only localization. Wallet data, keys and input values are never translated. */
 globalThis.WalletI18n = (() => {
   const pairs = `
+백업 파일 저장|Save backup file
+파일 저장 후 저장한 백업 파일 확인하기를 눌러 주세요.|After saving, select Verify saved backup file.
+파일을 저장하지 못했습니다. 다시 시도해 주세요.|Could not save the file. Please try again.
+백업 파일 저장을 눌러 파일을 저장한 뒤, 저장한 백업 파일 확인하기를 눌러 주세요.|Select Save backup file, then select Verify saved backup file.
 저장 위치|Save location
 저장된 지갑 이름|Wallet names in the backup
 마지막으로 확인한 백업 파일의 정보입니다. 파일 이동·삭제 여부는 자동으로 확인할 수 없습니다.|These are the details of the last verified backup file. Moving or deleting the file cannot be detected automatically.

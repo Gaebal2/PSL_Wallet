@@ -240,6 +240,31 @@ require('../pwa/backup.js');
   assert(ui('deviceBackupDialog').open);
   ui('deviceBackupExit').onclick();
   assert(!ui('deviceBackupDialog').open && ui('backupLocationDialog').open, 'Cancel new backup returns to saved-file details');
+  const saveContext = vm.createContext({
+    $: ui, backupBusy: false, preparedBackup: encrypted, vaultPassword: 'session',
+    File: globalThis.File, backupFileName: () => 'backup.json',
+    navigator: { canShare: () => true, share: async () => { saveContext.shared = true; } },
+    downloadBackup() { saveContext.downloaded = true; },
+    openRestoreBackup(verify) {
+      assert(!ui('deviceBackupDialog').open, 'Close backup dialog before opening the file picker dialog');
+      saveContext.verified = verify;
+    }
+  });
+  const saveStart = source.indexOf("  $('deviceBackupClose').onclick =");
+  vm.runInContext(source.slice(saveStart, cancelStart), saveContext);
+  const sharing = ui('deviceBackupDownload').onclick();
+  assert(saveContext.shared, 'Native sharing starts synchronously from the save tap');
+  await sharing;
+  assert(!saveContext.backupBusy && !saveContext.verified, 'Saving never automatically stacks the verification dialog');
+  saveContext.navigator.share = async () => { throw Object.assign(new Error(), { name: 'AbortError' }); };
+  await ui('deviceBackupDownload').onclick();
+  assert(!saveContext.backupBusy && saveContext.preparedBackup, 'Cancelled sharing allows a retry');
+  saveContext.navigator.canShare = () => false;
+  await ui('deviceBackupDownload').onclick();
+  assert(saveContext.downloaded, 'Unsupported sharing falls back to a download');
+  ui('deviceBackupDialog').showModal();
+  ui('deviceBackupVerify').onclick();
+  assert(saveContext.verified, 'Verification opens from a separate user action');
   const updateEnd = source.indexOf('  function mergeVerifiedWallets(', updateStart);
   vm.runInContext(source.slice(updateStart, updateEnd), updateContext);
   updateContext.openBackupUpdate();

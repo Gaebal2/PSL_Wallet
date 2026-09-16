@@ -1731,7 +1731,11 @@
     const link = document.createElement('a');
     link.href = url;
     link.download = backupFileName();
-    document.body.append(link);
+    // Preserve the wallet page when Safari previews a download.
+    link.target = '_blank';
+    link.rel = 'noopener';
+    const dialogs = [...document.querySelectorAll('dialog[open]')];
+    (dialogs[dialogs.length - 1] || document.body).append(link);
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
@@ -1885,7 +1889,6 @@
         downloadBackup(plan.updated);
         $('updateBackupDialog').close();
         openDeviceBackup();
-        openRestoreBackup(true);
         $('deviceBackupError').textContent = '새 통합 파일 저장을 요청했습니다. 기존 파일은 그대로입니다. 저장한 새 파일을 다시 열어 확인해 주세요.';
       }
     } catch (error) {
@@ -1908,6 +1911,8 @@
     }
     return [...merged.values()];
   }
+
+  let preparedBackup = null;
 
   function openDeviceBackup() {
     const wallet = activeWallet();
@@ -1938,6 +1943,31 @@
 
   document.querySelectorAll('[data-device-backup]').forEach((button) => { button.onclick = handleBackupStatus; });
   document.querySelectorAll('[data-restore-backup]').forEach((button) => { button.onclick = () => openRestoreBackup(); });
+  $('deviceBackupClose').onclick = () => $('deviceBackupExit').click();
+  $('deviceBackupVerify').onclick = () => {
+    if (backupBusy) return;
+    $('deviceBackupDialog').close();
+    openRestoreBackup(true);
+  };
+  $('deviceBackupDownload').onclick = async () => {
+    if (backupBusy || !preparedBackup || !vaultPassword) return;
+    const text = preparedBackup;
+    const file = new File([text], backupFileName(), { type: 'application/json' });
+    backupBusy = true;
+    try {
+      // Start sharing directly from a tap, without awaiting encryption first.
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
+        downloadBackup(text);
+      }
+      $('deviceBackupError').textContent = '파일 저장 후 저장한 백업 파일 확인하기를 눌러 주세요.';
+    } catch (error) {
+      if (error.name !== 'AbortError') $('deviceBackupError').textContent = '파일을 저장하지 못했습니다. 다시 시도해 주세요.';
+    } finally {
+      backupBusy = false;
+    }
+  };
   $('deviceBackupExit').onclick = () => {
     if (!backupBusy) $('deviceBackupDialog').close();
   };
@@ -1945,7 +1975,12 @@
   $('restoreBackupCancel').onclick = () => { if (!backupBusy) $('restoreBackupDialog').close(); };
   $('restoreBackupDialog').oncancel = (event) => { if (backupBusy) event.preventDefault(); };
   $('restoreBackupDialog').addEventListener('close', () => $('restoreBackupForm').reset());
-  $('deviceBackupDialog').addEventListener('close', () => $('deviceBackupForm').reset());
+  $('deviceBackupDialog').addEventListener('close', () => {
+    $('deviceBackupForm').reset();
+    preparedBackup = null;
+    $('deviceBackupDownload').classList.add('hidden');
+    $('deviceBackupForm').classList.remove('hidden');
+  });
 
   $('deviceBackupForm').onsubmit = async (event) => {
     event.preventDefault();
@@ -1962,10 +1997,12 @@
     try {
       const text = await WalletBackup.encrypt(wallets, password);
       if (activeWallet() !== wallet || !vaultPassword) return;
-      downloadBackup(text);
-      openRestoreBackup(true);
+      preparedBackup = text;
       $('deviceBackupForm').reset();
-      $('deviceBackupError').textContent = '파일 저장을 요청했습니다. 다운로드 또는 내 파일에서 저장 위치를 확인한 뒤, 아래 버튼으로 해당 파일을 다시 열어 주세요.';
+      $('deviceBackupForm').classList.add('hidden');
+      $('deviceBackupDownload').classList.remove('hidden');
+      $('deviceBackupDownload').focus();
+      $('deviceBackupError').textContent = '백업 파일 저장을 눌러 파일을 저장한 뒤, 저장한 백업 파일 확인하기를 눌러 주세요.';
     } catch {
       $('deviceBackupError').textContent = '백업 파일을 만들지 못했습니다. 비밀번호는 10자 이상이어야 합니다. 다시 시도해 주세요.';
     } finally {
@@ -2039,5 +2076,5 @@
   }
 
   start();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=81', { updateViaCache: 'none' }).catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js?v=83', { updateViaCache: 'none' }).catch(() => {});
 })();
