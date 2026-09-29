@@ -199,3 +199,8 @@ html[lang="en"] .active-card-actions button { min-height: 48px; }
   align-items: center;
   justify-content: center;
 }
+
+/* Match the 10px spacing used by stacked authentication actions. */
+#unlockError:empty { display: none; }
+#unlockBtn { margin-top: 10px; }
+#unlockError:not(:empty) { min-height: 0; margin: 10px 0 0; }
