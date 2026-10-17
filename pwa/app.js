@@ -3,6 +3,7 @@
 
   if (window.top !== window.self) return;
   document.documentElement.classList.add('app-context-verified');
+  if (window.PSLExternalBrowser.guard()) return;
 
   const $ = (id) => document.getElementById(id);
 
@@ -1995,7 +1996,7 @@
       hadController = true;
       applyUpdate();
     });
-    navigator.serviceWorker.register('./sw.js?v=92', { updateViaCache: 'none' }).then(registration => {
+    navigator.serviceWorker.register('./sw.js?v=95', { updateViaCache: 'none' }).then(registration => {
       const checkUpdate = () => {
         if (document.hidden) return;
         registration.update().catch(() => {});

@@ -1,6 +1,18 @@
 /* UI-only localization. Wallet data, keys and input values are never translated. */
 globalThis.WalletI18n = (() => {
   const pairs = `
+외부 브라우저에서 열어 주세요|Please open in an external browser
+PSL Wallet은 기기의 기본 브라우저에서 이용해 주세요. 메신저 안에서는 지갑을 사용하지 않고 외부 브라우저로 이동해 주세요.|Please use PSL Wallet in your device's default browser. Leave the messenger browser before using your wallet.
+외부 브라우저로 열기|Open in external browser
+주소 복사|Copy address
+버튼으로 열리지 않나요?|Did the button not open your browser?
+카카오톡·텔레그램 화면의 메뉴(⋮ · …) 또는 공유 버튼을 누르세요.|Tap the menu or share button in KakaoTalk or Telegram.
+“외부 브라우저로 열기”, “브라우저에서 열기” 또는 “Safari로 열기”를 선택하세요. 메뉴 이름은 기기마다 다를 수 있습니다.|Choose Open in external browser, Open in browser, or Open in Safari. Menu labels vary by device.
+해당 메뉴가 없으면 주소를 복사해 기본 브라우저 주소창에 붙여 넣으세요.|If unavailable, copy the address and paste it into your default browser.
+아이폰에서는 메신저 메뉴를 통해 외부 브라우저를 열어 주세요.|On iPhone, use the messenger menu to open an external browser.
+지갑 사이트 주소|Wallet website address
+닫기|Close
+외부 브라우저로 열기 · 안내|Open in external browser - Guide
 개인키가 저장된 지갑 리스트|Wallets with saved private keys
 1단계|Step 1
 2단계|Step 2
