@@ -1,6 +1,11 @@
 /* UI-only localization. Wallet data, keys and input values are never translated. */
 globalThis.WalletI18n = (() => {
   const pairs = `
+외부 브라우저에서 열어야 앱의 모든 기능을 사용할 수 있습니다.|Open in an external browser to use all of the app's features.
+전환되지 않으면 메신저 메뉴의 “외부 브라우저로 열기”를 선택하거나 주소를 복사해 기본 브라우저에 붙여 넣어 주세요.|If the browser does not open, choose Open in external browser from the messenger menu, or copy the address and paste it into your default browser.
+주소를 복사했습니다. 기본 브라우저를 열고 주소창에 붙여 넣어 주세요.|Address copied. Open your default browser and paste it into the address bar.
+아래 주소를 길게 눌러 복사한 뒤 기본 브라우저에서 열어 주세요.|Press and hold the address below to copy it, then open it in your default browser.
+
 외부 브라우저에서 열어 주세요|Please open in an external browser
 PSL Wallet은 기기의 기본 브라우저에서 이용해 주세요. 메신저 안에서는 지갑을 사용하지 않고 외부 브라우저로 이동해 주세요.|Please use PSL Wallet in your device's default browser. Leave the messenger browser before using your wallet.
 외부 브라우저로 열기|Open in external browser
@@ -354,8 +359,13 @@ SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니�
     ['거래 유효 시간이 지나 노드가 거절했습니다. 이 거래는 체결되지 않으며 이력에서 새 거래를 작성할 수 있습니다. 거래 해시: {0}', 'The node rejected the expired transaction. It cannot execute. Create a new transaction from history. Hash: {0}'],
     ['{0} 중복 전송을 피하려면 이력 또는 익스플로러를 먼저 확인해 주세요.', '{0} Check history or the explorer first to avoid a duplicate transfer.']
   ].map(([ko, en]) => ({ ko, en, pattern: new RegExp('^' + ko.split(/\{\d+\}/).map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('(.*?)') + '$') }));
-  let language = 'ko';
-  try { if (localStorage.getItem('psl-wallet-language') === 'en') language = 'en'; } catch {}
+  const deviceLanguage = typeof navigator !== 'undefined' ? (navigator.language || navigator.languages?.[0] || '') : '';
+  let language = /^ko(?:-|$)/i.test(deviceLanguage) ? 'ko' : 'en';
+  try {
+    const savedLanguage = localStorage.getItem('psl-wallet-language');
+    if (savedLanguage === 'ko' || savedLanguage === 'en') language = savedLanguage;
+  } catch {}
+  const languageToggleIds = ['languageToggle', 'externalBrowserLanguageToggle'];
   function translate(value) {
     if (language === 'ko') return koreanLabels.get(value) || value;
     if (dictionary.has(value)) return dictionary.get(value);
@@ -395,10 +405,12 @@ SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니�
   function update() {
     document.documentElement.lang = language;
     render();
-    const button = document.getElementById('languageToggle');
-    button.textContent = language === 'ko' ? 'ENG' : '한국어';
-    button.classList.toggle('korean-label', language === 'en');
-    button.setAttribute('aria-label', language === 'ko' ? '언어: 한국어. 영어로 전환' : 'Language: English. Switch to Korean');
+    for (const id of languageToggleIds) {
+      const button = document.getElementById(id);
+      button.textContent = language === 'ko' ? 'ENG' : '한국어';
+      button.classList.toggle('korean-label', language === 'en');
+      button.setAttribute('aria-label', language === 'ko' ? '언어: 한국어. 영어로 전환' : 'Language: English. Switch to Korean');
+    }
     document.getElementById('dangerConfirmPhrase').placeholder = language === 'ko' ? '삭제' : 'DELETE';
   }
   function setLanguage(value) {
@@ -413,7 +425,9 @@ SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니�
     }
   }
   if (typeof document !== 'undefined') {
-    document.getElementById('languageToggle').onclick = () => setLanguage(language === 'ko' ? 'en' : 'ko');
+    for (const id of languageToggleIds) {
+      document.getElementById(id).onclick = () => setLanguage(language === 'ko' ? 'en' : 'ko');
+    }
     update();
     new MutationObserver(mutations => {
       for (const mutation of mutations) {

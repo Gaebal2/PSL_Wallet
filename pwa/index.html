@@ -35,13 +35,14 @@
   <link rel="stylesheet" href="history.css?v=55">
   <link rel="stylesheet" href="overlays.css?v=94">
   <title>Wallet</title>
-  <link rel="stylesheet" href="external-browser.css?v=95">
+  <link rel="stylesheet" href="external-browser.css?v=96">
 </head>
 <body>
   <dialog id="externalBrowserDialog" class="external-browser-dialog" aria-labelledby="externalBrowserTitle">
-    <p class="eyebrow">PSL WALLET</p>
-    <h2 id="externalBrowserTitle">외부 브라우저에서 열어 주세요</h2>
-    <p>PSL Wallet은 기기의 기본 브라우저에서 이용해 주세요. 메신저 안에서는 지갑을 사용하지 않고 외부 브라우저로 이동해 주세요.</p>
+    <div class="external-browser-header">
+      <button id="externalBrowserLanguageToggle" class="language-toggle" type="button" translate="no" aria-label="언어: 한국어. 영어로 전환">ENG</button>
+    </div>
+    <h2 id="externalBrowserTitle">외부 브라우저에서 열어야 앱의 모든 기능을 사용할 수 있습니다.</h2>
     <button id="externalBrowserOpen" class="button primary" type="button">외부 브라우저로 열기</button>
     <button id="externalBrowserCopy" class="button secondary" type="button">주소 복사</button>
     <div id="externalBrowserSteps" tabindex="-1">
@@ -376,7 +377,7 @@
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
   <script src="backup.js?v=92"></script>
-  <script src="i18n.js?v=95"></script>
+  <script src="i18n.js?v=96"></script>
   <script src="external-browser.js?v=95"></script>
   <script src="app.js?v=95"></script>
 </body>

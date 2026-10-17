@@ -1,6 +1,7 @@
 .app-shell[hidden] { display: none; }
 .external-browser-dialog { color: var(--ink); padding: 28px; }
-.external-browser-dialog h2 { margin: 12px 0; }
+.external-browser-header { display: flex; justify-content: flex-end; }
+.external-browser-dialog h2 { margin: 12px 0; font-size: 18px; line-height: 1.6; }
 .external-browser-dialog p, .external-browser-dialog li { font-size: 14px; line-height: 1.7; }
 .external-browser-dialog ol { padding-left: 22px; }
 .external-browser-dialog .button { margin-top: 10px; }
