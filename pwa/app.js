@@ -1235,7 +1235,8 @@
   }
 
   function isIos() {
-    return /iphone|ipad|ipod/i.test(navigator.userAgent);
+    return /iphone|ipad|ipod/i.test(navigator.userAgent)
+      || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
   }
 
   function updateInstallDialog() {
@@ -1254,7 +1255,11 @@
   }
 
   function showInstallDialog() {
-    if (isStandalone() || localStorage.getItem(INSTALLED_KEY) || !deferredInstallPrompt || $('installDialog').open) return;
+    const ios = isIos();
+    if (isStandalone() || $('installDialog').open) return;
+    // Historical install records do not reflect whether the app is still installed.
+    if (!ios && !deferredInstallPrompt) return;
+    if (ios && document.querySelector('dialog[open]')) return;
     updateInstallDialog();
     $('installDialog').showModal();
   }
@@ -1977,6 +1982,8 @@
       toast('보안을 위해 기존 평문 키를 제거했습니다. 백업 키를 다시 가져와 주세요.');
     }
     showOnly(walletVault ? 'unlock' : 'onboarding');
+    // iOS has no beforeinstallprompt event; show its manual guide after startup.
+    if (isIos()) showInstallDialog();
   }
 
   start();
@@ -1996,7 +2003,7 @@
       hadController = true;
       applyUpdate();
     });
-    navigator.serviceWorker.register('./sw.js?v=95', { updateViaCache: 'none' }).then(registration => {
+    navigator.serviceWorker.register('./sw.js?v=100', { updateViaCache: 'none' }).then(registration => {
       const checkUpdate = () => {
         if (document.hidden) return;
         registration.update().catch(() => {});
