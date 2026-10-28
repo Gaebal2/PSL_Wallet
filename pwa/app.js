@@ -421,7 +421,7 @@
       const onCancel = (event) => { event.preventDefault(); finish(false); };
       $('dangerConfirmCancel').onclick = () => finish(false);
       $('dangerConfirmAccept').onclick = () => {
-        if (requirePhrase && phraseInput.value.trim() !== (WalletI18n.language === 'en' ? 'DELETE' : '삭제')) {
+        if (requirePhrase && phraseInput.value.trim() !== (WalletI18n.language === 'ko' ? '삭제' : 'DELETE')) {
           $('dangerConfirmError').textContent = '“삭제”를 정확히 입력해 주세요.';
           phraseInput.focus();
           return;
@@ -1052,7 +1052,7 @@
         const time = document.createElement('small');
         const timestamp = Number(transaction.timestamp || 0);
         time.dataset.timestamp = timestamp ? String(timestamp / 1000) : '';
-        time.textContent = timestamp ? new Intl.DateTimeFormat(WalletI18n.language === 'en' ? 'en-US' : 'ko-KR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(timestamp / 1000)) : '';
+        time.textContent = timestamp ? new Intl.DateTimeFormat(WalletI18n.locale, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(timestamp / 1000)) : '';
         const feeText = document.createElement('small');
         feeText.className = 'history-fee';
         feeText.textContent = '수수료 계산 중…';
@@ -1724,7 +1724,7 @@
   function backupFileName(now = new Date()) {
     const pad = value => String(value).padStart(2, '0');
     const timestamp = String(now.getFullYear()) + pad(now.getMonth() + 1) + pad(now.getDate()) + pad(now.getHours()) + pad(now.getMinutes());
-    const prefix = WalletI18n.language === 'en' ? 'PSL Wallet private key' : 'PSL지갑 개인키';
+    const prefix = WalletI18n.translate('PSL지갑 개인키');
     return prefix + '_' + timestamp + '.json';
   }
 
@@ -2003,7 +2003,7 @@
       hadController = true;
       applyUpdate();
     });
-    navigator.serviceWorker.register('./sw.js?v=100', { updateViaCache: 'none' }).then(registration => {
+    navigator.serviceWorker.register('./sw.js?v=102', { updateViaCache: 'none' }).then(registration => {
       const checkUpdate = () => {
         if (document.hidden) return;
         registration.update().catch(() => {});

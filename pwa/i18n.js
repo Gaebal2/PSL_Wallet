@@ -319,6 +319,14 @@ SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니�
 보안을 위해 기존 평문 키를 제거했습니다. 백업 키를 다시 가져와 주세요.|The old unencrypted key was removed for security. Import your backup key again.
 `.trim().split('\n').filter(line => line.includes('|')).map(line => line.split('|'));
   const dictionary = new Map(pairs);
+  dictionary.set('언어 선택', 'Select language');
+  dictionary.set('사용할 언어를 선택해 주세요.', 'Choose your preferred language.');
+  dictionary.set('PSL지갑 개인키', 'PSL Wallet private key');
+  dictionary.set('잘못된 백업 파일입니다.', 'Invalid backup file.');
+  dictionary.set('백업 비밀번호는 10자 이상 입력해 주세요.', 'Enter a backup password of at least 10 characters.');
+  dictionary.set('백업 파일이 너무 큽니다.', 'The backup file is too large.');
+  dictionary.set('지원하지 않는 백업 파일입니다.', 'Unsupported backup file.');
+  dictionary.set('손상된 백업 파일입니다.', 'The backup file is damaged.');
   const koreanLabels = new Map([
     ['OPEN SOURCE · SELF CUSTODY', '오픈소스 · 개인키 직접 관리'], ['WELCOME BACK', '다시 오신 것을 환영합니다'],
     ['ACTIVE WALLET', '현재 지갑'], ['MAINNET', '메인넷'], ['TESTNET', '테스트넷'], ['QUICK ACCESS', '빠른 실행'], ['HISTORY', '거래 이력'],
@@ -359,21 +367,42 @@ SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니�
     ['거래 유효 시간이 지나 노드가 거절했습니다. 이 거래는 체결되지 않으며 이력에서 새 거래를 작성할 수 있습니다. 거래 해시: {0}', 'The node rejected the expired transaction. It cannot execute. Create a new transaction from history. Hash: {0}'],
     ['{0} 중복 전송을 피하려면 이력 또는 익스플로러를 먼저 확인해 주세요.', '{0} Check history or the explorer first to avoid a duplicate transfer.']
   ].map(([ko, en]) => ({ ko, en, pattern: new RegExp('^' + ko.split(/\{\d+\}/).map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('(.*?)') + '$') }));
-  const deviceLanguage = typeof navigator !== 'undefined' ? (navigator.language || navigator.languages?.[0] || '') : '';
-  let language = /^ko(?:-|$)/i.test(deviceLanguage) ? 'ko' : 'en';
+  const supportedLanguages = [
+    {code:'ko', name:'한국어', locale:'ko-KR'}, {code:'en', name:'English', locale:'en-US'},
+    {code:'zh-CN', name:'简体中文', locale:'zh-CN'}, {code:'zh-TW', name:'繁體中文', locale:'zh-TW'},
+    {code:'vi', name:'Tiếng Việt', locale:'vi-VN'}, {code:'id', name:'Bahasa Indonesia', locale:'id-ID'},
+    {code:'hi', name:'हिन्दी', locale:'hi-IN'}, {code:'fil', name:'Filipino', locale:'fil-PH'},
+    {code:'ja', name:'日本語', locale:'ja-JP'}, {code:'de', name:'Deutsch', locale:'de-DE'}
+  ];
+  const isSupported = code => supportedLanguages.some(item => item.code === code);
+  function deviceLanguageCode(value) {
+    const [base, ...parts] = String(value || '').replaceAll('_', '-').toLowerCase().split('-');
+    if (base === 'zh') {
+      if (parts.includes('hant')) return 'zh-TW';
+      if (parts.includes('hans')) return 'zh-CN';
+      return parts.some(part => ['tw', 'hk', 'mo'].includes(part)) ? 'zh-TW' : 'zh-CN';
+    }
+    if (base === 'tl') return 'fil';
+    if (base === 'in') return 'id';
+    return isSupported(base) ? base : 'ko';
+  }
+  const deviceLanguage = globalThis.navigator?.languages?.[0] || globalThis.navigator?.language;
+  let language = deviceLanguageCode(deviceLanguage);
   try {
     const savedLanguage = localStorage.getItem('psl-wallet-language');
-    if (savedLanguage === 'ko' || savedLanguage === 'en') language = savedLanguage;
+    if (isSupported(savedLanguage)) language = savedLanguage;
   } catch {}
   const languageToggleIds = ['languageToggle', 'externalBrowserLanguageToggle'];
+  const localize = (ko, en) => language === 'en' ? en : (globalThis.WalletLocales?.[language]?.[ko] ?? en);
   function translate(value) {
     if (language === 'ko') return koreanLabels.get(value) || value;
-    if (dictionary.has(value)) return dictionary.get(value);
+    if (dictionary.has(value)) return localize(value, dictionary.get(value));
+    if (koreanLabels.has(value)) return localize(koreanLabels.get(value), value);
     for (const { pattern, ko, en } of templates) {
       const match = value.match(pattern);
-      if (match) return en.replace(/\{(\d+)\}/g, (_, i) => {
+      if (match) return localize(ko, en).replace(/\{(\d+)\}/g, (_, i) => {
         const argument = match[Number(i) + 1];
-        if (argument === '알 수 없음') return 'Unknown';
+        if (argument === '알 수 없음') return translate(argument);
         const errorArgument = Number(i) === 0 && (ko.startsWith('PSL 컨트랙트를') || ko.startsWith('PSL 잔액을') || ko.startsWith('{0} 기존 해시') || ko.startsWith('{0} 중복 전송'));
         return errorArgument && argument !== value ? translate(argument) : argument;
       });
@@ -407,26 +436,48 @@ SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니�
     render();
     for (const id of languageToggleIds) {
       const button = document.getElementById(id);
-      button.textContent = language === 'ko' ? 'ENG' : '한국어';
-      button.classList.toggle('korean-label', language === 'en');
-      button.setAttribute('aria-label', language === 'ko' ? '언어: 한국어. 영어로 전환' : 'Language: English. Switch to Korean');
+      button.setAttribute('aria-label', translate('언어 선택'));
+      button.title = translate('언어 선택');
     }
     document.getElementById('dangerConfirmPhrase').placeholder = language === 'ko' ? '삭제' : 'DELETE';
+    document.querySelectorAll('[data-language]').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.language === language));
+    });
   }
   function setLanguage(value) {
-    language = value === 'en' ? 'en' : 'ko';
+    if (!isSupported(value)) return;
+    language = value;
     try { localStorage.setItem('psl-wallet-language', language); } catch {}
     if (typeof document !== 'undefined') {
       update();
       document.querySelectorAll('[data-timestamp]').forEach(element => {
-        if (element.dataset.timestamp) element.textContent = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ko-KR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(Number(element.dataset.timestamp)));
+        if (element.dataset.timestamp) element.textContent = new Intl.DateTimeFormat(supportedLanguages.find(item => item.code === language).locale, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(Number(element.dataset.timestamp)));
       });
       document.dispatchEvent(new Event('walletlanguagechange'));
     }
   }
   if (typeof document !== 'undefined') {
+    const dialog = document.getElementById('languageDialog');
+    const options = document.getElementById('languageOptions');
+    for (const item of supportedLanguages) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'language-option';
+      button.dataset.language = item.code;
+      button.lang = item.code;
+      button.translate = false;
+      button.textContent = item.name;
+      button.onclick = () => { setLanguage(item.code); dialog.close(); };
+      options.append(button);
+    }
+    document.getElementById('languageClose').onclick = () => dialog.close();
+    dialog.addEventListener('close', () => languageToggleIds.forEach(id => document.getElementById(id).setAttribute('aria-expanded', 'false')));
     for (const id of languageToggleIds) {
-      document.getElementById(id).onclick = () => setLanguage(language === 'ko' ? 'en' : 'ko');
+      document.getElementById(id).onclick = () => {
+        document.getElementById(id).setAttribute('aria-expanded', 'true');
+        dialog.showModal();
+        options.querySelector('[aria-pressed="true"]')?.focus();
+      };
     }
     update();
     new MutationObserver(mutations => {
@@ -436,5 +487,5 @@ SL 수량과 네트워크 수수료를 합한 금액이 잔액을 초과합니�
       }
     }).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: attributes });
   }
-  return { translate, setLanguage, get language() { return language; }, dictionary, templates };
+  return { translate, setLanguage, deviceLanguageCode, supportedLanguages, get language() { return language; }, get locale() { return supportedLanguages.find(item => item.code === language).locale; }, dictionary, templates, koreanLabels };
 })();

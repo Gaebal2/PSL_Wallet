@@ -33,7 +33,7 @@
   <link rel="stylesheet" href="wallets.css?v=59">
   <link rel="stylesheet" href="install.css?v=55">
   <link rel="stylesheet" href="history.css?v=55">
-  <link rel="stylesheet" href="overlays.css?v=94">
+  <link rel="stylesheet" href="overlays.css?v=102">
   <title>Wallet</title>
   <link rel="stylesheet" href="external-browser.css?v=97">
 </head>
@@ -41,7 +41,7 @@
   <dialog id="externalBrowserDialog" class="external-browser-dialog" aria-labelledby="externalBrowserTitle">
     <div class="external-browser-header">
       <strong class="external-browser-brand" translate="no">PSL Wallet</strong>
-      <button id="externalBrowserLanguageToggle" class="language-toggle" type="button" translate="no" aria-label="언어: 한국어. 영어로 전환">ENG</button>
+      <button id="externalBrowserLanguageToggle" class="language-toggle" type="button" translate="no" aria-label="언어 선택" aria-haspopup="dialog" aria-controls="languageDialog" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M5 6.5h14M5 17.5h14"/></svg></button>
     </div>
     <h2 id="externalBrowserTitle">외부 브라우저에서 열어야 앱의 모든 기능을 사용할 수 있습니다.</h2>
     <button id="externalBrowserOpen" class="button primary" type="button">외부 브라우저로 열기</button>
@@ -71,7 +71,7 @@
       </a>
       <div class="header-actions">
         <span id="connectionState" class="connection"><i></i> 연결 확인 중</span>
-        <button id="languageToggle" class="language-toggle" type="button" translate="no" aria-label="언어: 한국어. 영어로 전환">ENG</button>
+        <button id="languageToggle" class="language-toggle" type="button" translate="no" aria-label="언어 선택" aria-haspopup="dialog" aria-controls="languageDialog" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M5 6.5h14M5 17.5h14"/></svg></button>
         <button id="lockBtn" class="icon-button hidden" type="button" aria-label="지갑 잠그기" title="지갑 잠그기">
           <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
         </button>
@@ -371,6 +371,11 @@
       </div>
     </form>
   </dialog>
+  <dialog id="languageDialog" class="safe-scroll-dialog" aria-labelledby="languageTitle">
+    <div class="sheet-head"><h2 id="languageTitle">언어 선택</h2><button id="languageClose" class="close" type="button" aria-label="닫기">×</button></div>
+    <p class="helper">사용할 언어를 선택해 주세요.</p>
+    <div id="languageOptions" class="language-options" role="group" aria-labelledby="languageTitle"></div>
+  </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite" popover="manual"></div>
   <script src="vendor/crypto-js.min.js"></script>
   <script src="vendor/nacl-fast.min.js"></script>
@@ -378,8 +383,9 @@
   <script src="vendor/qrcode.min.js"></script>
   <script src="vendor/saseul.min.js"></script>
   <script src="backup.js?v=92"></script>
-  <script src="i18n.js?v=96"></script>
+  <script src="locales.js?v=102"></script>
+  <script src="i18n.js?v=102"></script>
   <script src="external-browser.js?v=95"></script>
-  <script src="app.js?v=100"></script>
+  <script src="app.js?v=102"></script>
 </body>
 </html>
