@@ -40,7 +40,7 @@ if (missingIds.length) failures.push(`JavaScript references missing HTML ids: ${
 if (!html.includes('Content-Security-Policy')) failures.push('HTML CSP is missing');
 if (!appSource.includes('window.top !== window.self') || !appSource.includes("classList.add('app-context-verified')") || !framingSource.includes('html.app-context-verified')) failures.push('Framing protection is missing');
 if (!html.includes('property="og:image"')) failures.push('Open Graph image metadata is missing');
-if (!html.includes('https://gaebal2.github.io/PSL_Wallet/images/psl-wallet-social-v3.png')) failures.push('Open Graph image must use the public absolute URL');
+if (!html.includes('https://wallet.pslmining.com/images/psl-wallet-social-v3.png')) failures.push('Open Graph image must use the public absolute URL');
 if (!appSource.includes('formatCompactUnits') || !appSource.includes("[12, 'T'], [9, 'B'], [6, 'M'], [3, 'K']") || !appSource.includes('visibleFraction')) failures.push('Adaptive compact balance formatting is missing');
 if ((html.match(/data-password-toggle=/g) || []).length < 5) failures.push('Password visibility toggles are missing');
 if (!html.includes('id="receiveQr"') || !appSource.includes('new QRCode(')) failures.push('Receive QR generation is missing');
