@@ -23,13 +23,14 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#f4f6fb">
   <meta name="application-name" content="Wallet">
   <meta name="apple-mobile-web-app-title" content="Wallet">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-512.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/icon-512.png">
   <link rel="stylesheet" href="framing.css?v=55">
-  <link rel="stylesheet" href="styles.css?v=103">
+  <link rel="stylesheet" href="styles.css?v=104">
   <link rel="stylesheet" href="wallets.css?v=59">
   <link rel="stylesheet" href="install.css?v=55">
   <link rel="stylesheet" href="history.css?v=55">
@@ -145,11 +146,11 @@
     <p class="eyebrow">QUICK ACCESS</p>
     <h2 id="installTitle">Wallet을 설치할까요?</h2>
     <p id="installDescription" class="install-description">홈 화면이나 바탕화면에서 앱처럼 빠르게 열 수 있습니다.</p>
-    <div id="iosInstallHelp" class="install-help hidden">
+    <div id="iosInstallHelp" class="install-help hidden" tabindex="-1">
       Safari 하단의 <strong>공유</strong> 버튼을 누른 뒤 <strong>홈 화면에 추가</strong>를 선택하세요.
     </div>
     <div class="install-actions">
-      <button id="installBtn" class="button primary" type="button">폰·바탕화면에 설치</button>
+      <button id="installBtn" class="button primary" type="button" aria-controls="iosInstallHelp" aria-expanded="false">폰·바탕화면에 설치</button>
       <button id="installLaterBtn" class="button secondary" type="button">나중에</button>
     </div>
   </dialog>
@@ -386,6 +387,6 @@
   <script src="locales.js?v=102"></script>
   <script src="i18n.js?v=102"></script>
   <script src="external-browser.js?v=95"></script>
-  <script src="app.js?v=102"></script>
+  <script src="app.js?v=104"></script>
 </body>
 </html>

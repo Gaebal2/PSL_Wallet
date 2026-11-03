@@ -1241,7 +1241,8 @@
 
   function updateInstallDialog() {
     const ios = isIos();
-    $('iosInstallHelp').classList.toggle('hidden', !ios);
+    $('iosInstallHelp').classList.add('hidden');
+    $('installBtn').setAttribute('aria-expanded', 'false');
     if (ios) {
       $('installDescription').textContent = 'Safari에서 홈 화면 아이콘을 만들어 앱처럼 사용할 수 있습니다.';
       $('installBtn').textContent = '설치 방법 확인';
@@ -1292,7 +1293,15 @@
       return;
     }
     if (isIos()) {
-      $('iosInstallHelp').classList.remove('hidden');
+      const help = $('iosInstallHelp');
+      if (!help.classList.contains('hidden')) {
+        $('installDialog').close();
+        return;
+      }
+      help.classList.remove('hidden');
+      $('installBtn').setAttribute('aria-expanded', 'true');
+      $('installBtn').textContent = '닫기';
+      help.focus();
       return;
     }
     toast('브라우저 메뉴의 “앱 설치” 또는 “바로가기 만들기”를 선택하세요.');
@@ -2003,7 +2012,7 @@
       hadController = true;
       applyUpdate();
     });
-    navigator.serviceWorker.register('./sw.js?v=102', { updateViaCache: 'none' }).then(registration => {
+    navigator.serviceWorker.register('./sw.js?v=104', { updateViaCache: 'none' }).then(registration => {
       const checkUpdate = () => {
         if (document.hidden) return;
         registration.update().catch(() => {});
