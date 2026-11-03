@@ -4,6 +4,7 @@
   if (window.top !== window.self) return;
   document.documentElement.classList.add('app-context-verified');
   if (window.PSLExternalBrowser.guard()) return;
+  setupIosStatusSurface();
 
   const $ = (id) => document.getElementById(id);
 
@@ -1239,6 +1240,14 @@
       || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
   }
 
+  function setupIosStatusSurface() {
+    if (!isIos() || !isStandalone()) return;
+    const surface = document.createElement('div');
+    surface.className = 'ios-pwa-status-surface';
+    surface.setAttribute('aria-hidden', 'true');
+    document.body.prepend(surface);
+  }
+
   function updateInstallDialog() {
     const ios = isIos();
     $('iosInstallHelp').classList.add('hidden');
@@ -2012,7 +2021,7 @@
       hadController = true;
       applyUpdate();
     });
-    navigator.serviceWorker.register('./sw.js?v=104', { updateViaCache: 'none' }).then(registration => {
+    navigator.serviceWorker.register('./sw.js?v=106', { updateViaCache: 'none' }).then(registration => {
       const checkUpdate = () => {
         if (document.hidden) return;
         registration.update().catch(() => {});

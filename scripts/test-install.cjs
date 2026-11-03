@@ -5,6 +5,7 @@ const vm = require('node:vm');
 const source = fs.readFileSync(require.resolve('../pwa/app.js'), 'utf8');
 function harness(ios, standalone = false) {
   const elements = new Map();
+  const surfaces = [];
   const $ = id => {
     if (!elements.has(id)) {
       const classes = new Set();
@@ -21,14 +22,26 @@ function harness(ios, standalone = false) {
   const context = vm.createContext({ $, deferredInstallPrompt: null,
     navigator: { userAgent: ios ? 'iPhone' : 'Android', maxTouchPoints: 1 },
     window: { navigator: { standalone }, matchMedia: () => ({ matches: standalone }), addEventListener() {} },
-    document: { querySelector: () => null }, setTimeout() {}, toast() {},
+    document: { querySelector: () => null,
+      createElement: tag => ({ tag, attributes: {}, setAttribute(name, value) { this.attributes[name] = value; } }),
+      body: { prepend: element => surfaces.push(element) }
+    }, setTimeout() {}, toast() {},
     localStorage: { setItem() {} }, INSTALLED_KEY: 'installed'
   });
   vm.runInContext(source.slice(source.indexOf('  function isStandalone()'), source.indexOf("  document.querySelectorAll('[data-password-toggle]')")), context);
-  return { $, context };
+  return { $, context, surfaces };
 }
 
 (async () => {
+  for (const [ios, standalone, expected] of [[true, true, 1], [true, false, 0], [false, true, 0], [false, false, 0]]) {
+    const app = harness(ios, standalone);
+    vm.runInContext('setupIosStatusSurface()', app.context);
+    assert.equal(app.surfaces.length, expected, `Status surface: iOS=${ios}, standalone=${standalone}`);
+    if (expected) {
+      assert.equal(app.surfaces[0].className, 'ios-pwa-status-surface');
+      assert.equal(app.surfaces[0].attributes['aria-hidden'], 'true');
+    }
+  }
   const { $, context } = harness(true);
   vm.runInContext('showInstallDialog()', context);
   assert.equal($('installDialog').open, true);
