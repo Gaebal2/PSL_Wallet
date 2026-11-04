@@ -1917,7 +1917,30 @@
       $('deviceBackupDialog').close();
       openRestoreBackup(true);
     } catch (error) {
-      if (active() && error.name !== 'AbortError') $('deviceBackupError').textContent = '파일을 저장하지 못했습니다. 다시 시도해 주세요.';
+      if (active() && error?.name !== 'AbortError') {
+        $('deviceBackupError').textContent = '파일을 저장하지 못했습니다. 다시 시도해 주세요.';
+        const detail = document.createElement('span');
+        detail.style.display = 'block';
+        detail.style.overflowWrap = 'anywhere';
+        const name = typeof error?.name === 'string' ? error.name : '';
+        const message = typeof error?.message === 'string' ? error.message : typeof error === 'string' ? error : '';
+        const reasons = {
+          NotAllowedError: '파일 저장 또는 공유 권한이 허용되지 않았습니다. 브라우저 권한을 확인하거나 다른 저장 위치를 선택해 주세요.',
+          SecurityError: '브라우저 보안 제한으로 저장 기능을 사용할 수 없습니다. 일반 브라우저에서 지갑을 다시 열고 저장해 주세요.',
+          QuotaExceededError: '저장 공간이 부족하거나 저장 한도를 초과했습니다. 여유 공간을 확보하거나 다른 저장 위치를 선택해 주세요.',
+          NotFoundError: '저장할 파일이나 폴더를 찾을 수 없습니다. 저장 위치를 다시 선택해 주세요.',
+          NotReadableError: '파일에 접근할 수 없습니다. 다른 프로그램에서 파일을 사용 중인지 확인하고 다시 시도해 주세요.',
+          NoModificationAllowedError: '선택한 파일이나 폴더에 쓸 수 없습니다. 다른 이름이나 다른 폴더로 저장해 주세요.',
+          InvalidStateError: '저장 또는 공유 기능이 현재 준비되지 않았습니다. 다른 저장·공유 창을 닫고 다시 시도해 주세요.',
+          DataError: '파일을 공유 대상에 전달하지 못했습니다. 다른 공유 대상을 선택해 주세요.'
+        };
+        detail.textContent = Object.hasOwn(reasons, name) ? reasons[name] : '브라우저에서 구체적인 원인을 확인할 수 없습니다. 다시 시도하거나 다른 브라우저에서 저장해 주세요.';
+        const diagnostic = document.createElement('span');
+        diagnostic.style.display = 'block';
+        diagnostic.style.overflowWrap = 'anywhere';
+        diagnostic.textContent = [name, message].filter(Boolean).join(': ') || '알 수 없음';
+        $('deviceBackupError').append(detail, diagnostic);
+      }
     } finally {
       backupBusy = false;
       $('deviceBackupPassword').disabled = false;
@@ -2021,7 +2044,7 @@
       hadController = true;
       applyUpdate();
     });
-    navigator.serviceWorker.register('./sw.js?v=106', { updateViaCache: 'none' }).then(registration => {
+    navigator.serviceWorker.register('./sw.js?v=107', { updateViaCache: 'none' }).then(registration => {
       const checkUpdate = () => {
         if (document.hidden) return;
         registration.update().catch(() => {});

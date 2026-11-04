@@ -224,6 +224,7 @@ require('../pwa/backup.js');
   ui('deviceBackupClose').onclick();
   assert(!ui('deviceBackupDialog').open && ui('backupLocationDialog').open, 'Cancel new backup returns to saved-file details');
   const saveContext = vm.createContext({
+    document: { createElement() { return { style: {}, textContent: '' }; } },
     $: ui, backupBusy: false, preparedBackup: null, vaultPassword: 'session',
     backupPreparation: 0, backupSaveComplete: false, wallets: [wallet], WalletBackup,
     window: {}, setLoading(button, loading) { button.disabled = loading; },
@@ -285,6 +286,12 @@ require('../pwa/backup.js');
   saveContext.window.showSaveFilePicker = async () => { throw new Error('Denied'); };
   await submitBackup();
   assert(!saveContext.verified && !saveContext.backupBusy, 'Failed saves allow retry without verification');
+  assert.equal(ui('deviceBackupError').children.at(-1).textContent, 'Error: Denied', 'Save failures display the underlying error below the message');
+  assert(ui('deviceBackupError').children.at(-2).textContent.includes('구체적인 원인을 확인할 수 없습니다'), 'Unknown failures do not invent a cause');
+  saveContext.window.showSaveFilePicker = async () => { throw Object.assign(new Error('Denied'), { name: 'NotAllowedError' }); };
+  await submitBackup();
+  assert(ui('deviceBackupError').children.at(-2).textContent.includes('권한이 허용되지 않았습니다'), 'Permission failures explain the cause in plain Korean');
+  assert(ui('deviceBackupError').children.at(-2).textContent.includes('다른 저장 위치'), 'Permission failures suggest a next step');
   delete saveContext.window.showSaveFilePicker;
   await submitBackup();
   ui('deviceBackupDialog').showModal();
