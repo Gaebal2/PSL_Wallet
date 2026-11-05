@@ -1885,30 +1885,10 @@
     $('deviceBackupConfirm').disabled = true;
     setLoading($('deviceBackupSave'), true, '새 백업 파일 저장');
     try {
-      let message;
-      let title = '백업 파일 저장 완료';
-      // All permission prompts start in the submit gesture, before any await.
-      if (typeof window.showSaveFilePicker === 'function') {
-        const handle = await window.showSaveFilePicker({ suggestedName: prepared.file.name, types: [{ description: 'PSL Wallet backup', accept: { 'application/json': ['.json'] } }] });
-        if (!active()) return;
-        const writable = await handle.createWritable();
-        try {
-          await writable.write(prepared.text);
-          await writable.close();
-        } catch (error) {
-          await writable.abort().catch(() => {});
-          throw error;
-        }
-        message = '백업 파일을 저장했습니다. 저장한 파일을 다시 선택하여 확인해 주세요.';
-      } else if (typeof navigator.share === 'function' && navigator.canShare?.({ files: [prepared.file] })) {
-        await navigator.share({ files: [prepared.file] });
-        title = '파일 저장 창 완료';
-        message = '파일 저장 창이 완료되었습니다. 선택한 위치의 백업 파일을 다시 열어 확인해 주세요.';
-      } else {
-        downloadBackup(prepared.text);
-        title = '백업 파일 저장 요청';
-        message = '다운로드를 요청했습니다. 브라우저에서 저장을 완료한 뒤 저장한 파일을 다시 선택하여 확인해 주세요.';
-      }
+      // Start the browser download directly in the submit gesture on every browser.
+      downloadBackup(prepared.text);
+      const title = '백업 파일 저장 요청';
+      const message = '다운로드를 요청했습니다. 브라우저에서 저장을 완료한 뒤 저장한 파일을 다시 선택하여 확인해 주세요.';
       if (!active()) return;
       await showAlert(message, title);
       if (!active()) return;
@@ -2044,7 +2024,7 @@
       hadController = true;
       applyUpdate();
     });
-    navigator.serviceWorker.register('./sw.js?v=107', { updateViaCache: 'none' }).then(registration => {
+    navigator.serviceWorker.register('./sw.js?v=108', { updateViaCache: 'none' }).then(registration => {
       const checkUpdate = () => {
         if (document.hidden) return;
         registration.update().catch(() => {});
