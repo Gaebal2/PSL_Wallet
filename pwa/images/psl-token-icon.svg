@@ -21,7 +21,7 @@
       </g>
     </mask>
   </defs>
-  <g fill="none" stroke="#D9A000" stroke-width="8" stroke-linecap="round">
+  <g fill="none" stroke="#FFBA28" stroke-width="8" stroke-linecap="round">
     <g mask="url(#weave)">
       <use href="#link" transform="rotate(0 128 128)"/>
       <use href="#link" transform="rotate(30 128 128)"/>
@@ -50,5 +50,5 @@
     <use href="#join" transform="rotate(345 128 128)"/>
   </g>
   <!-- The symbol bounds (74, 89)?(182, 167) share the ring center (128, 128). -->
-  <path fill="#D9A000" d="M74 89h108v15h-24v63h-18v-63h-24v63H98v-63H74Z"/>
+  <path fill="#FFBA28" d="M74 89h108v15h-24v63h-18v-63h-24v63H98v-63H74Z"/>
 </svg>
